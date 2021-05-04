@@ -1,0 +1,16 @@
+#!groovy
+
+@Library("Infrastructure")
+
+import uk.gov.hmcts.contino.GradleBuilder
+
+def type = "java"
+def product = "hmc"
+def component = "hmi-outbound-adapter"
+
+GradleBuilder builder = new GradleBuilder(this, product)
+
+withPipeline(type, product, component) {
+  enableAksStagingDeployment()
+  disableLegacyDeployment()
+}
