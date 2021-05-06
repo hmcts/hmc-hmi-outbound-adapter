@@ -1,14 +1,15 @@
 version: '2.1'
 
 services:
-  spring-boot-template:
+  hmc-hmi-outbound-adapter:
     build:
       context: .
       args:
         - http_proxy
         - https_proxy
         - no_proxy
-    image: hmctspublic.azurecr.io/spring-boot/template
+    image: hmctspublic.azurecr.io/hmc/hmc-hmi-outbound-adapter
+    container_name: hmc-hmi-outbound-adapter
     environment:
       # these environment variables are used by java-logging library
       - ROOT_APPENDER
