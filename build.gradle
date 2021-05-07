@@ -201,7 +201,7 @@ dependencyCheck {
 def versions = [
   junit           : '5.7.1',
   junitPlatform   : '1.7.1',
-  junitVintageVersion : '5.5.2',
+  junitVintageVersion : '5.7.1',
   reformLogging   : '5.1.7',
   lombok          : '1.18.8',
   springBoot      : springBoot.class.package.implementationVersion,
