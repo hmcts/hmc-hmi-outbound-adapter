@@ -1,5 +1,6 @@
 plugins {
   id 'application'
+  id 'idea'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'org.springframework.boot' version '2.4.5'
@@ -51,6 +52,16 @@ sourceSets {
       srcDir file('src/smokeTest/java')
     }
     resources.srcDir file('src/smokeTest/resources')
+  }
+}
+
+idea {
+  module {
+    // config to allow Intellij to mark test source and resource files correctly to help linting tools
+    testSourceDirs += project.sourceSets.functionalTest.java.srcDirs
+    testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
+    testResourceDirs += project.sourceSets.functionalTest.resources.srcDirs
+    testResourceDirs += project.sourceSets.integrationTest.resources.srcDirs
   }
 }
 
@@ -145,6 +156,7 @@ task smoke(type: Test) {
         delete "${rootDir}/BEFTA Report for Smoke Tests/"
         new File("${rootDir}/BEFTA Report for Smoke Tests").mkdirs()
         file("${rootDir}/target/cucumber/cucumber-html-reports").renameTo(file("${rootDir}/BEFTA Report for Smoke Tests"))
+
         logger.quiet("Smoke test report moved to ---> file://${rootDir}/BEFTA%20Report%20for%20Smoke%20Tests/overview-features.html")
       }
     }
@@ -152,6 +164,20 @@ task smoke(type: Test) {
 
   outputs.upToDateWhen { false }
 }
+
+cucumberReports {
+  outputDir = file("${rootDir}/target/cucumber")
+  reports = files("${rootDir}/target/cucumber.json")
+}
+
+task customCleanBeftaReports(type:Delete) {
+  delete "${rootDir}/BEFTA Report for Smoke Tests/"
+  delete "${rootDir}/BEFTA Report for Functional Tests/"
+  delete "${rootDir}/target/cucumber"
+  delete "${rootDir}/target/cucumber.json"
+}
+tasks.clean.dependsOn(tasks.customCleanBeftaReports)
+
 
 jacocoTestReport {
   executionData(test, integration)
@@ -172,6 +198,18 @@ sonarqube {
   }
 }
 
+def versions = [
+  junit           : '5.7.1',
+  junitPlatform   : '1.7.1',
+  lombok          : '1.18.8',
+  mapstruct       : '1.4.2.Final',
+  reformLogging   : '5.1.7',
+  springBoot      : springBoot.class.package.implementationVersion,
+  springCloud     : '2020.0.1',
+  springfoxSwagger: '3.0.0',
+  testcontainers  : '1.15.2'
+]
+
 // before committing a change, make sure task still works
 dependencyUpdates {
   def isNonStable = { String version ->
@@ -187,17 +225,6 @@ dependencyUpdates {
 dependencyCheck {
   suppressionFile = 'config/owasp/suppressions.xml'
 }
-
-def versions = [
-  junit           : '5.7.1',
-  junitPlatform   : '1.7.1',
-  junitVintageVersion : '5.5.2',
-  reformLogging   : '5.1.7',
-  lombok          : '1.18.8',
-  springBoot      : springBoot.class.package.implementationVersion,
-  springfoxSwagger: '3.0.0'
-]
-
 
 dependencyManagement {
   dependencies {
@@ -235,9 +262,7 @@ ext.libraries = [
     "org.junit.jupiter:junit-jupiter-engine:${versions.junit}",
     "org.junit.jupiter:junit-jupiter-params:${versions.junit}",
     "org.junit.platform:junit-platform-commons:${versions.junitPlatform}",
-    "org.junit.platform:junit-platform-engine:${versions.junitPlatform}",
-    "org.junit.platform:junit-platform-engine:${versions.junitPlatform}",
-    "org.junit.vintage:junit-vintage-engine:${versions.junitVintageVersion}"
+    "org.junit.platform:junit-platform-engine:${versions.junitPlatform}"
   ]
 ]
 
@@ -246,6 +271,9 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
 
   implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
 
