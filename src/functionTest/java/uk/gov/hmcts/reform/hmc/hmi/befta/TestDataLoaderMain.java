@@ -1,4 +1,4 @@
-package uk.gov.hmcts.hmc.hmi.befta;
+package uk.gov.hmcts.reform.hmc.hmi.befta;
 
 public class TestDataLoaderMain {
 
