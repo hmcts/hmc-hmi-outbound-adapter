@@ -279,7 +279,6 @@ dependencies {
   functionalTestImplementation libraries.junit5
 
   smokeTestImplementation sourceSets.main.runtimeClasspath
-  implementation 'junit:junit:4.12'
 }
 
 mainClassName = 'uk.gov.hmcts.reform.hmc.Application'
