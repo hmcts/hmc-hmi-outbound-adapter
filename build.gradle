@@ -36,15 +36,6 @@ sourceSets {
     }
     resources.srcDir file('src/integrationTest/resources')
   }
-
-  smokeTest {
-    java {
-      compileClasspath += main.output
-      runtimeClasspath += main.output
-      srcDir file('src/smokeTest/java')
-    }
-    resources.srcDir file('src/smokeTest/resources')
-  }
 }
 
 idea {
@@ -233,6 +224,11 @@ dependencyManagement {
     dependencySet(group: 'com.google.guava', version: '30.1.1-jre') {
       entry 'guava'
     }
+    // Remove once BEFTA rest-assured is updated
+    dependencySet(group: 'io.rest-assured', version: '4.3.0') {
+      entry 'json-path'
+      entry 'xml-path'
+    }
     dependencySet(group: 'org.apache.tomcat.embed', version: '9.0.43') {
       entry 'tomcat-embed-core'
       entry 'tomcat-embed-el'
@@ -295,8 +291,6 @@ dependencies {
   functionalTestImplementation sourceSets.main.runtimeClasspath
   functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '6.14.2'
   functionalTestImplementation libraries.junit5
-
-  smokeTestImplementation sourceSets.main.runtimeClasspath
 }
 
 mainClassName = 'uk.gov.hmcts.reform.hmc.Application'
