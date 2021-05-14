@@ -8,4 +8,8 @@ java:
       secrets:
         - name: AppInsightsInstrumentationKey
           alias: azure.application-insights.instrumentation-key
+        - name: ClientID
+          alias: client-id
+        - name: ClientSecret
+          alias: client-secret
   environment:
