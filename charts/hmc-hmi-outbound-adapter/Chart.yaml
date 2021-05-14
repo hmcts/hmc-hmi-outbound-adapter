@@ -3,7 +3,7 @@ appVersion: "1.0"
 description: A Helm chart for hmc-hmi-outbound-adapter App
 name: rpe-spring-boot-template
 home: https://github.com/hmcts/hmc-hmi-outbound-adapter
-version: 0.0.1
+version: 0.0.2
 maintainers:
   - name: HMCTS hmc team
 dependencies:
