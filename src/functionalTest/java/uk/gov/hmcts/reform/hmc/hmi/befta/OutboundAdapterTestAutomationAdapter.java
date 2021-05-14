@@ -28,4 +28,8 @@ public class OutboundAdapterTestAutomationAdapter extends DefaultTestAutomationA
         };
     }
 
+    @Override
+    public String getNewS2SToken() {
+        return null;
+    }
 }
