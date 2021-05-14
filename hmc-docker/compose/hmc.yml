@@ -1,0 +1,30 @@
+---
+version: '2.4'
+
+services:
+  hmi-outbound-adapter:
+    #image: "hmctspublic.azurecr.io/hmc/hmi-outbound-adapter:${HMI_OUTBOUND_ADAPTER_TAG:-latest}"
+    image: "my-build:1"
+    container_name: hmi-outbound-adapter
+    environment:
+      SERVER_PORT: 4558
+    ports:
+      - 4558:4558
+    depends_on:
+      - hmc-wiremock
+    networks:
+      - ccd-network
+
+  hmc-wiremock:
+    container_name: hmc-wiremock
+    image: rodolpheche/wiremock
+    volumes:
+      - ./../mocks/wiremock:/home/wiremock:rw
+    ports:
+      - 4459:8080
+    networks:
+      - ccd-network
+
+networks:
+  ccd-network:
+    external: true
