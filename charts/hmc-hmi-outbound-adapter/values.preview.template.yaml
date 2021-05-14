@@ -6,3 +6,5 @@ java:
     hmc:
       resourceGroup: hmc-shared
       secrets:
+        - name: AppInsightsInstrumentationKey
+
