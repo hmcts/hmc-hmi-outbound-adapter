@@ -1,4 +1,4 @@
-package uk.gov.hmcts.hmc.hmi.befta;
+package uk.gov.hmcts.reform.hmc.hmi.befta;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
