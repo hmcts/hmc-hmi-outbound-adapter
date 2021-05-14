@@ -36,15 +36,6 @@ sourceSets {
     }
     resources.srcDir file('src/integrationTest/resources')
   }
-
-  smokeTest {
-    java {
-      compileClasspath += main.output
-      runtimeClasspath += main.output
-      srcDir file('src/smokeTest/java')
-    }
-    resources.srcDir file('src/smokeTest/resources')
-  }
 }
 
 idea {
@@ -135,10 +126,17 @@ task smoke(type: Test) {
   doLast {
     generateCucumberReports.enabled = true
     javaexec {
-      main = "uk.gov.hmcts.hmc.hmi.befta.OutboundAdapterBeftaMain"
-      classpath += configurations.cucumberRuntime + sourceSets.functionalTest.runtimeClasspath
-      args = ['--plugin', "json:${rootDir}/target/cucumber.json", '--tags', '@Smoke and not @Ignore', '--glue',
-              'uk.gov.hmcts.befta.player', '--glue', "uk.gov.hmcts.hmc.hmi.befta", 'src/functional/resources/features']
+      main = "uk.gov.hmcts.reform.hmc.hmi.befta.OutboundAdapterBeftaMain"
+      classpath += sourceSets.functionalTest.runtimeClasspath + sourceSets.main.output + sourceSets.test.output
+      args = [
+        '--strict',
+        '--threads', '10',
+        '--plugin', "json:${rootDir}/target/cucumber.json",
+        '--plugin', "junit:${buildDir}/test-results/functional/cucumber.xml",
+        '--tags', '@Smoke and not @Ignore',
+        '--glue', 'uk.gov.hmcts.befta.player', 'src/functionalTest/resources/features'
+      ]
+      // '--add-opens=...' added to suppress 'WARNING: An illegal reflective access operation has occurred' in uk.gov.hmcts.befta.util.CucumberStepAnnotationUtils
       jvmArgs = [ '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED' ]
     }
   }
@@ -226,6 +224,11 @@ dependencyManagement {
     dependencySet(group: 'com.google.guava', version: '30.1.1-jre') {
       entry 'guava'
     }
+    // Remove once BEFTA rest-assured is updated
+    dependencySet(group: 'io.rest-assured', version: '4.3.0') {
+      entry 'json-path'
+      entry 'xml-path'
+    }
     dependencySet(group: 'org.apache.tomcat.embed', version: '9.0.43') {
       entry 'tomcat-embed-core'
       entry 'tomcat-embed-el'
@@ -289,8 +292,6 @@ dependencies {
   functionalTestImplementation sourceSets.main.runtimeClasspath
   functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '6.14.2'
   functionalTestImplementation libraries.junit5
-
-  smokeTestImplementation sourceSets.main.runtimeClasspath
 }
 
 mainClassName = 'uk.gov.hmcts.reform.hmc.Application'
