@@ -18,14 +18,12 @@ public class OutboundAdapterTestAutomationAdapter extends DefaultTestAutomationA
         return super.calculateCustomValue(scenarioContext, key);
     }
 
-
     @Override
     protected BeftaTestDataLoader buildTestDataLoader() {
         return new DefaultBeftaTestDataLoader() {
             @Override
             public void doLoadTestData() {
-                OutboundAdapterTestAutomationAdapter.this.loader.addCcdRoles();
-                OutboundAdapterTestAutomationAdapter.this.loader.importDefinitions();
+                // NB: no CCD test data load requirements
             }
         };
     }
