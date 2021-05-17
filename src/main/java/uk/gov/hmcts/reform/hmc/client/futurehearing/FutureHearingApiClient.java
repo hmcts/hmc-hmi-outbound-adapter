@@ -1,19 +1,21 @@
 package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
-import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
+
+
 @FeignClient(
     name = "future-hearing-api",
-    url = "${fh.ad.host}"
+    url = "${fh.ad.host}",
+    configuration = {FutureHearingApiClientConfig.class}
 )
 public interface FutureHearingApiClient {
 
-    String AUTH = "moreUrl";
+    String AUTH = "${fh.ad.get-url}";
 
     @GetMapping(value = AUTH, consumes = APPLICATION_FORM_URLENCODED_VALUE)
-    AuthorizationResponse getAuthorizationToken(@RequestBody String request);
-
+    AuthenticationResponse authenticate(@RequestBody String authRequest);
 }
