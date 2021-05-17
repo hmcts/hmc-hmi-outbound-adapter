@@ -190,7 +190,7 @@ sonarqube {
 }
 
 def versions = [
-  junit           : '5.7.1',
+  junit           : '5.7.2',
   junitPlatform   : '1.7.1',
   lombok          : '1.18.8',
   mapstruct       : '1.4.2.Final',
