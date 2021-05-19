@@ -31,17 +31,6 @@ withPipeline(type, product, component) {
   disableLegacyDeployment()
 }
 
-def secrets = [
-  'ccd-${env}': [
-    secret('ccd-importer-autotest-email', 'CCD_IMPORT_AUTOTEST_EMAIL'),
-    secret('ccd-importer-autotest-password', 'CCD_IMPORT_AUTOTEST_PASSWORD'),
-    secret('ccd-api-gateway-oauth2-client-secret', 'OAUTH2_CLIENT_SECRET')
-  ],
-  's2s-${env}': [
-    secret('microservicekey-ccd-gw', 'BEFTA_S2S_CLIENT_SECRET')
-  ]
-]
-
 static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
   [
     $class: 'AzureKeyVaultSecret',
