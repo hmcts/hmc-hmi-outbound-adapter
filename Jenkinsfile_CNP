@@ -8,6 +8,7 @@ def component = "hmi-outbound-adapter"
 
 // Other env variables needed for BEFTA.
 env.BEFTA_RESPONSE_HEADER_CHECK_POLICY="JUST_WARN"
+env.OAUTH2_CLIENT_ID = "ccd_gateway"
 
 withPipeline(type, product, component) {
   enableAksStagingDeployment()
