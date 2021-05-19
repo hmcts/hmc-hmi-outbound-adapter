@@ -26,11 +26,6 @@ env.OAUTH2_REDIRECT_URI = "https://www-ccd.aat.platform.hmcts.net/oauth2redirect
 
 GradleBuilder builder = new GradleBuilder(this, product)
 
-withPipeline(type, product, component) {
-  enableAksStagingDeployment()
-  disableLegacyDeployment()
-}
-
 static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
   [
     $class: 'AzureKeyVaultSecret',
@@ -41,24 +36,7 @@ static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
   ]
 }
 
-def vaultOverrides = [
-  'preview': 'aat',
-  'spreview': 'saat'
-]
-
-
 withPipeline(type, product, component) {
-  if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'demo' || env.BRANCH_NAME == 'perftest' || env.BRANCH_NAME == 'ithc' || prsToUseAat.toLowerCase().contains(env.BRANCH_NAME.toLowerCase())) {
-    environmentOfDependencies = env.BRANCH_NAME
-    // use aat environment for dependencies of master and CI/CD builds.
-    if (env.BRANCH_NAME.startsWith("PR") || env.BRANCH_NAME == 'master') {
-      environmentOfDependencies = "aat"
-    }
-    env.DEFINITION_STORE_HOST      = "http://ccd-definition-store-api-${environmentOfDependencies}.service.core-compute-${environmentOfDependencies}.internal"
-  }
-
-  overrideVaultEnvironments(vaultOverrides)
-  loadVaultSecrets(secrets)
   enableAksStagingDeployment()
   disableLegacyDeployment()
 
