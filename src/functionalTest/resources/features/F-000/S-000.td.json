@@ -27,13 +27,6 @@
     "body": {
       "status": "UP",
       "components": {
-        "db": {
-          "status": "UP",
-          "details": {
-            "database": "PostgreSQL",
-            "validationQuery": "[[ANYTHING_PRESENT]]"
-          }
-        },
         "diskSpace": {
           "status": "UP",
           "details": {
@@ -43,12 +36,6 @@
             "exists": true
           }
         },
-        "jms": {
-          "status": "UP",
-          "details": {
-            "provider": "QpidJMS"
-          }
-        },
         "livenessState": {
           "status": "UP"
         },
@@ -56,9 +43,6 @@
           "status": "UP"
         },
         "readinessState": {
-          "status": "UP"
-        },
-        "refreshScope": {
           "status": "UP"
         }
       },
