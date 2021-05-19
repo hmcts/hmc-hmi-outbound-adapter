@@ -31,12 +31,6 @@ withPipeline(type, product, component) {
   disableLegacyDeployment()
 }
 
-def secrets = [
-  'hmc-${env}': [
-    secret('hmc-oauth2-client-secret', 'OAUTH2_CLIENT_SECRET')
-  ]
-]
-
 static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
   [
     $class: 'AzureKeyVaultSecret',
