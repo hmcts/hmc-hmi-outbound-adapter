@@ -8,6 +8,8 @@ import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 
 public class FutureHearingErrorDecoder implements ErrorDecoder {
     private static final Logger LOG = LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
+    public static final String INVALID_REQUEST = "Missing or invalid request parameters";
+    public static final String INVALID_SECRET = "Authentication error";
 
     @Override
     public Exception decode(String methodKey, Response response) {
@@ -18,11 +20,11 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
         }
         switch (response.status()) {
             case 400:
-                return new AuthenticationException("Missing one or more required parameters");
+                return new AuthenticationException(INVALID_REQUEST);
             case 401:
-                return new AuthenticationException("Invalid secrets");
+                return new AuthenticationException(INVALID_SECRET);
             default:
-                return new Exception(response.reason());
+                return new AuthenticationException(response.reason());
         }
     }
 }

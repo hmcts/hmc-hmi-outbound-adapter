@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
+//remove after testing
 @RestController
 public class TempController {
 
