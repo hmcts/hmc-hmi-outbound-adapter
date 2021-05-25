@@ -77,6 +77,7 @@ task functional(type: Test) {
     generateCucumberReports.enabled = true
 
     javaexec {
+      environment "OAUTH2_CLIENT_SECRET", "DUMMY"
       main = "uk.gov.hmcts.reform.hmc.hmi.befta.OutboundAdapterBeftaMain"
       classpath += sourceSets.functionalTest.runtimeClasspath + sourceSets.main.output + sourceSets.test.output
       args = [
@@ -126,6 +127,7 @@ task smoke(type: Test) {
   doLast {
     generateCucumberReports.enabled = true
     javaexec {
+      environment "OAUTH2_CLIENT_SECRET", "DUMMY"
       main = "uk.gov.hmcts.reform.hmc.hmi.befta.OutboundAdapterBeftaMain"
       classpath += sourceSets.functionalTest.runtimeClasspath + sourceSets.main.output + sourceSets.test.output
       args = [
