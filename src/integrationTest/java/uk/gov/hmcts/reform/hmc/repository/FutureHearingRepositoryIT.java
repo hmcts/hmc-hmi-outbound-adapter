@@ -4,10 +4,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyReturnToken;
@@ -23,6 +25,9 @@ public class FutureHearingRepositoryIT {
     @Nested
     @DisplayName("POST")
     class GetAuthenticationToken extends BaseTest {
+
+        @Autowired
+        private ApplicationParams applicationParams;
 
         @Autowired
         private DefaultFutureHearingRepository defaultFutureHearingRepository;
@@ -56,6 +61,14 @@ public class FutureHearingRepositoryIT {
             assertThatThrownBy(() -> defaultFutureHearingRepository.retrieveAuthToken())
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(SERVER_ERROR);
+        }
+
+        @Test
+        public void shouldSuccessfullyReturnApplicationParameters() {
+            assertThat(applicationParams.getGrantType()).isEqualTo("GRANT_TYPE");
+            assertThat(applicationParams.getScope()).isEqualTo("SCOPE");
+            assertThat(applicationParams.getClientSecret()).isEqualTo("CLIENT_SECRET");
+            assertThat(applicationParams.getClientId()).isEqualTo("CLIENT_ID");
         }
 
     }
