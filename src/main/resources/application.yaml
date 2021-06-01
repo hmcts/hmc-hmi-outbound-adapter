@@ -54,3 +54,7 @@ fh:
     client-secret: ${CLIENT_SECRET:someVar}
     scope: ${SCOPE:anotherVar}
     grant-type: ${GRANT_TYPE:anotherOne}
+
+feign:
+  okhttp:
+    enabled: true
