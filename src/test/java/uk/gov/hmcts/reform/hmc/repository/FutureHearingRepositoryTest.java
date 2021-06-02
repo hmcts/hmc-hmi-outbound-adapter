@@ -9,8 +9,9 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingApiClient;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
+
 
 class FutureHearingRepositoryTest {
 
@@ -45,6 +46,6 @@ class FutureHearingRepositoryTest {
         given(applicationParams.getClientSecret()).willReturn("CLIENT_SECRET");
 
         AuthenticationResponse testResponse = repository.retrieveAuthToken();
-        assertThat(testResponse.equals(response));
+        assertEquals(response, testResponse);
     }
 }
