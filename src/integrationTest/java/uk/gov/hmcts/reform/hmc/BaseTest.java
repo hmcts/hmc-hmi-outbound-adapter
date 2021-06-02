@@ -9,12 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ActiveProfiles;
 
-
 @SpringBootTest(classes = {
     Application.class,
 })
 @AutoConfigureMockMvc(addFilters = false)
-@AutoConfigureWireMock(port = 0, stubs = "classpath:/wiremock-stubs")
+@AutoConfigureWireMock(port = 0)
 @ActiveProfiles("itest")
 public class BaseTest {
 
