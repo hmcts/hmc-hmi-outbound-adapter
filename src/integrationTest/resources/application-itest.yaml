@@ -1,7 +1,7 @@
 fh:
   ad:
     host: http://localhost:${wiremock.server.port:5000}
-    get-url: /FH_GET_URL
+    get-token-url: /FH_GET_TOKEN_URL
     client-id: CLIENT_ID
     client-secret: CLIENT_SECRET
     scope: SCOPE

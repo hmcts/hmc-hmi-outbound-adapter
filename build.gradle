@@ -274,16 +274,16 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
   implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', version: '3.0.2'
-  implementation 'io.github.openfeign:feign-okhttp:11.2'
+  implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '11.2'
   implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
 
   implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
   implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
 
+  implementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
   implementation group: 'javax.inject', name: 'javax.inject', version: '1'
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
-  implementation 'com.github.tomakehurst:wiremock:2.27.2'
 
   testImplementation libraries.junit5
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', {

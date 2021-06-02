@@ -1,6 +1,5 @@
 package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
-
 public class AuthenticationRequest {
 
     private String grantType;
@@ -21,9 +20,6 @@ public class AuthenticationRequest {
     public String getRequest() {
         return "grant_type=" + grantType + "&client_id=" + clientId + "&scope=" + scope + "&client_secret="
             + clientSecret;
-
     }
-
-
 
 }

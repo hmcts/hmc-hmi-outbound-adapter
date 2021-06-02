@@ -29,7 +29,7 @@ public class WiremockFixtures {
     private static final String CLIENT_SECRET = "CLIENT_SECRET";
     private static final String SCOPE = "SCOPE";
     private static final String GRANT_TYPE = "GRANT_TYPE";
-    private static final String GET_URL = "/FH_GET_URL";
+    private static final String GET_TOKEN_URL = "/FH_GET_TOKEN_URL";
 
 
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
@@ -62,7 +62,7 @@ public class WiremockFixtures {
     public static void stubSuccessfullyReturnToken(String token) {
         AuthenticationResponse authenticationResponse = new AuthenticationResponse();
         authenticationResponse.setAccessToken(token);
-        stubFor(WireMock.post(urlEqualTo(GET_URL))
+        stubFor(WireMock.post(urlEqualTo(GET_TOKEN_URL))
                     .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
                     .withRequestBody(matching("grant_type=" + GRANT_TYPE + "&client_id=" + CLIENT_ID + "&scope="
                                                   + SCOPE + "&client_secret=" + CLIENT_SECRET))
@@ -75,7 +75,7 @@ public class WiremockFixtures {
 
 
     public static void stubThrowAuthenticationError(int status) {
-        stubFor(WireMock.post(urlEqualTo(GET_URL))
+        stubFor(WireMock.post(urlEqualTo(GET_TOKEN_URL))
                     .willReturn(okJson(TEST_BODY).withStatus(status)));
     }
 

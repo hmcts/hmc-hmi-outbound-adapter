@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
-
 @FeignClient(
     name = "future-hearing-api",
     url = "${fh.ad.host}",
@@ -14,8 +13,8 @@ import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VAL
 )
 public interface FutureHearingApiClient {
 
-    String AUTH = "${fh.ad.get-url}";
+    String GET_TOKEN = "${fh.ad.get-token-url}";
 
-    @PostMapping(value = AUTH, consumes = APPLICATION_FORM_URLENCODED_VALUE)
+    @PostMapping(value = GET_TOKEN, consumes = APPLICATION_FORM_URLENCODED_VALUE)
     AuthenticationResponse authenticate(@RequestBody String authRequest);
 }

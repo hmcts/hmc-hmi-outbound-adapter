@@ -9,5 +9,4 @@ public class FutureHearingApiClientConfig {
     public ErrorDecoder errorDecoder() {
         return new FutureHearingErrorDecoder();
     }
-
 }

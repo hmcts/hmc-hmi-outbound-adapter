@@ -18,7 +18,6 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         this.applicationParams = applicationParams;
     }
 
-
     public AuthenticationResponse retrieveAuthToken() {
         return futureHearingApiClient.authenticate(
             new AuthenticationRequest(

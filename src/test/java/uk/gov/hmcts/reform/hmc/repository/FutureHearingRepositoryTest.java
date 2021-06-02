@@ -18,7 +18,6 @@ class FutureHearingRepositoryTest {
     private AuthenticationResponse response;
     private String requestString;
 
-
     @InjectMocks
     private DefaultFutureHearingRepository repository;
 

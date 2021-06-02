@@ -48,12 +48,12 @@ azure:
 
 fh:
   ad:
-    host: ${FH_BASE_URL:someURL}
-    get-url: ${FH_GET_URL:moreURL}
-    client-id: ${CLIENT_ID:defaultVarValue}
-    client-secret: ${CLIENT_SECRET:someVar}
-    scope: ${SCOPE:anotherVar}
-    grant-type: ${GRANT_TYPE:anotherOne}
+    host: ${FH_BASE_URL:base/url}
+    get-token-url: ${FH_GET_TOKEN_URL:get/token/url}
+    client-id: ${CLIENT_ID:client-id}
+    client-secret: ${CLIENT_SECRET:client-secret}
+    scope: ${SCOPE:scope}
+    grant-type: ${GRANT_TYPE:grant-type}
 
 feign:
   okhttp:
