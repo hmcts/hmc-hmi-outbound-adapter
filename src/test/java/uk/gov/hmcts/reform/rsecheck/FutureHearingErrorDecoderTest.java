@@ -59,13 +59,14 @@ public class FutureHearingErrorDecoderTest {
 
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
+        assertThat(exception).isInstanceOf(AuthenticationException.class);
+        assertThat(exception.getMessage().equals(INVALID_REQUEST));
         List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(logsList.size(), 1);
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
         assertEquals(inputString, logsList.get(0)
             .getMessage());
-        assertThat(exception).isInstanceOf(AuthenticationException.class);
-        assertThat(exception.getMessage().equals(INVALID_REQUEST));
     }
 
     @Test
@@ -84,13 +85,14 @@ public class FutureHearingErrorDecoderTest {
 
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
+        assertThat(exception).isInstanceOf(AuthenticationException.class);
+        assertThat(exception.getMessage().equals(INVALID_SECRET));
         List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(logsList.size(), 1);
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
         assertEquals(inputString, logsList.get(0)
             .getMessage());
-        assertThat(exception).isInstanceOf(AuthenticationException.class);
-        assertThat(exception.getMessage().equals(INVALID_SECRET));
 
     }
 
@@ -110,13 +112,13 @@ public class FutureHearingErrorDecoderTest {
 
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
+        assertThat(exception).isInstanceOf(AuthenticationException.class);
+        assertThat(exception.getMessage().equals(SERVER_ERROR));
         List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(logsList.size(), 1);
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
         assertEquals(inputString, logsList.get(0)
             .getMessage());
-        assertThat(exception).isInstanceOf(AuthenticationException.class);
-        assertThat(exception.getMessage().equals(SERVER_ERROR));
-
     }
 }
