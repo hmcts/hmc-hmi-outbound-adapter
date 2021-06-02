@@ -1,11 +1,11 @@
 package uk.gov.hmcts.reform.hmc;
 
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
-@Getter
-@Component
+@Named
+@Singleton
 public class ApplicationParams {
 
     @Value("${fh.ad.client-id}")
