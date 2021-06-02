@@ -8,6 +8,8 @@ def type = "java"
 def product = "hmc"
 def component = "hmi-outbound-adapter"
 
+GradleBuilder builder = new GradleBuilder(this, product)
+
 // env variables needed for BEFTA.
 env.IDAM_URL = "https://idam-api.aat.platform.hmcts.net"
 env.S2S_URL = "http://rpe-service-auth-provider-aat.service.core-compute-aat.internal"
