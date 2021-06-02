@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.rsecheck;
+package uk.gov.hmcts.reform.hmc.client.featurehearing;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -26,7 +26,7 @@ import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDec
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_SECRET;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.SERVER_ERROR;
 
-public class FutureHearingErrorDecoderTest {
+class FutureHearingErrorDecoderTest {
 
     private String methodKey = null;
     private Response response;
@@ -44,7 +44,7 @@ public class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    public void shouldThrowAuthenticationExceptionWith400Error() {
+    void shouldThrowAuthenticationExceptionWith400Error() {
 
         Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
@@ -60,9 +60,9 @@ public class FutureHearingErrorDecoderTest {
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
-        assertThat(exception.getMessage().equals(INVALID_REQUEST));
+        assertEquals(INVALID_REQUEST, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals(logsList.size(), 1);
+        assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
         assertEquals(inputString, logsList.get(0)
@@ -70,7 +70,7 @@ public class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    public void shouldThrowAuthenticationExceptionWith401Error() {
+    void shouldThrowAuthenticationExceptionWith401Error() {
 
         Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
@@ -86,9 +86,9 @@ public class FutureHearingErrorDecoderTest {
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
-        assertThat(exception.getMessage().equals(INVALID_SECRET));
+        assertEquals(INVALID_SECRET, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals(logsList.size(), 1);
+        assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
         assertEquals(inputString, logsList.get(0)
@@ -97,7 +97,7 @@ public class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    public void shouldThrowAuthenticationExceptionWith500Error() {
+    void shouldThrowAuthenticationExceptionWith500Error() {
 
         Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
@@ -113,9 +113,9 @@ public class FutureHearingErrorDecoderTest {
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
-        assertThat(exception.getMessage().equals(SERVER_ERROR));
+        assertEquals(SERVER_ERROR, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals(logsList.size(), 1);
+        assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
         assertEquals(inputString, logsList.get(0)

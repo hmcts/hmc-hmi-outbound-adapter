@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.rsecheck.repository;
+package uk.gov.hmcts.reform.hmc.repository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,13 +8,11 @@ import org.mockito.MockitoAnnotations;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingApiClient;
-import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
-
-public class FutureHearingRepositoryTest {
+class FutureHearingRepositoryTest {
 
     private AuthenticationResponse response;
     private String requestString;
@@ -39,7 +37,7 @@ public class FutureHearingRepositoryTest {
     }
 
     @Test
-    public void shouldSuccessfullyReturnAuthenticationObject() {
+    void shouldSuccessfullyReturnAuthenticationObject() {
         given(futureHearingApiClient.authenticate(requestString)).willReturn(response);
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
