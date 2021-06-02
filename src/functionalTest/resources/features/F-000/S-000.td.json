@@ -24,32 +24,42 @@
       "Vary": "Accept-Encoding",
       "Request-Context": "[[ANY_NULLABLE]]"
     },
-    "body": {
-      "status": "UP",
-      "components": {
-        "diskSpace": {
-          "status": "UP",
-          "details": {
-            "total": "[[ANYTHING_PRESENT]]",
-            "free": "[[ANYTHING_PRESENT]]",
-            "threshold": "[[ANYTHING_PRESENT]]",
-            "exists": true
+    "body" : {
+      "status" : "UP",
+      "components" : {
+        "discoveryComposite" : {
+          "description" : "Discovery Client not initialized",
+          "status" : "UNKNOWN",
+          "components" : {
+            "discoveryClient" : {
+              "description" : "Discovery Client not initialized",
+              "status" : "UNKNOWN"
+            }
           }
         },
-        "livenessState": {
-          "status": "UP"
+        "diskSpace" : {
+          "status" : "UP",
+          "details" : {
+            "total" : "[[ANYTHING_PRESENT]]",
+            "free" : "[[ANYTHING_PRESENT]]",
+            "threshold" : "[[ANYTHING_PRESENT]]",
+            "exists" : true
+          }
         },
-        "ping": {
-          "status": "UP"
+        "livenessState" : {
+          "status" : "UP"
         },
-        "readinessState": {
-          "status": "UP"
+        "ping" : {
+          "status" : "UP"
+        },
+        "readinessState" : {
+          "status" : "UP"
+        },
+        "refreshScope" : {
+          "status" : "UP"
         }
       },
-      "groups": [
-        "liveness",
-        "readiness"
-      ]
+      "groups" : [ "liveness", "readiness" ]
     }
   }
 }
