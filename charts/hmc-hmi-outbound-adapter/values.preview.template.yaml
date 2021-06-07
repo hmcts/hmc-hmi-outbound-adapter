@@ -7,3 +7,12 @@ java:
       resourceGroup: hmc-shared
       secrets:
         - name: AppInsightsInstrumentationKey
+        SERVICE_BUS_CONNECTION_STRING:
+          secretRef: //TODO
+          key: connectionString
+
+servicebus:
+  enabled: true
+  teamName: CCD
+  resourceGroup: hmc-aks
+  serviceplan: standard
