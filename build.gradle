@@ -172,7 +172,7 @@ task customCleanBeftaReports(type:Delete) {
 tasks.clean.dependsOn(tasks.customCleanBeftaReports)
 
 jacocoTestReport {
-  executionData(test)
+  executionData(test, integration)
   reports {
     xml.enabled = true
     csv.enabled = false
