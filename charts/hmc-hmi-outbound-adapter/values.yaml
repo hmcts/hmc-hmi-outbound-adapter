@@ -8,4 +8,10 @@ java:
       secrets:
         - name: AppInsightsInstrumentationKey
           alias: azure.application-insights.instrumentation-key
+        - name: ClientId
+          alias: fh.ad.client-id
+        - name: ClientSecret
+          alias: fh.ad.client-secret
+        - name: Scope
+          alias: fh.ad.scope
   environment:

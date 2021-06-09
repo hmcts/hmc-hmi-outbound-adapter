@@ -17,6 +17,9 @@ spring:
     import: "optional:configtree:/mnt/secrets/"
   application:
     name: HMC HMI Outbound Adapter
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
 #  datasource:
 #    driver-class-name: org.postgresql.Driver
 #    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_OPTIONS:}
@@ -42,3 +45,16 @@ spring:
 azure:
   application-insights:
     instrumentation-key: ${hmc.AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+
+fh:
+  ad:
+    host: ${FH_BASE_URL:base/url}
+    get-token-url: ${FH_GET_TOKEN_URL:get/token/url}
+    client-id: ${CLIENT_ID:client-id}
+    client-secret: ${CLIENT_SECRET:client-secret}
+    scope: ${SCOPE:scope}
+    grant-type: ${GRANT_TYPE:grant-type}
+
+feign:
+  okhttp:
+    enabled: true
