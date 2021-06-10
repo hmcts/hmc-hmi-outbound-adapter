@@ -19,7 +19,8 @@ import java.util.concurrent.TimeUnit;
 public class MessageReceiverConfiguration {
 
     private static ApplicationParams applicationParams;
-    private static final String REQUEST_HEARING = "requestHearing";
+    private static final String REQUEST_HEARING = "REQUEST_HEARING";
+    private static final String MESSAGE_TYPE = "message_type";
 
     public MessageReceiverConfiguration(ApplicationParams applicationParams) {
         this.applicationParams = applicationParams;
@@ -53,15 +54,22 @@ public class MessageReceiverConfiguration {
         log.info("Processing message. Session: %s, Sequence #: %s. Contents: %s%n", message.getMessageId(),
                  message.getSequenceNumber(), message.getBody());
 
-        // change to correct message header key
-        switch (message.getApplicationProperties().get("messageType").toString()) {
-            case REQUEST_HEARING:
-                // calls Abi's code;
-                break;
-            default:
-                // add to dead letter queue - unsupported message type
-                break;
+        if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)){
+            switch (message.getApplicationProperties().get(MESSAGE_TYPE).toString()) {
+                case REQUEST_HEARING:
+                    log.info("Message of type REQUEST_HEARING received");
+                    // calls Abi's code;
+                    break;
+                default:
+                    log.info("Message has unsupported value for message_type");
+                    // add to dead letter queue - unsupported message type
+                    break;
+            }
+        } else {
+            // add to dead letter queue - unsupported message type
+            log.info("Message is missing custom header message_type");
         }
+
     }
 
     private static void processError(ServiceBusErrorContext context, CountDownLatch countdownLatch) {
