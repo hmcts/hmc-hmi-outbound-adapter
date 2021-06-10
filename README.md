@@ -110,7 +110,7 @@ are disabled in production.
 To enable publishing to an Azure Service Bus destination:
 
 1. Comment the `SPRING_PROFILES_ACTIVE` environment variable in the `docker-compose.yml`
-1. Set the Azure Service Bus connection string in the `SERVICE_BUS_CONNECTION_STRING` environment variable
+1. Set the Azure Service Bus connection string in the `SB_CONN_STRING` environment variable
 1. Set the Azure Service Bus queue name in the `SERVICE_BUS_QUEUE_NAME` environment variable
 1. Restart the application
 

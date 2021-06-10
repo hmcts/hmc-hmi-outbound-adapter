@@ -23,7 +23,7 @@ spring:
     exclude: org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
   jms:
     servicebus:
-      connection-string: ${SERVICE_BUS_CONNECTION_STRING}
+      connection-string: ${SB_CONN_STRING}
       wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:1800000}
       queue-name: ${SERVICE_BUS_QUEUE_NAME}
 #  datasource:
