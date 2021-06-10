@@ -99,7 +99,7 @@ instance. This is possible due to both Azure Service Bus and ActiveMQ support fo
 **By default** the hmi outbound adapter is configured to start in "dev" mode with ActiveMQ enabled when run locally.
 
 ActiveMQ information, including details on published messages, can be accessed via the
-Hawtio Management Console UI at http://localhost:4456/hawtio.
+Hawtio Management Console UI at http://localhost:4558/hawtio.
 
 Note that the ActiveMQ menu option on Hawtio will only show up once the first message has been published, and
 data will not persist across restarts. This is meant for dev/test purposes only and ActiveMQ and the Hawtio console
@@ -111,7 +111,7 @@ To enable publishing to an Azure Service Bus destination:
 
 1. Comment the `SPRING_PROFILES_ACTIVE` environment variable in the `docker-compose.yml`
 1. Set the Azure Service Bus connection string in the `SERVICE_BUS_CONNECTION_STRING` environment variable
-1. Set the destination in the `CCD_CASE_EVENTS_DESTINATION` environment variable - this can be either a topic or a queue
+1. Set the Azure Service Bus queue name in the `SERVICE_BUS_QUEUE_NAME` environment variable
 1. Restart the application
 
 ## Developing

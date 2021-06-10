@@ -7,53 +7,58 @@ import com.azure.messaging.servicebus.ServiceBusFailureReason;
 import com.azure.messaging.servicebus.ServiceBusProcessorClient;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
-import org.slf4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-
+@Slf4j
+@Component
 public class MessageReceiverConfiguration {
 
-    private static Logger logger;
-    private static final String CONNECTION_STRING_KEY = "CONNECTION_STRING";
+    private static ApplicationParams applicationParams;
+
+    public MessageReceiverConfiguration(ApplicationParams applicationParams) {
+        this.applicationParams = applicationParams;
+    }
 
     // handles received messages
-    static void receiveMessages() throws InterruptedException
-    {
+    public void receiveMessages() throws InterruptedException {
         CountDownLatch countdownLatch = new CountDownLatch(1);
 
         // Create an instance of the processor through the ServiceBusClientBuilder
         ServiceBusProcessorClient processorClient = new ServiceBusClientBuilder()
-            .connectionString(System.getenv(CONNECTION_STRING_KEY))
+            .connectionString(applicationParams.getConnectionString())
             .processor()
-            .queueName("hmc-to-hmi-env")
+            .queueName(applicationParams.getQueueName())
             .processMessage(MessageReceiverConfiguration::processMessage)
             .processError(context -> processError(context, countdownLatch))
             .buildProcessorClient();
-        logger.info("Connected to Queue");
+        log.info("Connected to Queue");
 
-        logger.info("Starting the processor");
+        log.info("Starting the processor");
         processorClient.start();
 
-        TimeUnit.SECONDS.sleep(10);
-        logger.info("Stopping and closing the processor");
+        TimeUnit.SECONDS.sleep(Long.valueOf(applicationParams.getWaitToRetryTime()));
+        log.info("Stopping and closing the processor");
         processorClient.close();
     }
 
     private static void processMessage(ServiceBusReceivedMessageContext context) {
         ServiceBusReceivedMessage message = context.getMessage();
-        logger.info("Processing message. Session: %s, Sequence #: %s. Contents: %s%n", message.getMessageId(),
+        log.info("Processing message. Session: %s, Sequence #: %s. Contents: %s%n", message.getMessageId(),
                           message.getSequenceNumber(), message.getBody());
     }
 
     private static void processError(ServiceBusErrorContext context, CountDownLatch countdownLatch) {
-        logger.error("Error when receiving messages from namespace: '%s'. Entity: '%s'%n",
+        log.error("Error when receiving messages from namespace: '%s'. Entity: '%s'%n",
                           context.getFullyQualifiedNamespace(), context.getEntityPath()
         );
 
         if (!(context.getException() instanceof ServiceBusException)) {
-            logger.error("Non-ServiceBusException occurred: %s%n", context.getException());
+            log.error("Non-ServiceBusException occurred: %s%n", context.getException());
             return;
         }
 
@@ -63,26 +68,24 @@ public class MessageReceiverConfiguration {
         if (reason == ServiceBusFailureReason.MESSAGING_ENTITY_DISABLED
             || reason == ServiceBusFailureReason.MESSAGING_ENTITY_NOT_FOUND
             || reason == ServiceBusFailureReason.UNAUTHORIZED) {
-            logger.error("An unrecoverable error occurred. Stopping processing with reason %s: %s%n",
+            log.error("An unrecoverable error occurred. Stopping processing with reason %s: %s%n",
                               reason, exception.getMessage()
             );
 
             countdownLatch.countDown();
         } else if (reason == ServiceBusFailureReason.MESSAGE_LOCK_LOST) {
-            logger.error("Message lock lost for message: %s%n", context.getException());
+            log.error("Message lock lost for message: %s%n", context.getException());
         } else if (reason == ServiceBusFailureReason.SERVICE_BUSY) {
             try {
                 // Choosing an arbitrary amount of time to wait until trying again.
-                TimeUnit.SECONDS.sleep(1);
+                TimeUnit.SECONDS.sleep(Long.valueOf(applicationParams.getWaitToRetryTime()));
             } catch (InterruptedException e) {
-                logger.error("Unable to sleep for period of time");
+                log.error("Unable to sleep for period of time");
             }
         } else {
-            logger.error("Error source %s, reason %s, message: %s%n", context.getErrorSource(),
+            log.error("Error source %s, reason %s, message: %s%n", context.getErrorSource(),
                               reason, context.getException()
             );
         }
-
-
     }
 }
