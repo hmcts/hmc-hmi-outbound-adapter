@@ -54,7 +54,7 @@ public class MessageReceiverConfiguration {
         log.info("Processing message. Session: %s, Sequence #: %s. Contents: %s%n", message.getMessageId(),
                  message.getSequenceNumber(), message.getBody());
 
-        if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)){
+        if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
             switch (message.getApplicationProperties().get(MESSAGE_TYPE).toString()) {
                 case REQUEST_HEARING:
                     log.info("Message of type REQUEST_HEARING received");
