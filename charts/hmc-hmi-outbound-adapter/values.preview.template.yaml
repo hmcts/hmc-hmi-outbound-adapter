@@ -7,8 +7,8 @@ java:
       resourceGroup: hmc-shared
       secrets:
         - name: AppInsightsInstrumentationKey
-        SERVICE_BUS_CONNECTION_STRING:
-          secretRef: servicebus-secret-{{ .Release.Name }}-servicebus
+        SB_CONN_STRING:
+          secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-to-hmi
           key: connectionString
 
 servicebus:
@@ -17,5 +17,5 @@ servicebus:
   resourceGroup: hmc-aks
   serviceplan: standard
   setup:
-    queue:
-      -name: {{ .Release.Name }}-queue
+    queues:
+      -name: hmc-to-hmi-{{ .Release.Name }}
