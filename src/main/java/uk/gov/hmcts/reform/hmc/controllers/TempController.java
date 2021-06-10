@@ -26,11 +26,6 @@ public class TempController {
         this.futureHearingRepository = futureHearingRepository;
     }
 
-    @GetMapping("/something")
-    public AuthenticationResponse assignAccessWithinOrganisation() {
-        return futureHearingRepository.retrieveAuthToken();
-    }
-
     @PostMapping("/something")
     public HearingManagementInterfaceResponse assignAccessWithinOrganisation(@RequestBody Object data) {
         JsonNode anyData = OBJECT_MAPPER.convertValue(data, JsonNode.class);
