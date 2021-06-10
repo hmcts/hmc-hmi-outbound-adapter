@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class MessageReceiverConfiguration {
 
     private static ApplicationParams applicationParams;
+    private static final String REQUEST_HEARING = "requestHearing";
 
     public MessageReceiverConfiguration(ApplicationParams applicationParams) {
         this.applicationParams = applicationParams;
@@ -41,6 +42,7 @@ public class MessageReceiverConfiguration {
         log.info("Starting the processor");
         processorClient.start();
 
+        //to be removed
         TimeUnit.SECONDS.sleep(Long.valueOf(applicationParams.getWaitToRetryTime()));
         log.info("Stopping and closing the processor");
         processorClient.close();
@@ -49,7 +51,17 @@ public class MessageReceiverConfiguration {
     private static void processMessage(ServiceBusReceivedMessageContext context) {
         ServiceBusReceivedMessage message = context.getMessage();
         log.info("Processing message. Session: %s, Sequence #: %s. Contents: %s%n", message.getMessageId(),
-                          message.getSequenceNumber(), message.getBody());
+                 message.getSequenceNumber(), message.getBody());
+
+        // change to correct message header key
+        switch (message.getApplicationProperties().get("messageType").toString()) {
+            case REQUEST_HEARING:
+                // calls Abi's code;
+                break;
+            default:
+                // add to dead letter queue - unsupported message type
+                break;
+        }
     }
 
     private static void processError(ServiceBusErrorContext context, CountDownLatch countdownLatch) {

@@ -3,8 +3,8 @@ package uk.gov.hmcts.reform.hmc;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
 @EnableFeignClients

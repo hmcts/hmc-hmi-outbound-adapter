@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
 import static org.mockito.Mockito.when;
@@ -26,7 +25,8 @@ public class MessageReceiverConfigurationTest {
     @Test
     void shouldConnectToQueue() throws InterruptedException {
         when(applicationParams.getConnectionString()).thenReturn(
-            "Endpoint=sb://namespacename.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=key");
+            "Endpoint=sb://namespacename.servicebus.windows.net/"
+                + ";SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=key");
         when(applicationParams.getQueueName()).thenReturn("queueName");
         when(applicationParams.getWaitToRetryTime()).thenReturn("1");
         messageReceiverConfiguration.receiveMessages();
