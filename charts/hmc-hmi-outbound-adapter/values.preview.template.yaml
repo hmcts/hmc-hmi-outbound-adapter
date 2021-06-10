@@ -8,7 +8,7 @@ java:
       secrets:
         - name: AppInsightsInstrumentationKey
         SERVICE_BUS_CONNECTION_STRING:
-          secretRef: //TODO
+          secretRef: servicebus-secret-{{ .Release.Name }}-servicebus
           key: connectionString
 
 servicebus:
@@ -16,3 +16,6 @@ servicebus:
   teamName: CCD
   resourceGroup: hmc-aks
   serviceplan: standard
+  setup:
+    queue:
+      -name: {{ .Release.Name }}-queue
