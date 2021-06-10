@@ -8,7 +8,35 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ApplicationParamsTest {
 
-    private final ApplicationParams applicationParams = new ApplicationParams();
+    private ApplicationParams applicationParams = new ApplicationParams();
+
+    @Test
+    void shouldGetClientId() {
+        ReflectionTestUtils.setField(applicationParams, "clientId", "someurl");
+        assertEquals("someurl",
+                     applicationParams.getClientId());
+    }
+
+    @Test
+    void shouldGetClientSecret() {
+        ReflectionTestUtils.setField(applicationParams, "clientSecret", "someurl");
+        assertEquals("someurl",
+                     applicationParams.getClientSecret());
+    }
+
+    @Test
+    void shouldGetGrantType() {
+        ReflectionTestUtils.setField(applicationParams, "grantType", "someurl");
+        assertEquals("someurl",
+                     applicationParams.getGrantType());
+    }
+
+    @Test
+    void shouldGetScope() {
+        ReflectionTestUtils.setField(applicationParams, "scope", "someurl");
+        assertEquals("someurl",
+                     applicationParams.getScope());
+    }
 
     @Test
     void shouldGetConnectionString() {
