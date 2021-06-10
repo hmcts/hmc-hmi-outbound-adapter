@@ -30,8 +30,8 @@ class FutureHearingRepositoryTest {
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
-    private String sourceSystem = "SOURCE_SYSTEM";
-    private String destinationSystem = "DESTINATION_SYSTEM";
+    private static final String SOURCE_SYSTEM = "SOURCE_SYSTEM";
+    private static final String DESTINATION_SYSTEM = "DESTINATION_SYSTEM";
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
 
@@ -58,8 +58,8 @@ class FutureHearingRepositoryTest {
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
         given(applicationParams.getScope()).willReturn("SCOPE");
         given(applicationParams.getClientSecret()).willReturn("CLIENT_SECRET");
-        given(applicationParams.getSourceSystem()).willReturn(sourceSystem);
-        given(applicationParams.getDestinationSystem()).willReturn(destinationSystem);
+        given(applicationParams.getSourceSystem()).willReturn(SOURCE_SYSTEM);
+        given(applicationParams.getDestinationSystem()).willReturn(DESTINATION_SYSTEM);
     }
 
     @Test
@@ -76,7 +76,7 @@ class FutureHearingRepositoryTest {
         response.setAccessToken("test-token");
         JsonNode anyData = OBJECT_MAPPER.convertValue(response, JsonNode.class);
         given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
-        given(hmiClient.requestHearing("Bearer test-token", sourceSystem, destinationSystem,
+        given(hmiClient.requestHearing("Bearer test-token", SOURCE_SYSTEM, DESTINATION_SYSTEM,
                                        LocalDateTime.now().format(formatter), APPLICATION_JSON_VALUE,
                                        APPLICATION_JSON_VALUE, anyData)).willReturn(expectedResponse);
         HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData);
