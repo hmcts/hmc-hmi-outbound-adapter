@@ -16,14 +16,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 )
 public interface HearingManagementInterfaceApiClient {
 
-    String REQUEST_URL = "/hearings";
+    String HEARINGS_URL = "/hearings";
 
-    @PostMapping(value = REQUEST_URL, consumes = APPLICATION_JSON_VALUE)
+    @PostMapping(value = HEARINGS_URL, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     HearingManagementInterfaceResponse requestHearing(@RequestHeader(AUTHORIZATION) String authorization,
                         @RequestHeader("Source-System") String sourceSystem,
                         @RequestHeader("Destination-System") String destinationSystem,
                         @RequestHeader("Request-Created-At") String requestCreatedAt,
-                        @RequestHeader("Accept") String accept,
-                        @RequestHeader("Content-Type") String content,
                         @RequestBody JsonNode data);
 }

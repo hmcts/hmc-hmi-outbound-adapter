@@ -15,13 +15,12 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
 
 class FutureHearingRepositoryTest {
 
@@ -32,8 +31,7 @@ class FutureHearingRepositoryTest {
         .build();
     private static final String SOURCE_SYSTEM = "SOURCE_SYSTEM";
     private static final String DESTINATION_SYSTEM = "DESTINATION_SYSTEM";
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
+    private final Clock fixedClock = Clock.fixed(Instant.parse("2021-06-10T04:00:00.08Z"), ZoneOffset.UTC);
 
     @InjectMocks
     private DefaultFutureHearingRepository repository;
@@ -52,7 +50,8 @@ class FutureHearingRepositoryTest {
         MockitoAnnotations.openMocks(this);
 
         response = new AuthenticationResponse();
-        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient);
+        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient,
+                                                        fixedClock);
         requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
@@ -74,11 +73,10 @@ class FutureHearingRepositoryTest {
         HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
         expectedResponse.setResponseCode(202);
         response.setAccessToken("test-token");
-        JsonNode anyData = OBJECT_MAPPER.convertValue(response, JsonNode.class);
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
         given(hmiClient.requestHearing("Bearer test-token", SOURCE_SYSTEM, DESTINATION_SYSTEM,
-                                       LocalDateTime.now().format(formatter), APPLICATION_JSON_VALUE,
-                                       APPLICATION_JSON_VALUE, anyData)).willReturn(expectedResponse);
+                                       fixedClock.instant().toString(), anyData)).willReturn(expectedResponse);
         HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData);
         assertEquals(expectedResponse, actualResponse);
     }

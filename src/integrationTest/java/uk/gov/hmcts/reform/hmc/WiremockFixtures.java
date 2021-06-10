@@ -16,9 +16,6 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
@@ -45,10 +42,7 @@ public class WiremockFixtures {
         .modules(new Jdk8Module())
         .build();
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
     public static String TEST_BODY = "This is a test message";
-
 
     private WiremockFixtures() {
     }
@@ -98,7 +92,8 @@ public class WiremockFixtures {
                     .withHeader("Accept", equalTo(APPLICATION_JSON_VALUE))
                     .withHeader("Source-System", equalTo(SOURCE_SYSTEM))
                     .withHeader("Destination-System", equalTo(DESTINATION_SYSTEM))
-                    .withHeader("Request-Created-At", equalTo(LocalDateTime.now().format(formatter)))
+                    .withHeader("Request-Created-At", matching("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]"
+                                                                   + "{2}:[0-9]{2}.[0-9]{6}Z"))
                     .withHeader(AUTHORIZATION, equalTo("Bearer " + token))
                     .willReturn(aResponse()
                                     .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

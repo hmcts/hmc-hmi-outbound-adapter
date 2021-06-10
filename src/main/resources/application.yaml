@@ -56,8 +56,8 @@ fh:
     grant-type: ${GRANT_TYPE:grant-type}
   hmi:
     host: ${HMI_BASE_URL:base/url}
-    source-system: ${SOURCE_SYSTEM:source-system}
-    destination-system: ${DESTINATION_SYSTEM:destination-system}
+    source-system: ${HMI_SOURCE_SYSTEM:source-system}
+    destination-system: ${HMI_DESTINATION_SYSTEM:destination-system}
 
 
 feign:
