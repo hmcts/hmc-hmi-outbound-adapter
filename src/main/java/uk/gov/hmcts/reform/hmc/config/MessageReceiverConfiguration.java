@@ -20,6 +20,8 @@ public class MessageReceiverConfiguration {
 
     private static ApplicationParams applicationParams;
     private static final String REQUEST_HEARING = "REQUEST_HEARING";
+    private static final String AMEND_HEARING = "AMEND_HEARING";
+    private static final String DELETE_HEARING = "DELETE_HEARING";
     private static final String MESSAGE_TYPE = "message_type";
 
     public MessageReceiverConfiguration(ApplicationParams applicationParams) {
@@ -29,8 +31,6 @@ public class MessageReceiverConfiguration {
     // handles received messages
     public void receiveMessages() throws InterruptedException {
         CountDownLatch countdownLatch = new CountDownLatch(1);
-
-        // Create an instance of the processor through the ServiceBusClientBuilder
         ServiceBusProcessorClient processorClient = new ServiceBusClientBuilder()
             .connectionString(applicationParams.getConnectionString())
             .processor()
@@ -43,7 +43,6 @@ public class MessageReceiverConfiguration {
         log.info("Starting the processor");
         processorClient.start();
 
-        //to be removed
         TimeUnit.SECONDS.sleep(Long.valueOf(applicationParams.getWaitToRetryTime()));
         log.info("Stopping and closing the processor");
         processorClient.close();
@@ -58,7 +57,12 @@ public class MessageReceiverConfiguration {
             switch (message.getApplicationProperties().get(MESSAGE_TYPE).toString()) {
                 case REQUEST_HEARING:
                     log.info("Message of type REQUEST_HEARING received");
-                    // calls Abi's code;
+                    break;
+                case AMEND_HEARING:
+                    log.info("Message of type AMEND_HEARING received");
+                    break;
+                case DELETE_HEARING:
+                    log.info("Message of type DELETE_HEARING received");
                     break;
                 default:
                     log.info("Message has unsupported value for message_type");
@@ -101,6 +105,7 @@ public class MessageReceiverConfiguration {
                 TimeUnit.SECONDS.sleep(Long.valueOf(applicationParams.getWaitToRetryTime()));
             } catch (InterruptedException e) {
                 log.error("Unable to sleep for period of time");
+                Thread.currentThread().interrupt();
             }
         } else {
             log.error("Error source %s, reason %s, message: %s%n", context.getErrorSource(),

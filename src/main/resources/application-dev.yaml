@@ -15,9 +15,9 @@ spring:
   jms:
     servicebus:
       enabled: false
-      connection-string: ${SERVICE_BUS_CONNECTION_STRING:dummy}
+      connection-string: ${SB_CONN_STRING}
       wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:1800000}
-      queue-name: ${SERVICE_BUS_QUEUE_NAME:dummy}
+      queue-name: ${SERVICE_BUS_QUEUE_NAME}
   activemq:
     in-memory: true
   autoconfigure:
