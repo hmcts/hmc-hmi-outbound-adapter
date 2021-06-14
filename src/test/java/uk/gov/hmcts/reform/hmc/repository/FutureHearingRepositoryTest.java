@@ -5,9 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
@@ -18,10 +21,15 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceRe
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({UUID.class})
 class FutureHearingRepositoryTest {
 
     private AuthenticationResponse response;
@@ -73,10 +81,14 @@ class FutureHearingRepositoryTest {
         HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
         expectedResponse.setResponseCode(202);
         response.setAccessToken("test-token");
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        UUID transactionId = UUID.randomUUID();
+        mockStatic(UUID.class);
+        when(UUID.randomUUID()).thenReturn(transactionId);
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(hmiClient.requestHearing("Bearer test-token", SOURCE_SYSTEM, DESTINATION_SYSTEM,
-                                       fixedClock.instant().toString(), anyData)).willReturn(expectedResponse);
+                                       fixedClock.instant().toString(), transactionId, anyData))
+            .willReturn(expectedResponse);
         HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData);
         assertEquals(expectedResponse, actualResponse);
     }

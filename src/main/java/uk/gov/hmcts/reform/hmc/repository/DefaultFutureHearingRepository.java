@@ -12,6 +12,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceRe
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.UUID;
 
 @Repository("defaultFutureHearingRepository")
 public class DefaultFutureHearingRepository implements FutureHearingRepository {
@@ -44,6 +45,7 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     public HearingManagementInterfaceResponse createHearingRequest(JsonNode data) {
         String authorization = retrieveAuthToken().getAccessToken();
         return hmiClient.requestHearing("Bearer " + authorization, applicationParams.getSourceSystem(),
-                                        applicationParams.getDestinationSystem(), Instant.now(clock).toString(), data);
+                                        applicationParams.getDestinationSystem(), Instant.now(clock).toString(),
+                                        UUID.randomUUID(), data);
     }
 }

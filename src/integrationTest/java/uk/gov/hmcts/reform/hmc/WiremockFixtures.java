@@ -95,6 +95,8 @@ public class WiremockFixtures {
                     .withHeader("Request-Created-At", matching("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]"
                                                                    + "{2}:[0-9]{2}.[0-9]{6}Z"))
                     .withHeader(AUTHORIZATION, equalTo("Bearer " + token))
+                    .withHeader("transactionIdHMCTS", matching("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]"
+                                                                   + "{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"))
                     .willReturn(aResponse()
                                     .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                                     .withBody(getJsonString(response))

@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import java.util.UUID;
+
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -14,6 +16,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
     url = "${fh.hmi.host}",
     configuration = {FutureHearingApiClientConfig.class}
 )
+@SuppressWarnings("checkstyle:abbreviationaswordinname")
 public interface HearingManagementInterfaceApiClient {
 
     String HEARINGS_URL = "/hearings";
@@ -23,5 +26,6 @@ public interface HearingManagementInterfaceApiClient {
                         @RequestHeader("Source-System") String sourceSystem,
                         @RequestHeader("Destination-System") String destinationSystem,
                         @RequestHeader("Request-Created-At") String requestCreatedAt,
+                        @RequestHeader("transactionIdHMCTS") UUID transactionIdHMCTS,
                         @RequestBody JsonNode data);
 }
