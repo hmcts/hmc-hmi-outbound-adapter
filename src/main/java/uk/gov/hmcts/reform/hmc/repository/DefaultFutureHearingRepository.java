@@ -22,10 +22,10 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final ApplicationParams applicationParams;
 
-    public DefaultFutureHearingRepository(final ActiveDirectoryApiClient activeDirectoryApiClient,
-                                          final ApplicationParams applicationParams,
-                                          HearingManagementInterfaceApiClient hmiClient, @Qualifier("utcClock") final
-                                          Clock clock) {
+    public DefaultFutureHearingRepository(ActiveDirectoryApiClient activeDirectoryApiClient,
+                                          ApplicationParams applicationParams,
+                                          HearingManagementInterfaceApiClient hmiClient,
+                                          @Qualifier("utcClock") Clock clock) {
         this.activeDirectoryApiClient = activeDirectoryApiClient;
         this.applicationParams = applicationParams;
         this.hmiClient = hmiClient;
