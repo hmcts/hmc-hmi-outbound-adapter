@@ -19,22 +19,16 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingRequestPayload;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.model.CaseDetails;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.model.HearingRequest;
-import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository.REQUEST_ID_NOT_FOUND;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({UUID.class})
@@ -49,7 +43,7 @@ class FutureHearingRepositoryTest {
     private static final String DESTINATION_SYSTEM = "DESTINATION_SYSTEM";
     private final Clock fixedClock = Clock.fixed(Instant.parse("2021-06-10T04:00:00.08Z"), ZoneOffset.UTC);
     private static MockedStatic<UUID> mockedUuid;
-
+    private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
 
     @InjectMocks
     private DefaultFutureHearingRepository repository;
@@ -116,27 +110,12 @@ class FutureHearingRepositoryTest {
         given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
         UUID transactionId = UUID.randomUUID();
         when(UUID.randomUUID()).thenReturn(transactionId);
-        CaseDetails details = new CaseDetails();
-        details.setCaseListingRequestId("test-id");
-        HearingRequest request = new HearingRequest();
-        request.setCaseDetails(details);
-        HearingRequestPayload payload = new HearingRequestPayload();
-        payload.setHearingRequest(request);
-        JsonNode viableData = OBJECT_MAPPER.convertValue(payload, JsonNode.class);
-        given(hmiClient.amendHearing("test-id", "Bearer test-token", SOURCE_SYSTEM, DESTINATION_SYSTEM,
-                                       fixedClock.instant().toString(), transactionId, viableData))
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
+        given(hmiClient.amendHearing(CASE_LISTING_REQUEST_ID, "Bearer test-token", SOURCE_SYSTEM,
+                                     DESTINATION_SYSTEM, fixedClock.instant().toString(), transactionId, anyData))
             .willReturn(expectedResponse);
-        HearingManagementInterfaceResponse actualResponse = repository.amendHearingRequest(viableData);
+        HearingManagementInterfaceResponse actualResponse = repository.amendHearingRequest(anyData,
+                                                                                           CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
-    }
-
-    @Test
-    void shouldThrow400AuthenticationExceptionWhenNoCaseListingRequestIdFound() {
-        response.setAccessToken("test-token");
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
-        JsonNode data = OBJECT_MAPPER.convertValue("test", JsonNode.class);
-        assertThatThrownBy(() -> repository.amendHearingRequest(data))
-            .isInstanceOf(AuthenticationException.class)
-            .hasMessageContaining(REQUEST_ID_NOT_FOUND);
     }
 }

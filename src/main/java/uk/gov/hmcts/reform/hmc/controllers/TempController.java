@@ -24,8 +24,9 @@ public class TempController {
     }
 
     @PutMapping("/something")
-    public HearingManagementInterfaceResponse assignAccessWithinOrganisation(@RequestBody Object data) {
+    public HearingManagementInterfaceResponse assignAccessWithinOrganisation(@RequestBody Object data,
+    @RequestHeader("RequestId") String caseListinRequestId) {
         JsonNode anyData = OBJECT_MAPPER.convertValue(data, JsonNode.class);
-        return futureHearingRepository.amendHearingRequest(anyData);
+        return futureHearingRepository.amendHearingRequest(anyData, caseListinRequestId);
     }
 }*/

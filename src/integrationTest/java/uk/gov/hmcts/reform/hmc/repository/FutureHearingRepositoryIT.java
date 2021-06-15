@@ -3,7 +3,6 @@ package uk.gov.hmcts.reform.hmc.repository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,9 +12,6 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingRequestPayload;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.model.CaseDetails;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.model.HearingRequest;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,15 +25,14 @@ import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDec
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_SECRET;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.REQUEST_NOT_FOUND;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.SERVER_ERROR;
-import static uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository.REQUEST_ID_NOT_FOUND;
 
 public class FutureHearingRepositoryIT extends BaseTest {
 
     private static final String TOKEN = "example-token";
     private static final String GET_TOKEN_URL = "/FH_GET_TOKEN_URL";
     private static final String HMI_REQUEST_URL = "/hearings";
-    private static final String TEST_ID = "test-id";
-    private static final String HMI_REQUEST_URL_WITH_ID = "/hearings/" + TEST_ID;
+    private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
+    private static final String HMI_REQUEST_URL_WITH_ID = "/hearings/" + CASE_LISTING_REQUEST_ID;
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
@@ -131,42 +126,20 @@ public class FutureHearingRepositoryIT extends BaseTest {
     @DisplayName("Create Hearing Request")
     class AmendHearingRequest {
 
-        private JsonNode viableData;
-
-        @BeforeEach
-        public void setUp() {
-            CaseDetails details = new CaseDetails();
-            details.setCaseListingRequestId(TEST_ID);
-            HearingRequest request = new HearingRequest();
-            request.setCaseDetails(details);
-            HearingRequestPayload payload = new HearingRequestPayload();
-            payload.setHearingRequest(request);
-            viableData = OBJECT_MAPPER.convertValue(payload, JsonNode.class);
-        }
-
         @Test
         public void shouldSuccessfullyAmendAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
-            stubSuccessfullyAmendHearing(TOKEN, TEST_ID);
+            stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
             HearingManagementInterfaceResponse response = defaultFutureHearingRepository
-                .amendHearingRequest(viableData);
+                .amendHearingRequest(data, CASE_LISTING_REQUEST_ID);
             assertEquals(response.getResponseCode(), 202);
-        }
-
-        @Test
-        public void shouldThrow400AuthenticationExceptionWhenNoCaseListingRequestIdFound() {
-            stubSuccessfullyReturnToken(TOKEN);
-            stubPutMethodThrowingAuthenticationError(400, HMI_REQUEST_URL_WITH_ID);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data))
-                .isInstanceOf(AuthenticationException.class)
-                .hasMessageContaining(REQUEST_ID_NOT_FOUND);
         }
 
         @Test
         public void shouldThrow400AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingAuthenticationError(400, HMI_REQUEST_URL_WITH_ID);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(viableData))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(INVALID_REQUEST);
         }
@@ -175,7 +148,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         public void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingAuthenticationError(401, HMI_REQUEST_URL_WITH_ID);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(viableData))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(INVALID_SECRET);
         }
@@ -184,7 +157,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         public void shouldThrow404AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingAuthenticationError(404, HMI_REQUEST_URL_WITH_ID);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(viableData))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(REQUEST_NOT_FOUND);
         }

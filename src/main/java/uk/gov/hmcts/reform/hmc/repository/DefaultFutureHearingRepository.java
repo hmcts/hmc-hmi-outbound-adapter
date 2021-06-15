@@ -9,7 +9,6 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationRequest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -22,7 +21,6 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     private final HearingManagementInterfaceApiClient hmiClient;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final ApplicationParams applicationParams;
-    public static final String REQUEST_ID_NOT_FOUND = "Case Listing Request Id cannot be retrieved from message";
 
     public DefaultFutureHearingRepository(ActiveDirectoryApiClient activeDirectoryApiClient,
                                           ApplicationParams applicationParams,
@@ -52,23 +50,10 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     }
 
     @Override
-    public HearingManagementInterfaceResponse amendHearingRequest(JsonNode data) {
+    public HearingManagementInterfaceResponse amendHearingRequest(JsonNode data, String caseListingRequestId) {
         String authorization = retrieveAuthToken().getAccessToken();
-
-        String caseListingRequestId = getCaseListingRequestId(data);
-
         return hmiClient.amendHearing(caseListingRequestId, "Bearer " + authorization,
                                       applicationParams.getSourceSystem(), applicationParams.getDestinationSystem(),
                                       Instant.now(clock).toString(), UUID.randomUUID(), data);
-    }
-
-    public String getCaseListingRequestId(JsonNode data) {
-        String caseListingRequestId;
-        try {
-            caseListingRequestId = data.get("hearingRequest").get("_case").get("caseListingRequestId").asText();
-        } catch (NullPointerException exception) {
-            throw new AuthenticationException(REQUEST_ID_NOT_FOUND);
-        }
-        return caseListingRequestId;
     }
 }
