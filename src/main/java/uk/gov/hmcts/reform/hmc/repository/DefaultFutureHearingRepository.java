@@ -9,6 +9,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationRequest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -22,10 +23,12 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final ApplicationParams applicationParams;
 
-    public DefaultFutureHearingRepository(final ActiveDirectoryApiClient activeDirectoryApiClient,
-                                          final ApplicationParams applicationParams,
-                                          HearingManagementInterfaceApiClient hmiClient, @Qualifier("utcClock") final
-                                          Clock clock) {
+    public static final String REQUEST_ID_NOT_FOUND = "Case Listing Request Id cannot be retrieved from message";
+
+    public DefaultFutureHearingRepository(ActiveDirectoryApiClient activeDirectoryApiClient,
+                                          ApplicationParams applicationParams,
+                                          HearingManagementInterfaceApiClient hmiClient,
+                                          @Qualifier("utcClock") Clock clock) {
         this.activeDirectoryApiClient = activeDirectoryApiClient;
         this.applicationParams = applicationParams;
         this.hmiClient = hmiClient;
@@ -47,5 +50,26 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         return hmiClient.requestHearing("Bearer " + authorization, applicationParams.getSourceSystem(),
                                         applicationParams.getDestinationSystem(), Instant.now(clock).toString(),
                                         UUID.randomUUID(), data);
+    }
+
+    @Override
+    public HearingManagementInterfaceResponse amendHearingRequest(JsonNode data) {
+        String authorization = retrieveAuthToken().getAccessToken();
+
+        String caseListingRequestId = getCaseListingRequestId(data);
+
+        return hmiClient.amendHearing(caseListingRequestId, "Bearer " + authorization,
+                                      applicationParams.getSourceSystem(), applicationParams.getDestinationSystem(),
+                                      Instant.now(clock).toString(), UUID.randomUUID(), data);
+    }
+
+    public String getCaseListingRequestId(JsonNode data) {
+        String caseListingRequestId;
+        try {
+            caseListingRequestId = data.get("hearingRequest").get("_case").get("caseListingRequestId").asText();
+        } catch (NullPointerException exception) {
+            throw new AuthenticationException(REQUEST_ID_NOT_FOUND);
+        }
+        return caseListingRequestId;
     }
 }

@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_REQUEST;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_SECRET;
+import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.REQUEST_NOT_FOUND;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.SERVER_ERROR;
 
 class FutureHearingErrorDecoderTest {
@@ -93,7 +94,32 @@ class FutureHearingErrorDecoderTest {
             .getLevel());
         assertEquals(inputString, logsList.get(0)
             .getMessage());
+    }
 
+    @Test
+    void shouldThrowAuthenticationExceptionWith404Error() {
+
+        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        response = Response.builder()
+            .body(byteArrray)
+            .status(404)
+            .request(Request.create(HttpMethod.PUT, "/api", Collections.emptyMap(), null, Util.UTF_8, template))
+            .build();
+
+        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+
+        assertThat(exception).isInstanceOf(AuthenticationException.class);
+        assertEquals(REQUEST_NOT_FOUND, exception.getMessage());
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(1, logsList.size());
+        assertEquals(Level.ERROR, logsList.get(0)
+            .getLevel());
+        assertEquals(inputString, logsList.get(0)
+            .getMessage());
     }
 
     @Test

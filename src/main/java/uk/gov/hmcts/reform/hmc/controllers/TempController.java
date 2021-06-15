@@ -1,13 +1,10 @@
 package uk.gov.hmcts.reform.hmc.controllers;
-
-/*import com.fasterxml.jackson.databind.JsonNode;
+/*
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.repository.FutureHearingRepository;
@@ -26,9 +23,9 @@ public class TempController {
         this.futureHearingRepository = futureHearingRepository;
     }
 
-    @PostMapping("/something")
+    @PutMapping("/something")
     public HearingManagementInterfaceResponse assignAccessWithinOrganisation(@RequestBody Object data) {
         JsonNode anyData = OBJECT_MAPPER.convertValue(data, JsonNode.class);
-        return futureHearingRepository.createHearingRequest(anyData);
+        return futureHearingRepository.amendHearingRequest(anyData);
     }
 }*/

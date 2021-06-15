@@ -104,6 +104,32 @@ public class WiremockFixtures {
                     ));
     }
 
+    public static void stubSuccessfullyAmendHearing(String token, String caseListingRequestId) {
+        HearingManagementInterfaceResponse response =  new HearingManagementInterfaceResponse();
+        response.setResponseCode(202);
+        response.setDescription("The request was received successfully.");
+        stubFor(WireMock.put(urlEqualTo(HMI_REQUEST_URL + "/" + caseListingRequestId))
+                    .withHeader("Content-Type", equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader("Accept", equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader("Source-System", equalTo(SOURCE_SYSTEM))
+                    .withHeader("Destination-System", equalTo(DESTINATION_SYSTEM))
+                    .withHeader("Request-Created-At", matching("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]"
+                                                                   + "{2}:[0-9]{2}.[0-9]{6}Z"))
+                    .withHeader(AUTHORIZATION, equalTo("Bearer " + token))
+                    .withHeader("transactionIdHMCTS", matching("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]"
+                                                                   + "{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"))
+                    .willReturn(aResponse()
+                                    .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                                    .withBody(getJsonString(response))
+                                    .withStatus(202)
+                    ));
+    }
+
+    public static void stubPutMethodThrowingAuthenticationError(int status, String url) {
+        stubFor(WireMock.put(urlEqualTo(url))
+                    .willReturn(okJson(TEST_BODY).withStatus(status)));
+    }
+
     @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "squid:S112"})
     // Required as wiremock's Json.getObjectMapper().registerModule(..); not working
     // see https://github.com/tomakehurst/wiremock/issues/1127

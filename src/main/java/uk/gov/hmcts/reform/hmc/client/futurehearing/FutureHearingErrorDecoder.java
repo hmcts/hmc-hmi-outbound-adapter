@@ -16,6 +16,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
     public static final String INVALID_REQUEST = "Missing or invalid request parameters";
     public static final String INVALID_SECRET = "Authentication error";
     public static final String SERVER_ERROR = "Server error";
+    public static final String REQUEST_NOT_FOUND = "Hearing request could not be found";
 
     @Override
     public Exception decode(String methodKey, Response response) {
@@ -51,6 +52,8 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                 return new AuthenticationException(INVALID_REQUEST);
             case 401:
                 return new AuthenticationException(INVALID_SECRET);
+            case 404:
+                return new AuthenticationException(REQUEST_NOT_FOUND);
             default:
                 return new AuthenticationException(SERVER_ERROR);
         }

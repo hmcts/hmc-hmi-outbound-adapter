@@ -10,4 +10,6 @@ public interface FutureHearingRepository {
 
     HearingManagementInterfaceResponse createHearingRequest(JsonNode data);
 
+    HearingManagementInterfaceResponse amendHearingRequest(JsonNode data);
+
 }
