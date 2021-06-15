@@ -22,7 +22,6 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     private final HearingManagementInterfaceApiClient hmiClient;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final ApplicationParams applicationParams;
-
     public static final String REQUEST_ID_NOT_FOUND = "Case Listing Request Id cannot be retrieved from message";
 
     public DefaultFutureHearingRepository(ActiveDirectoryApiClient activeDirectoryApiClient,
