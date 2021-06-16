@@ -23,8 +23,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
@@ -75,24 +73,5 @@ class HearingManagementInterfaceRequestInterceptorTest {
         assertThat(template.headers().get("Source-System")).containsOnly(SOURCE_SYSTEM);
         assertThat(template.headers().get("Destination-System")).containsOnly(DESTINATION_SYSTEM);
         assertThat(template.headers().get("Request-Created-At")).containsOnly(fixedClock.instant().toString());
-    }
-
-    @Test
-    @DisplayName("Headers shouldn't be overridden if present")
-    void shouldNotOverrideHeaders() {
-        UUID transactionId = UUID.randomUUID();
-        when(UUID.randomUUID()).thenReturn(transactionId);
-
-        template.header("Request-Created-At", "test");
-        template.header("Destination-System", "test");
-        template.header("transactionIdHMCTS", "test");
-        template.header("Source-System", "test");
-
-        hearingManagementInterfaceRequestInterceptor.apply(template);
-
-        verify(applicationParams, times(0)).getSourceSystem();
-        verify(applicationParams, times(0)).getDestinationSystem();
-        assertThat(template.headers().get("Request-Created-At")).containsOnly("test");
-        assertThat(template.headers().get("transactionIdHMCTS")).containsOnly("test");
     }
 }
