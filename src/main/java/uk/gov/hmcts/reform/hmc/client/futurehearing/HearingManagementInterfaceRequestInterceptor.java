@@ -22,17 +22,9 @@ public class HearingManagementInterfaceRequestInterceptor implements RequestInte
 
     @Override
     public void apply(RequestTemplate template) {
-        if (!template.headers().containsKey("Source-System")) {
-            template.header("Source-System", applicationParams.getSourceSystem());
-        }
-        if (!template.headers().containsKey("Destination-System")) {
-            template.header("Destination-System", applicationParams.getDestinationSystem());
-        }
-        if (!template.headers().containsKey("Request-Created-At")) {
-            template.header("Request-Created-At", Instant.now(clock).toString());
-        }
-        if (!template.headers().containsKey("transactionIdHMCTS")) {
-            template.header("transactionIdHMCTS", String.valueOf(UUID.randomUUID()));
-        }
+        template.header("Source-System", applicationParams.getSourceSystem());
+        template.header("Destination-System", applicationParams.getDestinationSystem());
+        template.header("Request-Created-At", Instant.now(clock).toString());
+        template.header("transactionIdHMCTS", String.valueOf(UUID.randomUUID()));
     }
 }
