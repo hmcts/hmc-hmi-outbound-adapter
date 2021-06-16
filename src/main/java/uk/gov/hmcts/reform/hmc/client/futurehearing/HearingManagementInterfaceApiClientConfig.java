@@ -9,8 +9,8 @@ import java.time.Clock;
 public class HearingManagementInterfaceApiClientConfig {
 
     @Bean
-    public HearingManagementInterfaceHeadersInterceptor hearingManagementInterfaceHeadersInterceptor(
+    public HearingManagementInterfaceRequestInterceptor hearingManagementInterfaceRequestInterceptor(
         ApplicationParams applicationParams, @Qualifier("utcClock") Clock clock) {
-        return new HearingManagementInterfaceHeadersInterceptor(applicationParams, clock);
+        return new HearingManagementInterfaceRequestInterceptor(applicationParams, clock);
     }
 }

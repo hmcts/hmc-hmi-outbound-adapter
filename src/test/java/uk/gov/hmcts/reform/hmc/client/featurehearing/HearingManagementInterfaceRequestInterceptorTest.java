@@ -13,7 +13,7 @@ import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceHeadersInterceptor;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceRequestInterceptor;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -30,7 +30,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({UUID.class})
-public class HearingManagementInterfaceHeadersInterceptorTest {
+class HearingManagementInterfaceRequestInterceptorTest {
 
     private final Clock fixedClock = Clock.fixed(Instant.parse("2021-06-10T04:00:00.08Z"), ZoneOffset.UTC);
     private static MockedStatic<UUID> mockedUuid;
@@ -39,7 +39,7 @@ public class HearingManagementInterfaceHeadersInterceptorTest {
     private static final String TEST_TOKEN = "test-token";
 
     @InjectMocks
-    HearingManagementInterfaceHeadersInterceptor hearingManagementInterfaceHeadersInterceptor;
+    HearingManagementInterfaceRequestInterceptor hearingManagementInterfaceRequestInterceptor;
 
     @Mock
     ApplicationParams applicationParams;
@@ -51,8 +51,8 @@ public class HearingManagementInterfaceHeadersInterceptorTest {
         mockedUuid = mockStatic(UUID.class);
         template = new RequestTemplate();
         template.header(AUTHORIZATION,TEST_TOKEN);
-        hearingManagementInterfaceHeadersInterceptor = new
-            HearingManagementInterfaceHeadersInterceptor(applicationParams, fixedClock);
+        hearingManagementInterfaceRequestInterceptor = new
+            HearingManagementInterfaceRequestInterceptor(applicationParams, fixedClock);
         given(applicationParams.getSourceSystem()).willReturn(SOURCE_SYSTEM);
         given(applicationParams.getDestinationSystem()).willReturn(DESTINATION_SYSTEM);
     }
@@ -68,7 +68,7 @@ public class HearingManagementInterfaceHeadersInterceptorTest {
         UUID transactionId = UUID.randomUUID();
         when(UUID.randomUUID()).thenReturn(transactionId);
 
-        hearingManagementInterfaceHeadersInterceptor.apply(template);
+        hearingManagementInterfaceRequestInterceptor.apply(template);
 
         assertThat(template.headers().get(AUTHORIZATION)).containsOnly(TEST_TOKEN);
         assertThat(template.headers().get("transactionIdHMCTS")).containsOnly(String.valueOf(transactionId));
@@ -85,13 +85,14 @@ public class HearingManagementInterfaceHeadersInterceptorTest {
 
         template.header("Request-Created-At", "test");
         template.header("Destination-System", "test");
+        template.header("transactionIdHMCTS", "test");
+        template.header("Source-System", "test");
 
-        hearingManagementInterfaceHeadersInterceptor.apply(template);
+        hearingManagementInterfaceRequestInterceptor.apply(template);
 
+        verify(applicationParams, times(0)).getSourceSystem();
         verify(applicationParams, times(0)).getDestinationSystem();
         assertThat(template.headers().get("Request-Created-At")).containsOnly("test");
-        assertThat(template.headers().get(AUTHORIZATION)).containsOnly(TEST_TOKEN);
-        assertThat(template.headers().get("transactionIdHMCTS")).containsOnly(String.valueOf(transactionId));
-        assertThat(template.headers().get("Source-System")).containsOnly(SOURCE_SYSTEM);
+        assertThat(template.headers().get("transactionIdHMCTS")).containsOnly("test");
     }
 }

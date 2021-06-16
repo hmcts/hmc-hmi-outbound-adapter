@@ -9,12 +9,12 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
-public class HearingManagementInterfaceHeadersInterceptor implements RequestInterceptor {
+public class HearingManagementInterfaceRequestInterceptor implements RequestInterceptor {
 
     private final ApplicationParams applicationParams;
     private final Clock clock;
 
-    public HearingManagementInterfaceHeadersInterceptor(ApplicationParams applicationParams,
+    public HearingManagementInterfaceRequestInterceptor(ApplicationParams applicationParams,
                                                         @Qualifier("utcClock") Clock clock) {
         this.applicationParams = applicationParams;
         this.clock = clock;
