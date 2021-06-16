@@ -7,6 +7,7 @@ import feign.codec.ErrorDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -53,7 +54,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
             case 401:
                 return new AuthenticationException(INVALID_SECRET);
             case 404:
-                return new AuthenticationException(REQUEST_NOT_FOUND);
+                return new ResourceNotFoundException(REQUEST_NOT_FOUND);
             default:
                 return new AuthenticationException(SERVER_ERROR);
         }

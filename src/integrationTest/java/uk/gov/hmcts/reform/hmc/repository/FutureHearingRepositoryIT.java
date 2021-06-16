@@ -13,6 +13,7 @@ import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -123,7 +124,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     }
 
     @Nested
-    @DisplayName("Create Hearing Request")
+    @DisplayName("Amend Hearing Request")
     class AmendHearingRequest {
 
         @Test
@@ -158,7 +159,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingAuthenticationError(404, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
-                .isInstanceOf(AuthenticationException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(REQUEST_NOT_FOUND);
         }
     }

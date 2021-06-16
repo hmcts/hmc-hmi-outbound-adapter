@@ -16,6 +16,7 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.util.Collections;
 import java.util.List;
@@ -112,7 +113,7 @@ class FutureHearingErrorDecoderTest {
 
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
-        assertThat(exception).isInstanceOf(AuthenticationException.class);
+        assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
         assertEquals(REQUEST_NOT_FOUND, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
