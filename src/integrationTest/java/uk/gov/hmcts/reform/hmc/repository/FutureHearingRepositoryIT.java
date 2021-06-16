@@ -195,6 +195,15 @@ public class FutureHearingRepositoryIT extends BaseTest {
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(INVALID_SECRET);
         }
+
+        @Test
+        public void shouldThrow404ResourceNotFoundException() {
+            stubSuccessfullyReturnToken(TOKEN);
+            stubDeleteMethodThrowingError(404, HMI_REQUEST_URL_WITH_ID);
+            assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(REQUEST_NOT_FOUND);
+        }
     }
 }
 
