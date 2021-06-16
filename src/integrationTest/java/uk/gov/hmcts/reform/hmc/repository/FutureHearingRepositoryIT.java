@@ -18,7 +18,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPostMethodThrowingAuthenticationError;
-import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPutMethodThrowingAuthenticationError;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPutMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyAmendHearing;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyRequestHearing;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyReturnToken;
@@ -120,7 +120,6 @@ public class FutureHearingRepositoryIT extends BaseTest {
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(SERVER_ERROR);
         }
-
     }
 
     @Nested
@@ -139,7 +138,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         @Test
         public void shouldThrow400AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
-            stubPutMethodThrowingAuthenticationError(400, HMI_REQUEST_URL_WITH_ID);
+            stubPutMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(INVALID_REQUEST);
@@ -148,16 +147,16 @@ public class FutureHearingRepositoryIT extends BaseTest {
         @Test
         public void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
-            stubPutMethodThrowingAuthenticationError(401, HMI_REQUEST_URL_WITH_ID);
+            stubPutMethodThrowingError(401, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(INVALID_SECRET);
         }
 
         @Test
-        public void shouldThrow404AuthenticationException() {
+        public void shouldThrow404ResourceNotFoundException() {
             stubSuccessfullyReturnToken(TOKEN);
-            stubPutMethodThrowingAuthenticationError(404, HMI_REQUEST_URL_WITH_ID);
+            stubPutMethodThrowingError(404, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(REQUEST_NOT_FOUND);

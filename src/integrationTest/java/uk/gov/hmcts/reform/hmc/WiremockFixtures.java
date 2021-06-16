@@ -104,8 +104,13 @@ public class WiremockFixtures {
                     ));
     }
 
+    public static void stubPutMethodThrowingError(int status, String url) {
+        stubFor(WireMock.put(urlEqualTo(url))
+                    .willReturn(okJson(TEST_BODY).withStatus(status)));
+    }
+
     public static void stubSuccessfullyAmendHearing(String token, String caseListingRequestId) {
-        HearingManagementInterfaceResponse response =  new HearingManagementInterfaceResponse();
+        HearingManagementInterfaceResponse response = new HearingManagementInterfaceResponse();
         response.setResponseCode(202);
         response.setDescription("The request was received successfully.");
         stubFor(WireMock.put(urlEqualTo(HMI_REQUEST_URL + "/" + caseListingRequestId))
@@ -125,10 +130,6 @@ public class WiremockFixtures {
                     ));
     }
 
-    public static void stubPutMethodThrowingAuthenticationError(int status, String url) {
-        stubFor(WireMock.put(urlEqualTo(url))
-                    .willReturn(okJson(TEST_BODY).withStatus(status)));
-    }
 
     @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "squid:S112"})
     // Required as wiremock's Json.getObjectMapper().registerModule(..); not working

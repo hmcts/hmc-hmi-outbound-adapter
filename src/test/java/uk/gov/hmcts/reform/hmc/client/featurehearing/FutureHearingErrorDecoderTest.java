@@ -98,7 +98,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    void shouldThrowAuthenticationExceptionWith404Error() {
+    void shouldThrowResourceNotFoundExceptionWith404Error() {
 
         Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
