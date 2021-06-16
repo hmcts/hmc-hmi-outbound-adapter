@@ -12,4 +12,7 @@ public interface FutureHearingRepository {
 
     HearingManagementInterfaceResponse amendHearingRequest(JsonNode data, String caseListingRequestId);
 
+    HearingManagementInterfaceResponse deleteHearingRequest(JsonNode data, String caseListingRequestId);
+
+
 }

@@ -29,15 +29,22 @@ public class TempController {
     }
 
     @PostMapping("/something")
-    public HearingManagementInterfaceResponse assignAccessWithinOrganisation(@RequestBody Object data) {
+    public HearingManagementInterfaceResponse createHearingRequest(@RequestBody Object data) {
         JsonNode anyData = OBJECT_MAPPER.convertValue(data, JsonNode.class);
         return futureHearingRepository.createHearingRequest(anyData);
     }
 
     @PutMapping("/something")
-    public HearingManagementInterfaceResponse assignAccessWithinOrganisation(@RequestBody Object data,
+    public HearingManagementInterfaceResponse amendHearingRequest(@RequestBody Object data,
     @RequestHeader("RequestId") String caseListinRequestId) {
         JsonNode anyData = OBJECT_MAPPER.convertValue(data, JsonNode.class);
         return futureHearingRepository.amendHearingRequest(anyData, caseListinRequestId);
+    }
+
+    @DeleteMapping("/something")
+    public HearingManagementInterfaceResponse deleteHearingRequest(@RequestBody Object data,
+    @RequestHeader("RequestId") String caseListinRequestId) {
+        JsonNode anyData = OBJECT_MAPPER.convertValue(data, JsonNode.class);
+        return futureHearingRepository.deleteHearingRequest(anyData, caseListinRequestId);
     }
 }*/

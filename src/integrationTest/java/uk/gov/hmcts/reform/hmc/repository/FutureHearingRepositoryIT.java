@@ -17,9 +17,11 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubDeleteMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPostMethodThrowingAuthenticationError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPutMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyAmendHearing;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyDeleteHearing;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyRequestHearing;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyReturnToken;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_REQUEST;
@@ -160,6 +162,38 @@ public class FutureHearingRepositoryIT extends BaseTest {
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(REQUEST_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("Delete Hearing Request")
+    class DeleteHearingRequest {
+
+        @Test
+        public void shouldSuccessfullyDeleteAHearing() {
+            stubSuccessfullyReturnToken(TOKEN);
+            stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
+            HearingManagementInterfaceResponse response = defaultFutureHearingRepository
+                .deleteHearingRequest(data, CASE_LISTING_REQUEST_ID);
+            assertEquals(response.getResponseCode(), 200);
+        }
+
+        @Test
+        public void shouldThrow400AuthenticationException() {
+            stubSuccessfullyReturnToken(TOKEN);
+            stubDeleteMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
+            assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
+                .isInstanceOf(AuthenticationException.class)
+                .hasMessageContaining(INVALID_REQUEST);
+        }
+
+        @Test
+        public void shouldThrow401AuthenticationException() {
+            stubSuccessfullyReturnToken(TOKEN);
+            stubDeleteMethodThrowingError(401, HMI_REQUEST_URL_WITH_ID);
+            assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
+                .isInstanceOf(AuthenticationException.class)
+                .hasMessageContaining(INVALID_SECRET);
         }
     }
 }

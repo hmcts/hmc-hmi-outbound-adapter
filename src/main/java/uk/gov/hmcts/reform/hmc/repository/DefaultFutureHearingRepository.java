@@ -44,4 +44,10 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         String authorization = retrieveAuthToken().getAccessToken();
         return hmiClient.amendHearing(caseListingRequestId, "Bearer " + authorization, data);
     }
+
+    @Override
+    public HearingManagementInterfaceResponse deleteHearingRequest(JsonNode data, String caseListingRequestId) {
+        String authorization = retrieveAuthToken().getAccessToken();
+        return hmiClient.deleteHearing(caseListingRequestId, "Bearer " + authorization, data);
+    }
 }
