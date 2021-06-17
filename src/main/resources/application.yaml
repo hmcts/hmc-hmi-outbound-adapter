@@ -54,6 +54,11 @@ fh:
     client-secret: ${CLIENT_SECRET:client-secret}
     scope: ${SCOPE:scope}
     grant-type: ${GRANT_TYPE:grant-type}
+  hmi:
+    host: ${HMI_BASE_URL:base/url}
+    source-system: ${HMI_SOURCE_SYSTEM:source-system}
+    destination-system: ${HMI_DESTINATION_SYSTEM:destination-system}
+
 
 feign:
   okhttp:
