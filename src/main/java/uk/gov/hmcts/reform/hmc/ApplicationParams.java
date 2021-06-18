@@ -25,7 +25,42 @@ public class ApplicationParams {
 
     @Value("${fh.hmi.source-system}")
     private String sourceSystem;
+    @Value("${spring.jms.servicebus.queue-name}")
+    private String queueName;
+
+    @Value("${spring.jms.servicebus.connection-string}")
+    private String connectionString;
+
+    @Value("${spring.jms.servicebus.wait-to-retry-time}")
+    private String waitToRetryTime;
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
 
     @Value("${fh.hmi.destination-system}")
     private String destinationSystem;
+    public String getGrantType() {
+        return grantType;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public String getQueueName() {
+        return queueName;
+    }
+
+    public String getConnectionString() {
+        return connectionString;
+    }
+
+    public String getWaitToRetryTime() {
+        return waitToRetryTime;
+    }
 }

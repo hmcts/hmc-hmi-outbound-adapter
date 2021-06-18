@@ -52,4 +52,25 @@ class ApplicationParamsTest {
         assertEquals(VALUE,
                      applicationParams.getDestinationSystem());
     }
+
+    @Test
+    void shouldGetConnectionString() {
+        ReflectionTestUtils.setField(applicationParams, "connectionString", "someValue");
+        assertEquals("someValue",
+                     applicationParams.getConnectionString());
+    }
+
+    @Test
+    void shouldGetQueueName() {
+        ReflectionTestUtils.setField(applicationParams, "queueName", "someValue");
+        assertEquals("someValue",
+                     applicationParams.getQueueName());
+    }
+
+    @Test
+    void shouldGetWaitToRetryTime() {
+        ReflectionTestUtils.setField(applicationParams, "waitToRetryTime", "someValue");
+        assertEquals("someValue",
+                     applicationParams.getWaitToRetryTime());
+    }
 }

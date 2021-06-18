@@ -88,6 +88,59 @@ docker image rm <image-id>
 
 There is no need to remove postgres and java or similar core images.
 
+## Azure Service Bus & Local Testing
+
+There is currently no Azure Service Bus emulator available for local/offline testing, and therefore
+the hmi outbound adapter provides an alternative option through an embedded [ActiveMQ](http://activemq.apache.org/)
+instance. This is possible due to both Azure Service Bus and ActiveMQ support for the AMQP 1.0 protocol.
+
+### ActiveMQ
+
+**By default** the hmi outbound adapter is configured to start in "dev" mode with ActiveMQ enabled when run locally.
+
+ActiveMQ information, including details on published messages, can be accessed via the
+Hawtio Management Console UI at http://localhost:4558/hawtio.
+
+Note that the ActiveMQ menu option on Hawtio will only show up once the first message has been published, and
+data will not persist across restarts. This is meant for dev/test purposes only and ActiveMQ and the Hawtio console
+are disabled in production.
+
+### Azure Service Bus
+
+To enable publishing to an Azure Service Bus destination:
+
+1. Comment the `SPRING_PROFILES_ACTIVE` environment variable in the `docker-compose.yml`
+1. Set the Azure Service Bus connection string in the `SB_CONN_STRING` environment variable
+1. Set the Azure Service Bus queue name in the `SERVICE_BUS_QUEUE_NAME` environment variable
+1. Restart the application
+
+## Developing
+
+### Unit tests
+
+To run all unit tests execute the following command:
+```bash
+  ./gradlew test
+```
+
+### Integration tests
+
+To run all integration tests execute the following command:
+```bash
+  ./gradlew integration
+```
+
+### Code quality checks
+We use [Checkstyle](http://checkstyle.sourceforge.net/).
+To run all local checks execute the following command:
+
+```bash
+  ./gradlew check
+```
+
+Additionally, [SonarQube](https://sonarcloud.io/dashboard?id=uk.gov.hmcts.reform%3Accd-message-publisher)
+analyses are performed on all remote code.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details

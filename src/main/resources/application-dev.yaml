@@ -1,0 +1,24 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, hawtio, jolokia
+
+endpoints:
+  jolokia:
+    sensitive: false
+
+hawtio:
+  authenticationEnabled: false
+
+spring:
+  jms:
+    servicebus:
+      enabled: false
+      connection-string: ${SB_CONN_STRING}
+      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:1800000}
+      queue-name: ${SERVICE_BUS_QUEUE_NAME}
+  activemq:
+    in-memory: true
+  autoconfigure:
+    exclude:
