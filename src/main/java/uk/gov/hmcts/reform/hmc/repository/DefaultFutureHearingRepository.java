@@ -15,6 +15,7 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     private final HearingManagementInterfaceApiClient hmiClient;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final ApplicationParams applicationParams;
+    private static final String BEARER = "Bearer ";
 
     public DefaultFutureHearingRepository(ActiveDirectoryApiClient activeDirectoryApiClient,
                                           ApplicationParams applicationParams,
@@ -36,12 +37,18 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     @Override
     public HearingManagementInterfaceResponse createHearingRequest(JsonNode data) {
         String authorization = retrieveAuthToken().getAccessToken();
-        return hmiClient.requestHearing("Bearer " + authorization, data);
+        return hmiClient.requestHearing(BEARER + authorization, data);
     }
 
     @Override
     public HearingManagementInterfaceResponse amendHearingRequest(JsonNode data, String caseListingRequestId) {
         String authorization = retrieveAuthToken().getAccessToken();
-        return hmiClient.amendHearing(caseListingRequestId, "Bearer " + authorization, data);
+        return hmiClient.amendHearing(caseListingRequestId, BEARER + authorization, data);
+    }
+
+    @Override
+    public HearingManagementInterfaceResponse deleteHearingRequest(JsonNode data, String caseListingRequestId) {
+        String authorization = retrieveAuthToken().getAccessToken();
+        return hmiClient.deleteHearing(caseListingRequestId, BEARER + authorization, data);
     }
 }

@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -28,6 +29,11 @@ public interface HearingManagementInterfaceApiClient {
 
     @PutMapping(value = CASE_LISTING_URL, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     HearingManagementInterfaceResponse amendHearing(@PathVariable("cid") String caseListingRequestId,
+                                                    @RequestHeader(AUTHORIZATION) String token,
+                                                    @RequestBody JsonNode data);
+
+    @DeleteMapping(value = CASE_LISTING_URL, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    HearingManagementInterfaceResponse deleteHearing(@PathVariable("cid") String caseListingRequestId,
                                                     @RequestHeader(AUTHORIZATION) String token,
                                                     @RequestBody JsonNode data);
 }
