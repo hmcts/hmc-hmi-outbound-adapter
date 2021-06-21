@@ -8,54 +8,68 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ApplicationParamsTest {
 
-    private ApplicationParams applicationParams = new ApplicationParams();
+    private final ApplicationParams applicationParams = new ApplicationParams();
+    private static final String VALUE = "test-value";
 
     @Test
     void shouldGetClientId() {
-        ReflectionTestUtils.setField(applicationParams, "clientId", "someurl");
-        assertEquals("someurl",
+        ReflectionTestUtils.setField(applicationParams, "clientId", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getClientId());
     }
 
     @Test
     void shouldGetClientSecret() {
-        ReflectionTestUtils.setField(applicationParams, "clientSecret", "someurl");
-        assertEquals("someurl",
+        ReflectionTestUtils.setField(applicationParams, "clientSecret", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getClientSecret());
     }
 
     @Test
     void shouldGetGrantType() {
-        ReflectionTestUtils.setField(applicationParams, "grantType", "someurl");
-        assertEquals("someurl",
+        ReflectionTestUtils.setField(applicationParams, "grantType", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getGrantType());
     }
 
     @Test
     void shouldGetScope() {
-        ReflectionTestUtils.setField(applicationParams, "scope", "someurl");
-        assertEquals("someurl",
+        ReflectionTestUtils.setField(applicationParams, "scope", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getScope());
     }
 
     @Test
+    void shouldGetSourceSystem() {
+        ReflectionTestUtils.setField(applicationParams, "sourceSystem", VALUE);
+        assertEquals(VALUE,
+                     applicationParams.getSourceSystem());
+    }
+
+    @Test
+    void shouldGetDestinationSystem() {
+        ReflectionTestUtils.setField(applicationParams, "destinationSystem", VALUE);
+        assertEquals(VALUE,
+                     applicationParams.getDestinationSystem());
+    
+    @Test
     void shouldGetConnectionString() {
-        ReflectionTestUtils.setField(applicationParams, "connectionString", "someValue");
-        assertEquals("someValue",
+        ReflectionTestUtils.setField(applicationParams, "connectionString", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getConnectionString());
     }
 
     @Test
     void shouldGetQueueName() {
-        ReflectionTestUtils.setField(applicationParams, "queueName", "someValue");
-        assertEquals("someValue",
+        ReflectionTestUtils.setField(applicationParams, "queueName", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getQueueName());
     }
 
     @Test
     void shouldGetWaitToRetryTime() {
-        ReflectionTestUtils.setField(applicationParams, "waitToRetryTime", "someValue");
-        assertEquals("someValue",
+        ReflectionTestUtils.setField(applicationParams, "waitToRetryTime", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getWaitToRetryTime());
     }
 }

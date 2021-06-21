@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -21,6 +22,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 
 public class WiremockFixtures {
@@ -30,14 +34,15 @@ public class WiremockFixtures {
     private static final String SCOPE = "SCOPE";
     private static final String GRANT_TYPE = "GRANT_TYPE";
     private static final String GET_TOKEN_URL = "/FH_GET_TOKEN_URL";
-
+    private static final String HMI_REQUEST_URL = "/hearings";
+    private static final String SOURCE_SYSTEM = "SOURCE_SYSTEM";
+    private static final String DESTINATION_SYSTEM = "DESTINATION_SYSTEM";
 
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
 
     public static String TEST_BODY = "This is a test message";
-
 
     private WiremockFixtures() {
     }
@@ -63,7 +68,7 @@ public class WiremockFixtures {
         AuthenticationResponse authenticationResponse = new AuthenticationResponse();
         authenticationResponse.setAccessToken(token);
         stubFor(WireMock.post(urlEqualTo(GET_TOKEN_URL))
-                    .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+                    .withHeader("Content-Type", equalTo(APPLICATION_FORM_URLENCODED_VALUE))
                     .withRequestBody(matching("grant_type=" + GRANT_TYPE + "&client_id=" + CLIENT_ID + "&scope="
                                                   + SCOPE + "&client_secret=" + CLIENT_SECRET))
                     .willReturn(aResponse()
@@ -73,10 +78,30 @@ public class WiremockFixtures {
                     ));
     }
 
-
-    public static void stubThrowAuthenticationError(int status) {
-        stubFor(WireMock.post(urlEqualTo(GET_TOKEN_URL))
+    public static void stubPostMethodThrowingAuthenticationError(int status, String url) {
+        stubFor(WireMock.post(urlEqualTo(url))
                     .willReturn(okJson(TEST_BODY).withStatus(status)));
+    }
+
+    public static void stubSuccessfullyRequestHearing(String token) {
+        HearingManagementInterfaceResponse response =  new HearingManagementInterfaceResponse();
+        response.setResponseCode(202);
+        response.setDescription("The request was received successfully.");
+        stubFor(WireMock.post(urlEqualTo(HMI_REQUEST_URL))
+                    .withHeader("Content-Type", equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader("Accept", equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader("Source-System", equalTo(SOURCE_SYSTEM))
+                    .withHeader("Destination-System", equalTo(DESTINATION_SYSTEM))
+                    .withHeader("Request-Created-At", matching("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]"
+                                                                   + "{2}:[0-9]{2}.[0-9]{6}Z"))
+                    .withHeader(AUTHORIZATION, equalTo("Bearer " + token))
+                    .withHeader("transactionIdHMCTS", matching("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]"
+                                                                   + "{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"))
+                    .willReturn(aResponse()
+                                    .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                                    .withBody(getJsonString(response))
+                                    .withStatus(202)
+                    ));
     }
 
     @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "squid:S112"})
