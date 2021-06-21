@@ -49,9 +49,12 @@ class ApplicationParamsTest {
     @Test
     void shouldGetDestinationSystem() {
         ReflectionTestUtils.setField(applicationParams, "destinationSystem", VALUE);
-        assertEquals(VALUE,
-                     applicationParams.getDestinationSystem());
-    
+        assertEquals(
+            VALUE,
+            applicationParams.getDestinationSystem()
+        );
+    }
+
     @Test
     void shouldGetConnectionString() {
         ReflectionTestUtils.setField(applicationParams, "connectionString", VALUE);
