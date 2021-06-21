@@ -25,6 +25,10 @@ public class ApplicationParams {
 
     @Value("${fh.hmi.source-system}")
     private String sourceSystem;
+
+    @Value("${fh.hmi.destination-system}")
+    private String destinationSystem;
+
     @Value("${spring.jms.servicebus.queue-name}")
     private String queueName;
 
@@ -42,8 +46,6 @@ public class ApplicationParams {
         return clientSecret;
     }
 
-    @Value("${fh.hmi.destination-system}")
-    private String destinationSystem;
     public String getGrantType() {
         return grantType;
     }

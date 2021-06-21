@@ -65,7 +65,6 @@ fh:
     source-system: ${HMI_SOURCE_SYSTEM:source-system}
     destination-system: ${HMI_DESTINATION_SYSTEM:destination-system}
 
-
 feign:
   okhttp:
     enabled: true

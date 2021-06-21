@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.config;
 
+import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusClientBuilder;
 import com.azure.messaging.servicebus.ServiceBusErrorContext;
 import com.azure.messaging.servicebus.ServiceBusException;
@@ -7,10 +8,17 @@ import com.azure.messaging.servicebus.ServiceBusFailureReason;
 import com.azure.messaging.servicebus.ServiceBusProcessorClient;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -18,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class MessageReceiverConfiguration {
 
-    private static ApplicationParams applicationParams;
+    private final ApplicationParams applicationParams;
     private static final String REQUEST_HEARING = "REQUEST_HEARING";
     private static final String AMEND_HEARING = "AMEND_HEARING";
     private static final String DELETE_HEARING = "DELETE_HEARING";
@@ -29,7 +37,8 @@ public class MessageReceiverConfiguration {
     }
 
     // handles received messages
-    public void receiveMessages() throws InterruptedException {
+    @EventListener(MessageReceiverConfiguration.class)
+    public void receiveMessages() {
         CountDownLatch countdownLatch = new CountDownLatch(1);
         ServiceBusProcessorClient processorClient = new ServiceBusClientBuilder()
             .connectionString(applicationParams.getConnectionString())
@@ -39,13 +48,18 @@ public class MessageReceiverConfiguration {
             .processError(context -> processError(context, countdownLatch))
             .buildProcessorClient();
         log.info("Connected to Queue");
-
         log.info("Starting the processor");
-        processorClient.start();
 
-        TimeUnit.SECONDS.sleep(Long.valueOf(applicationParams.getWaitToRetryTime()));
-        log.info("Stopping and closing the processor");
-        processorClient.close();
+        processorClient.start();
+    }
+
+    private static JsonNode convertMessage(BinaryData message) throws IOException {
+        ObjectMapper om = new ObjectMapper();
+        final ObjectWriter writer = om.writer();
+        final byte[] bytes = writer.writeValueAsBytes(message);
+        final ObjectReader reader = om.reader();
+        final JsonNode newNode = reader.readTree(new ByteArrayInputStream(bytes));
+        return newNode;
     }
 
     private static void processMessage(ServiceBusReceivedMessageContext context) {
@@ -54,6 +68,11 @@ public class MessageReceiverConfiguration {
                  message.getSequenceNumber(), message.getBody());
 
         if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
+            try {
+                JsonNode node = convertMessage(message.getBody());
+            } catch (IOException exception) {
+                log.error(exception.getMessage());
+            }
             switch (message.getApplicationProperties().get(MESSAGE_TYPE).toString()) {
                 case REQUEST_HEARING:
                     log.info("Message of type REQUEST_HEARING received");
@@ -76,7 +95,7 @@ public class MessageReceiverConfiguration {
 
     }
 
-    private static void processError(ServiceBusErrorContext context, CountDownLatch countdownLatch) {
+    private void processError(ServiceBusErrorContext context, CountDownLatch countdownLatch) {
         log.error("Error when receiving messages from namespace: '%s'. Entity: '%s'%n",
                           context.getFullyQualifiedNamespace(), context.getEntityPath()
         );
@@ -101,8 +120,9 @@ public class MessageReceiverConfiguration {
             log.error("Message lock lost for message: %s%n", context.getException());
         } else if (reason == ServiceBusFailureReason.SERVICE_BUSY) {
             try {
-                // Choosing an arbitrary amount of time to wait until trying again.
-                TimeUnit.SECONDS.sleep(Long.valueOf(applicationParams.getWaitToRetryTime()));
+                // wait an arbitrary amount of time to wait until trying again
+                String value = applicationParams.getWaitToRetryTime();
+                TimeUnit.SECONDS.sleep(Long.valueOf(value));
             } catch (InterruptedException e) {
                 log.error("Unable to sleep for period of time");
                 Thread.currentThread().interrupt();

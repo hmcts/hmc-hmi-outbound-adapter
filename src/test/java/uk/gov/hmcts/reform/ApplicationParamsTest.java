@@ -49,28 +49,30 @@ class ApplicationParamsTest {
     @Test
     void shouldGetDestinationSystem() {
         ReflectionTestUtils.setField(applicationParams, "destinationSystem", VALUE);
-        assertEquals(VALUE,
-                     applicationParams.getDestinationSystem());
+        assertEquals(
+            VALUE,
+            applicationParams.getDestinationSystem()
+        );
     }
 
     @Test
     void shouldGetConnectionString() {
-        ReflectionTestUtils.setField(applicationParams, "connectionString", "someValue");
-        assertEquals("someValue",
+        ReflectionTestUtils.setField(applicationParams, "connectionString", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getConnectionString());
     }
 
     @Test
     void shouldGetQueueName() {
-        ReflectionTestUtils.setField(applicationParams, "queueName", "someValue");
-        assertEquals("someValue",
+        ReflectionTestUtils.setField(applicationParams, "queueName", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getQueueName());
     }
 
     @Test
     void shouldGetWaitToRetryTime() {
-        ReflectionTestUtils.setField(applicationParams, "waitToRetryTime", "someValue");
-        assertEquals("someValue",
+        ReflectionTestUtils.setField(applicationParams, "waitToRetryTime", VALUE);
+        assertEquals(VALUE,
                      applicationParams.getWaitToRetryTime());
     }
 }
