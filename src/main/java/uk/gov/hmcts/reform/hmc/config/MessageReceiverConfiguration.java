@@ -13,31 +13,45 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
+import uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler;
+import uk.gov.hmcts.reform.hmc.repository.FutureHearingRepository;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_REQUEST;
+import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_SECRET;
+import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.REQUEST_NOT_FOUND;
+import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.SERVER_ERROR;
+
 @Slf4j
 @Component
 public class MessageReceiverConfiguration {
 
+    private static HearingManagementInterfaceErrorHandler handler;
+    private static FutureHearingRepository repository;
+    private static final Exception exception = new Exception("Test message");
     private final ApplicationParams applicationParams;
     private static final String REQUEST_HEARING = "REQUEST_HEARING";
     private static final String AMEND_HEARING = "AMEND_HEARING";
     private static final String DELETE_HEARING = "DELETE_HEARING";
     private static final String MESSAGE_TYPE = "message_type";
+    private static final String HEARING_ID = "hearing_id";
+    private static JsonNode data = null;
 
-    public MessageReceiverConfiguration(ApplicationParams applicationParams) {
+    public MessageReceiverConfiguration(ApplicationParams applicationParams,
+                                        HearingManagementInterfaceErrorHandler handler,
+                                        FutureHearingRepository repository) {
         this.applicationParams = applicationParams;
+        this.handler = handler;
+        this.repository = repository;
     }
 
     // handles received messages
-    @EventListener(MessageReceiverConfiguration.class)
     public void receiveMessages() {
         CountDownLatch countdownLatch = new CountDownLatch(1);
         ServiceBusProcessorClient processorClient = new ServiceBusClientBuilder()
@@ -53,51 +67,91 @@ public class MessageReceiverConfiguration {
         processorClient.start();
     }
 
-    private static JsonNode convertMessage(BinaryData message) throws IOException {
-        ObjectMapper om = new ObjectMapper();
-        final ObjectWriter writer = om.writer();
-        final byte[] bytes = writer.writeValueAsBytes(message);
-        final ObjectReader reader = om.reader();
-        final JsonNode newNode = reader.readTree(new ByteArrayInputStream(bytes));
+    private static JsonNode convertMessage(BinaryData message) {
+        JsonNode newNode = null;
+        try {
+            ObjectMapper om = new ObjectMapper();
+            final ObjectWriter writer = om.writer();
+            final byte[] bytes = writer.writeValueAsBytes(message);
+            final ObjectReader reader = om.reader();
+            newNode = reader.readTree(new ByteArrayInputStream(bytes));
+        } catch (IOException exception) {
+            log.error(exception.getMessage());
+            //genericErrorHandlerCall
+        }
         return newNode;
     }
 
     private static void processMessage(ServiceBusReceivedMessageContext context) {
         ServiceBusReceivedMessage message = context.getMessage();
         log.info("Processing message. Session: %s, Sequence #: %s. Contents: %s%n", message.getMessageId(),
-                 message.getSequenceNumber(), message.getBody());
+                 message.getSequenceNumber(), message.getBody()
+        );
+        data = convertMessage(message.getBody());
+        try {
+            if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
 
-        if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
-            try {
-                JsonNode node = convertMessage(message.getBody());
-            } catch (IOException exception) {
-                log.error(exception.getMessage());
+
+                switch (message.getApplicationProperties().get(MESSAGE_TYPE).toString()) {
+                    case REQUEST_HEARING:
+                        log.info("Message of type REQUEST_HEARING received");
+                        repository.createHearingRequest(data);
+                        break;
+                    case AMEND_HEARING:
+                        log.info("Message of type AMEND_HEARING received");
+                        if (message.getApplicationProperties().containsKey(HEARING_ID)) {
+                            repository.amendHearingRequest(
+                                data,
+                                message.getApplicationProperties().get(HEARING_ID).toString()
+                            );
+                        } else {
+                            // genericErrorHandlerCall - unsupported message type
+                            log.info("Message is missing custom header message_type");
+                        }
+                        break;
+                    case DELETE_HEARING:
+                        log.info("Message of type DELETE_HEARING received");
+                        if (message.getApplicationProperties().containsKey(HEARING_ID)) {
+                            repository.deleteHearingRequest(
+                                data,
+                                message.getApplicationProperties().get(HEARING_ID).toString()
+                            );
+                        }
+                        break;
+                    default:
+                        log.info("Message has unsupported value for message_type");
+                        handler.handleGenericError(context, message, exception);
+                        break;
+                }
+            } else {
+                // genericErrorHandlerCall - unsupported message type
+                log.info("Message is missing custom header message_type");
             }
-            switch (message.getApplicationProperties().get(MESSAGE_TYPE).toString()) {
-                case REQUEST_HEARING:
-                    log.info("Message of type REQUEST_HEARING received");
+        } catch (Exception exception) {
+
+            switch (exception.getMessage()) {
+                case INVALID_REQUEST:
+                    handler.handleApplicationError(context, message, exception);
                     break;
-                case AMEND_HEARING:
-                    log.info("Message of type AMEND_HEARING received");
+                case INVALID_SECRET:
+                    handler.handleApplicationError(context, message, exception);
                     break;
-                case DELETE_HEARING:
-                    log.info("Message of type DELETE_HEARING received");
+                case REQUEST_NOT_FOUND:
+                    handler.handleApplicationError(context, message, exception);
+                    break;
+                case SERVER_ERROR:
+                    //genericErrorHandlerCall
                     break;
                 default:
-                    log.info("Message has unsupported value for message_type");
-                    // add to dead letter queue - unsupported message type
-                    break;
+                    //generic
             }
-        } else {
-            // add to dead letter queue - unsupported message type
-            log.info("Message is missing custom header message_type");
         }
 
     }
 
     private void processError(ServiceBusErrorContext context, CountDownLatch countdownLatch) {
         log.error("Error when receiving messages from namespace: '%s'. Entity: '%s'%n",
-                          context.getFullyQualifiedNamespace(), context.getEntityPath()
+                  context.getFullyQualifiedNamespace(), context.getEntityPath()
         );
 
         if (!(context.getException() instanceof ServiceBusException)) {
@@ -112,7 +166,7 @@ public class MessageReceiverConfiguration {
             || reason == ServiceBusFailureReason.MESSAGING_ENTITY_NOT_FOUND
             || reason == ServiceBusFailureReason.UNAUTHORIZED) {
             log.error("An unrecoverable error occurred. Stopping processing with reason %s: %s%n",
-                              reason, exception.getMessage()
+                      reason, exception.getMessage()
             );
 
             countdownLatch.countDown();
@@ -129,7 +183,7 @@ public class MessageReceiverConfiguration {
             }
         } else {
             log.error("Error source %s, reason %s, message: %s%n", context.getErrorSource(),
-                              reason, context.getException()
+                      reason, context.getException()
             );
         }
     }
