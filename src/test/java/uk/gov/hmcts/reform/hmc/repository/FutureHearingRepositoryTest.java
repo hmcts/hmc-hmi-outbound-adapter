@@ -5,12 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
@@ -18,18 +15,9 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UUID.class})
 class FutureHearingRepositoryTest {
 
     private AuthenticationResponse response;
@@ -37,9 +25,8 @@ class FutureHearingRepositoryTest {
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
-    private static final String SOURCE_SYSTEM = "SOURCE_SYSTEM";
-    private static final String DESTINATION_SYSTEM = "DESTINATION_SYSTEM";
-    private final Clock fixedClock = Clock.fixed(Instant.parse("2021-06-10T04:00:00.08Z"), ZoneOffset.UTC);
+
+    private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
 
     @InjectMocks
     private DefaultFutureHearingRepository repository;
@@ -58,15 +45,12 @@ class FutureHearingRepositoryTest {
         MockitoAnnotations.openMocks(this);
 
         response = new AuthenticationResponse();
-        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient,
-                                                        fixedClock);
+        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient);
         requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
         given(applicationParams.getScope()).willReturn("SCOPE");
         given(applicationParams.getClientSecret()).willReturn("CLIENT_SECRET");
-        given(applicationParams.getSourceSystem()).willReturn(SOURCE_SYSTEM);
-        given(applicationParams.getDestinationSystem()).willReturn(DESTINATION_SYSTEM);
     }
 
     @Test
@@ -82,14 +66,38 @@ class FutureHearingRepositoryTest {
         expectedResponse.setResponseCode(202);
         response.setAccessToken("test-token");
         given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
-        UUID transactionId = UUID.randomUUID();
-        mockStatic(UUID.class);
-        when(UUID.randomUUID()).thenReturn(transactionId);
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        given(hmiClient.requestHearing("Bearer test-token", SOURCE_SYSTEM, DESTINATION_SYSTEM,
-                                       fixedClock.instant().toString(), transactionId, anyData))
+        given(hmiClient.requestHearing("Bearer test-token", anyData))
             .willReturn(expectedResponse);
         HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData);
+        assertEquals(expectedResponse, actualResponse);
+    }
+
+    @Test
+    void shouldSuccessfullyAmendHearingRequest() {
+        HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
+        expectedResponse.setResponseCode(202);
+        response.setAccessToken("test-token");
+        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
+        given(hmiClient.amendHearing(CASE_LISTING_REQUEST_ID, "Bearer test-token", anyData))
+            .willReturn(expectedResponse);
+        HearingManagementInterfaceResponse actualResponse = repository.amendHearingRequest(anyData,
+                                                                                           CASE_LISTING_REQUEST_ID);
+        assertEquals(expectedResponse, actualResponse);
+    }
+
+    @Test
+    void shouldSuccessfullyDeleteHearingRequest() {
+        HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
+        expectedResponse.setResponseCode(200);
+        response.setAccessToken("test-token");
+        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
+        given(hmiClient.deleteHearing(CASE_LISTING_REQUEST_ID, "Bearer test-token", anyData))
+            .willReturn(expectedResponse);
+        HearingManagementInterfaceResponse actualResponse = repository.deleteHearingRequest(anyData,
+                                                                                           CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
     }
 }

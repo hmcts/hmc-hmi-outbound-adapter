@@ -7,6 +7,7 @@ import feign.codec.ErrorDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -16,6 +17,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
     public static final String INVALID_REQUEST = "Missing or invalid request parameters";
     public static final String INVALID_SECRET = "Authentication error";
     public static final String SERVER_ERROR = "Server error";
+    public static final String REQUEST_NOT_FOUND = "Hearing request could not be found";
 
     @Override
     public Exception decode(String methodKey, Response response) {
@@ -51,6 +53,8 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                 return new AuthenticationException(INVALID_REQUEST);
             case 401:
                 return new AuthenticationException(INVALID_SECRET);
+            case 404:
+                return new ResourceNotFoundException(REQUEST_NOT_FOUND);
             default:
                 return new AuthenticationException(SERVER_ERROR);
         }
