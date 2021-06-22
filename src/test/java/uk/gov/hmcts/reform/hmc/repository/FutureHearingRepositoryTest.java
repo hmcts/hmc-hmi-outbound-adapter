@@ -86,4 +86,18 @@ class FutureHearingRepositoryTest {
                                                                                            CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
     }
+
+    @Test
+    void shouldSuccessfullyDeleteHearingRequest() {
+        HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
+        expectedResponse.setResponseCode(200);
+        response.setAccessToken("test-token");
+        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
+        given(hmiClient.deleteHearing(CASE_LISTING_REQUEST_ID, "Bearer test-token", anyData))
+            .willReturn(expectedResponse);
+        HearingManagementInterfaceResponse actualResponse = repository.deleteHearingRequest(anyData,
+                                                                                           CASE_LISTING_REQUEST_ID);
+        assertEquals(expectedResponse, actualResponse);
+    }
 }
