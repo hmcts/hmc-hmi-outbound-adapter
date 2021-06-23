@@ -11,7 +11,7 @@ fh:
     source-system: SOURCE_SYSTEM
     destination-system: DESTINATION_SYSTEM
 
-spring:
+azure:
   jms:
     servicebus:
       connection-string: ${SB_CONN_STRING:Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]}

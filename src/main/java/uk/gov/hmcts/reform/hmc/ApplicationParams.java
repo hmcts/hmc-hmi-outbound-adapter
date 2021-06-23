@@ -29,13 +29,13 @@ public class ApplicationParams {
     @Value("${fh.hmi.destination-system}")
     private String destinationSystem;
 
-    @Value("${spring.jms.servicebus.queue-name}")
+    @Value("${azure.jms.servicebus.queue-name}")
     private String queueName;
 
-    @Value("${spring.jms.servicebus.connection-string}")
+    @Value("${azure.jms.servicebus.connection-string}")
     private String connectionString;
 
-    @Value("${spring.jms.servicebus.wait-to-retry-time}")
+    @Value("${azure.jms.servicebus.wait-to-retry-time}")
     private String waitToRetryTime;
 
     public String getClientId() {

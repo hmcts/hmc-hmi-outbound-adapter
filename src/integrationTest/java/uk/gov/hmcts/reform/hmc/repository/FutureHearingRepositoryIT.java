@@ -53,14 +53,14 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class RetrieveAuthorisationToken {
 
         @Test
-        public void shouldSuccessfullyReturnAuthenticationObject() {
+        void shouldSuccessfullyReturnAuthenticationObject() {
             stubSuccessfullyReturnToken(TOKEN);
             AuthenticationResponse response = defaultFutureHearingRepository.retrieveAuthToken();
-            assertEquals(response.getAccessToken(), TOKEN);
+            assertEquals(TOKEN, response.getAccessToken());
         }
 
         @Test
-        public void shouldThrow400AuthenticationException() {
+        void shouldThrow400AuthenticationException() {
             stubPostMethodThrowingAuthenticationError(400, GET_TOKEN_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.retrieveAuthToken())
                 .isInstanceOf(AuthenticationException.class)
@@ -68,7 +68,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow401AuthenticationException() {
+        void shouldThrow401AuthenticationException() {
             stubPostMethodThrowingAuthenticationError(401, GET_TOKEN_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.retrieveAuthToken())
                 .isInstanceOf(AuthenticationException.class)
@@ -76,7 +76,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow500AuthenticationException() {
+        void shouldThrow500AuthenticationException() {
             stubPostMethodThrowingAuthenticationError(500, GET_TOKEN_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.retrieveAuthToken())
                 .isInstanceOf(AuthenticationException.class)
@@ -89,15 +89,15 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class CreateHearingRequest {
 
         @Test
-        public void shouldSuccessfullyRequestAHearing() {
+        void shouldSuccessfullyRequestAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyRequestHearing(TOKEN);
             HearingManagementInterfaceResponse response = defaultFutureHearingRepository.createHearingRequest(data);
-            assertEquals(response.getResponseCode(), 202);
+            assertEquals(202, response.getResponseCode());
         }
 
         @Test
-        public void shouldThrow400AuthenticationException() {
+        void shouldThrow400AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(400, HMI_REQUEST_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
@@ -106,7 +106,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow401AuthenticationException() {
+        void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(401, HMI_REQUEST_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
@@ -115,7 +115,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow500AuthenticationException() {
+        void shouldThrow500AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(500, HMI_REQUEST_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
@@ -129,7 +129,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class AmendHearingRequest {
 
         @Test
-        public void shouldSuccessfullyAmendAHearing() {
+        void shouldSuccessfullyAmendAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
             HearingManagementInterfaceResponse response = defaultFutureHearingRepository
@@ -138,7 +138,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow400AuthenticationException() {
+        void shouldThrow400AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
@@ -147,7 +147,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow401AuthenticationException() {
+        void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingError(401, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
@@ -156,7 +156,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow404ResourceNotFoundException() {
+        void shouldThrow404ResourceNotFoundException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingError(404, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
@@ -170,7 +170,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class DeleteHearingRequest {
 
         @Test
-        public void shouldSuccessfullyDeleteAHearing() {
+        void shouldSuccessfullyDeleteAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
             HearingManagementInterfaceResponse response = defaultFutureHearingRepository
@@ -179,7 +179,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow400AuthenticationException() {
+        void shouldThrow400AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
@@ -188,7 +188,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow401AuthenticationException() {
+        void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(401, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
@@ -197,7 +197,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        public void shouldThrow404ResourceNotFoundException() {
+        void shouldThrow404ResourceNotFoundException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(404, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))

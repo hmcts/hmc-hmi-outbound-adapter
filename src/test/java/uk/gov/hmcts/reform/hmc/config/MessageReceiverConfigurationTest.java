@@ -1,21 +1,33 @@
 package uk.gov.hmcts.reform.hmc.config;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 
+import java.time.Clock;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-public class MessageReceiverConfigurationTest {
+class MessageReceiverConfigurationTest {
 
-    @InjectMocks
-    private MessageReceiverConfiguration messageReceiverConfiguration;
+    @Mock
+    private MessageReceiverConfiguration messageReceiverConfigurationMock;
 
     @Mock
     private ApplicationParams applicationParams;
+
+    @Mock
+    private ActiveDirectoryApiClient activeDirectoryApiClient;
+
+    @Mock
+    private HearingManagementInterfaceApiClient hmiClient;
 
     @BeforeEach
     public void setUp() {
@@ -29,6 +41,26 @@ public class MessageReceiverConfigurationTest {
                 + ";SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=key");
         when(applicationParams.getQueueName()).thenReturn("queueName");
         when(applicationParams.getWaitToRetryTime()).thenReturn("1");
-        messageReceiverConfiguration.receiveMessages();
+        MessageReceiverConfiguration messageReceiverConfiguration
+            = new MessageReceiverConfiguration(applicationParams,
+                                               activeDirectoryApiClient,
+                                               hmiClient);
+       // messageReceiverConfiguration.receiveMessages();
+    }
+
+    @Disabled
+    @Test
+    void shouldConnectToQueue1() throws InterruptedException {
+
+        InterruptedException exception = assertThrows(InterruptedException.class, () -> {
+           // messageReceiverConfigurationMock.receiveMessages();
+        });
+        String expectedMessage = "For input string";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
+
+        //  doThrow(new InterruptedException()).when(messageReceiverConfigurationMock).receiveMessages();
+        //   messageReceiverConfigurationMock.receiveMessages();
     }
 }
