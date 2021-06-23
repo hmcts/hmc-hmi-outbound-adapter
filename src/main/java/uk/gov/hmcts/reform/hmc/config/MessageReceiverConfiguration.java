@@ -1,136 +1,137 @@
 package uk.gov.hmcts.reform.hmc.config;
 
+import com.azure.core.amqp.AmqpRetryOptions;
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusClientBuilder;
-import com.azure.messaging.servicebus.ServiceBusErrorContext;
-import com.azure.messaging.servicebus.ServiceBusException;
-import com.azure.messaging.servicebus.ServiceBusFailureReason;
-import com.azure.messaging.servicebus.ServiceBusProcessorClient;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
-import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
+import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
+import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Slf4j
 @Component
-public class MessageReceiverConfiguration {
+public class MessageReceiverConfiguration implements Runnable {
 
     private final ApplicationParams applicationParams;
-    private static final String REQUEST_HEARING = "REQUEST_HEARING";
-    private static final String AMEND_HEARING = "AMEND_HEARING";
-    private static final String DELETE_HEARING = "DELETE_HEARING";
+    private final ActiveDirectoryApiClient activeDirectoryApiClient;
+    private final HearingManagementInterfaceApiClient hmiClient;
     private static final String MESSAGE_TYPE = "message_type";
+    private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
+        .modules(new Jdk8Module())
+        .build();
+    private static final JsonNode data = OBJECT_MAPPER.convertValue("Test data", JsonNode.class);
 
-    public MessageReceiverConfiguration(ApplicationParams applicationParams) {
+    public MessageReceiverConfiguration(ApplicationParams applicationParams,
+                                        ActiveDirectoryApiClient activeDirectoryApiClient,
+                                        HearingManagementInterfaceApiClient hmiClient) {
         this.applicationParams = applicationParams;
+        this.activeDirectoryApiClient = activeDirectoryApiClient;
+        this.hmiClient = hmiClient;
+    }
+
+
+    @Override
+    @SuppressWarnings("squid:S2189")
+    @PostConstruct
+    public void run() {
+        log.info("Creating Session receiver");
+
+        ServiceBusReceiverClient client = new ServiceBusClientBuilder()
+            .connectionString(applicationParams.getConnectionString())
+            .retryOptions(retryOptions())
+            .receiver()
+            .queueName(applicationParams.getQueueName())
+            .buildClient();
+
+        while (true) {
+            receiveMessages(client);
+        }
     }
 
     // handles received messages
-    @EventListener(MessageReceiverConfiguration.class)
-    public void receiveMessages() {
-        CountDownLatch countdownLatch = new CountDownLatch(1);
-        ServiceBusProcessorClient processorClient = new ServiceBusClientBuilder()
-            .connectionString(applicationParams.getConnectionString())
-            .processor()
-            .queueName(applicationParams.getQueueName())
-            .processMessage(MessageReceiverConfiguration::processMessage)
-            .processError(context -> processError(context, countdownLatch))
-            .buildProcessorClient();
-        log.info("Connected to Queue");
-        log.info("Starting the processor");
+    public void receiveMessages(ServiceBusReceiverClient client) {
 
-        processorClient.start();
+        client.receiveMessages(1)
+            .forEach(
+                message -> {
+                    try {
+                        log.info("Received message with id '{}'", message.getMessageId());
+                        processMessage(message);
+                        client.complete(message);
+                        log.info("Message with id '{}' handled successfully", message.getMessageId());
+                    } catch (RestClientException ex) {
+
+                    } catch (Exception ex) {
+
+                    }
+                });
     }
 
-    private static JsonNode convertMessage(BinaryData message) throws IOException {
-        ObjectMapper om = new ObjectMapper();
-        final ObjectWriter writer = om.writer();
-        final byte[] bytes = writer.writeValueAsBytes(message);
-        final ObjectReader reader = om.reader();
-        final JsonNode newNode = reader.readTree(new ByteArrayInputStream(bytes));
-        return newNode;
+    private AmqpRetryOptions retryOptions() {
+        AmqpRetryOptions retryOptions = new AmqpRetryOptions();
+        retryOptions.setTryTimeout(Duration.ofSeconds(Integer.valueOf(applicationParams.getWaitToRetryTime())));
+
+        return retryOptions;
     }
 
-    private static void processMessage(ServiceBusReceivedMessageContext context) {
-        ServiceBusReceivedMessage message = context.getMessage();
-        log.info("Processing message. Session: %s, Sequence #: %s. Contents: %s%n", message.getMessageId(),
-                 message.getSequenceNumber(), message.getBody());
+    private static JsonNode convertMessage(BinaryData message) {
+        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        return OBJECT_MAPPER.convertValue(message, JsonNode.class);
+    }
 
+    private void processMessage(ServiceBusReceivedMessage message) {
         if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
-            try {
                 JsonNode node = convertMessage(message.getBody());
-            } catch (IOException exception) {
-                log.error(exception.getMessage());
-            }
-            switch (message.getApplicationProperties().get(MESSAGE_TYPE).toString()) {
-                case REQUEST_HEARING:
-                    log.info("Message of type REQUEST_HEARING received");
-                    break;
-                case AMEND_HEARING:
-                    log.info("Message of type AMEND_HEARING received");
-                    break;
-                case DELETE_HEARING:
-                    log.info("Message of type DELETE_HEARING received");
-                    break;
-                default:
-                    log.info("Message has unsupported value for message_type");
-                    // add to dead letter queue - unsupported message type
-                    break;
-            }
+
+                MessageType messageType =
+                    MessageType.valueOf(message.getApplicationProperties().get(MESSAGE_TYPE).toString());
+
+                DefaultFutureHearingRepository defaultFutureHearingRepository =
+                    new DefaultFutureHearingRepository(
+                        activeDirectoryApiClient,
+                        applicationParams,
+                        hmiClient
+                    );
+
+                switch (messageType) {
+                    case REQUEST_HEARING:
+                        log.info("Message of type REQUEST_HEARING received");
+                        defaultFutureHearingRepository.createHearingRequest(node);
+                        break;
+                    case AMEND_HEARING:
+                        log.info("Message of type AMEND_HEARING received");
+                        defaultFutureHearingRepository.amendHearingRequest(node,
+                                                                           message.getApplicationProperties().get("caseListingID").toString());
+                        break;
+                    case DELETE_HEARING:
+                        log.info("Message of type DELETE_HEARING received");
+                        defaultFutureHearingRepository.deleteHearingRequest(node,
+                                                                            message.getApplicationProperties().get("caseListingID").toString());
+                        break;
+                    default:
+                        log.info("Message has unsupported value for message_type");
+                        // add to dead letter queue - unsupported message type
+                        break;
+                }
         } else {
             // add to dead letter queue - unsupported message type
             log.info("Message is missing custom header message_type");
         }
 
-    }
-
-    private void processError(ServiceBusErrorContext context, CountDownLatch countdownLatch) {
-        log.error("Error when receiving messages from namespace: '%s'. Entity: '%s'%n",
-                          context.getFullyQualifiedNamespace(), context.getEntityPath()
-        );
-
-        if (!(context.getException() instanceof ServiceBusException)) {
-            log.error("Non-ServiceBusException occurred: %s%n", context.getException());
-            return;
-        }
-
-        ServiceBusException exception = (ServiceBusException) context.getException();
-        ServiceBusFailureReason reason = exception.getReason();
-
-        if (reason == ServiceBusFailureReason.MESSAGING_ENTITY_DISABLED
-            || reason == ServiceBusFailureReason.MESSAGING_ENTITY_NOT_FOUND
-            || reason == ServiceBusFailureReason.UNAUTHORIZED) {
-            log.error("An unrecoverable error occurred. Stopping processing with reason %s: %s%n",
-                              reason, exception.getMessage()
-            );
-
-            countdownLatch.countDown();
-        } else if (reason == ServiceBusFailureReason.MESSAGE_LOCK_LOST) {
-            log.error("Message lock lost for message: %s%n", context.getException());
-        } else if (reason == ServiceBusFailureReason.SERVICE_BUSY) {
-            try {
-                // wait an arbitrary amount of time to wait until trying again
-                String value = applicationParams.getWaitToRetryTime();
-                TimeUnit.SECONDS.sleep(Long.valueOf(value));
-            } catch (InterruptedException e) {
-                log.error("Unable to sleep for period of time");
-                Thread.currentThread().interrupt();
-            }
-        } else {
-            log.error("Error source %s, reason %s, message: %s%n", context.getErrorSource(),
-                              reason, context.getException()
-            );
-        }
     }
 }

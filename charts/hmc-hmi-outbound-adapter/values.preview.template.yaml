@@ -4,14 +4,15 @@ java:
   ingressHost: ${SERVICE_FQDN}
   environment:
     SERVICE_BUS_QUEUE_NAME: hmc-to-hmi-{{ .Release.Name }}
+  secrets:
+    SB_CONN_STRING:
+      secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-to-hmi
+      key: connectionString
   keyVaults:
     hmc:
       resourceGroup: hmc-shared
       secrets:
         - name: AppInsightsInstrumentationKey
-        SB_CONN_STRING:
-          secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-to-hmi
-          key: connectionString
 
 servicebus:
   enabled: true
@@ -20,4 +21,4 @@ servicebus:
   serviceplan: standard
   setup:
     queues:
-      -name: hmc-to-hmi-{{ .Release.Name }}
+      -name: hmc-to-hmi

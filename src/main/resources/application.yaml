@@ -21,11 +21,6 @@ spring:
     property-naming-strategy: SNAKE_CASE
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
-  jms:
-    servicebus:
-      connection-string: ${SB_CONN_STRING}
-      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:1800000}
-      queue-name: ${SERVICE_BUS_QUEUE_NAME}
 #  datasource:
 #    driver-class-name: org.postgresql.Driver
 #    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_OPTIONS:}
@@ -51,6 +46,11 @@ spring:
 azure:
   application-insights:
     instrumentation-key: ${hmc.AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+  jms:
+    servicebus:
+      connection-string: ${SB_CONN_STRING}
+      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:1800000}
+      queue-name: ${SERVICE_BUS_QUEUE_NAME}
 
 fh:
   ad:
