@@ -32,7 +32,6 @@ public class MessageReceiverConfiguration implements Runnable {
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
-    private static final JsonNode data = OBJECT_MAPPER.convertValue("Test data", JsonNode.class);
 
     public MessageReceiverConfiguration(ApplicationParams applicationParams,
                                         ActiveDirectoryApiClient activeDirectoryApiClient,
