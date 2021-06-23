@@ -18,10 +18,8 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
-import javax.annotation.PostConstruct;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.time.Duration;
+import javax.annotation.PostConstruct;
 
 @Slf4j
 @Component
@@ -75,9 +73,9 @@ public class MessageReceiverConfiguration implements Runnable {
                         client.complete(message);
                         log.info("Message with id '{}' handled successfully", message.getMessageId());
                     } catch (RestClientException ex) {
-
+                        log.error(ex.getMessage());
                     } catch (Exception ex) {
-
+                        log.error(ex.getMessage());
                     }
                 });
     }
@@ -96,38 +94,42 @@ public class MessageReceiverConfiguration implements Runnable {
 
     private void processMessage(ServiceBusReceivedMessage message) {
         if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
-                JsonNode node = convertMessage(message.getBody());
+            JsonNode node = convertMessage(message.getBody());
 
-                MessageType messageType =
-                    MessageType.valueOf(message.getApplicationProperties().get(MESSAGE_TYPE).toString());
+            MessageType messageType =
+                MessageType.valueOf(message.getApplicationProperties().get(MESSAGE_TYPE).toString());
 
-                DefaultFutureHearingRepository defaultFutureHearingRepository =
-                    new DefaultFutureHearingRepository(
-                        activeDirectoryApiClient,
-                        applicationParams,
-                        hmiClient
+            DefaultFutureHearingRepository defaultFutureHearingRepository =
+                new DefaultFutureHearingRepository(
+                    activeDirectoryApiClient,
+                    applicationParams,
+                    hmiClient
+                );
+
+            switch (messageType) {
+                case REQUEST_HEARING:
+                    log.info("Message of type REQUEST_HEARING received");
+                    defaultFutureHearingRepository.createHearingRequest(node);
+                    break;
+                case AMEND_HEARING:
+                    log.info("Message of type AMEND_HEARING received");
+                    defaultFutureHearingRepository.amendHearingRequest(
+                        node,
+                        message.getApplicationProperties().get("caseListingID").toString()
                     );
-
-                switch (messageType) {
-                    case REQUEST_HEARING:
-                        log.info("Message of type REQUEST_HEARING received");
-                        defaultFutureHearingRepository.createHearingRequest(node);
-                        break;
-                    case AMEND_HEARING:
-                        log.info("Message of type AMEND_HEARING received");
-                        defaultFutureHearingRepository.amendHearingRequest(node,
-                                                                           message.getApplicationProperties().get("caseListingID").toString());
-                        break;
-                    case DELETE_HEARING:
-                        log.info("Message of type DELETE_HEARING received");
-                        defaultFutureHearingRepository.deleteHearingRequest(node,
-                                                                            message.getApplicationProperties().get("caseListingID").toString());
-                        break;
-                    default:
-                        log.info("Message has unsupported value for message_type");
-                        // add to dead letter queue - unsupported message type
-                        break;
-                }
+                    break;
+                case DELETE_HEARING:
+                    log.info("Message of type DELETE_HEARING received");
+                    defaultFutureHearingRepository.deleteHearingRequest(
+                        node,
+                        message.getApplicationProperties().get("caseListingID").toString()
+                    );
+                    break;
+                default:
+                    log.info("Message has unsupported value for message_type");
+                    // add to dead letter queue - unsupported message type
+                    break;
+            }
         } else {
             // add to dead letter queue - unsupported message type
             log.info("Message is missing custom header message_type");
