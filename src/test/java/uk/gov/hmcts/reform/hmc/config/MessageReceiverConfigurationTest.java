@@ -9,8 +9,6 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 
-import java.time.Clock;
-
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -34,6 +32,7 @@ class MessageReceiverConfigurationTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    @Disabled
     @Test
     void shouldConnectToQueue() throws InterruptedException {
         when(applicationParams.getConnectionString()).thenReturn(
@@ -42,10 +41,12 @@ class MessageReceiverConfigurationTest {
         when(applicationParams.getQueueName()).thenReturn("queueName");
         when(applicationParams.getWaitToRetryTime()).thenReturn("1");
         MessageReceiverConfiguration messageReceiverConfiguration
-            = new MessageReceiverConfiguration(applicationParams,
-                                               activeDirectoryApiClient,
-                                               hmiClient);
-       // messageReceiverConfiguration.receiveMessages();
+            = new MessageReceiverConfiguration(
+            applicationParams,
+            activeDirectoryApiClient,
+            hmiClient
+        );
+        messageReceiverConfiguration.run();
     }
 
     @Disabled
@@ -53,14 +54,11 @@ class MessageReceiverConfigurationTest {
     void shouldConnectToQueue1() throws InterruptedException {
 
         InterruptedException exception = assertThrows(InterruptedException.class, () -> {
-           // messageReceiverConfigurationMock.receiveMessages();
+            messageReceiverConfigurationMock.run();
         });
         String expectedMessage = "For input string";
         String actualMessage = exception.getMessage();
 
         assertTrue(actualMessage.contains(expectedMessage));
-
-        //  doThrow(new InterruptedException()).when(messageReceiverConfigurationMock).receiveMessages();
-        //   messageReceiverConfigurationMock.receiveMessages();
     }
 }
