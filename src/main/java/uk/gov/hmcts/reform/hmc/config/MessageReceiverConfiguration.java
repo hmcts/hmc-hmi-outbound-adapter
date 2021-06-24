@@ -16,19 +16,30 @@ import org.springframework.web.client.RestClientException;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
+import uk.gov.hmcts.reform.hmc.errorhandling.*;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.time.Duration;
 import javax.annotation.PostConstruct;
 
+import static uk.gov.hmcts.reform.hmc.config.MessageType.AMEND_HEARING;
+import static uk.gov.hmcts.reform.hmc.config.MessageType.DELETE_HEARING;
+
 @Slf4j
 @Component
 public class MessageReceiverConfiguration implements Runnable {
 
+    private final DeadLetterService deadLetterService = new DeadLetterService();
+    private final HearingManagementInterfaceErrorHandler handler = new HearingManagementInterfaceErrorHandler(deadLetterService);
     private final ApplicationParams applicationParams;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final HearingManagementInterfaceApiClient hmiClient;
     private static final String MESSAGE_TYPE = "message_type";
+    private String caseListingID;
+    private static final String MISSING_CASE_LISTING_ID = "Message is missing custom header caseListingID";
+    private static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
+    private static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
+
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
@@ -71,8 +82,11 @@ public class MessageReceiverConfiguration implements Runnable {
                         processMessage(message);
                         client.complete(message);
                         log.info("Message with id '{}' handled successfully", message.getMessageId());
-                    } catch (RestClientException ex) {
+                    } catch (MalformedMessageException ex) {
+                        handler.handleGenericError(client, message, ex);
+                    } catch (AuthenticationException | ResourceNotFoundException ex ) {
                         log.error(ex.getMessage());
+                        handler.handleApplicationError(client, message, ex);
                     } catch (Exception ex) {
                         log.error(ex.getMessage());
                     }
@@ -105,6 +119,15 @@ public class MessageReceiverConfiguration implements Runnable {
                     hmiClient
                 );
 
+            if(messageType.equals(AMEND_HEARING) || messageType.equals(DELETE_HEARING)) {
+                try {
+                    caseListingID = message.getApplicationProperties().get("caseListingID").toString();
+                } catch (Exception exception) {
+                    log.error(MISSING_CASE_LISTING_ID);
+                    throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
+                }
+            }
+
             switch (messageType) {
                 case REQUEST_HEARING:
                     log.info("Message of type REQUEST_HEARING received");
@@ -113,26 +136,22 @@ public class MessageReceiverConfiguration implements Runnable {
                 case AMEND_HEARING:
                     log.info("Message of type AMEND_HEARING received");
                     defaultFutureHearingRepository.amendHearingRequest(
-                        node,
-                        message.getApplicationProperties().get("caseListingID").toString()
+                        node, caseListingID
                     );
                     break;
                 case DELETE_HEARING:
                     log.info("Message of type DELETE_HEARING received");
                     defaultFutureHearingRepository.deleteHearingRequest(
-                        node,
-                        message.getApplicationProperties().get("caseListingID").toString()
+                        node, caseListingID
                     );
                     break;
                 default:
-                    log.info("Message has unsupported value for message_type");
-                    // add to dead letter queue - unsupported message type
-                    break;
+                    log.error(UNSUPPORTED_MESSAGE_TYPE);
+                    throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
             }
         } else {
-            // add to dead letter queue - unsupported message type
-            log.info("Message is missing custom header message_type");
+            log.error(MISSING_MESSAGE_TYPE);
+            throw new MalformedMessageException(MISSING_MESSAGE_TYPE);
         }
-
     }
 }

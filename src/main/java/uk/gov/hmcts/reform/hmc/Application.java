@@ -15,25 +15,9 @@ import java.time.Clock;
 @EnableFeignClients
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
 public class Application {
-
-    private static FutureHearingRepository repository;
-    private static HearingManagementInterfaceErrorHandler handler;
-    private static ApplicationParams applicationParams;
-    private final MessageReceiverConfiguration messageReceiverConfiguration;
-
-    public Application(MessageReceiverConfiguration messageReceiverConfiguration, ApplicationParams applicationParams,
-                       HearingManagementInterfaceErrorHandler handler, FutureHearingRepository repository) {
-        this.repository = repository;
-        this.handler = handler;
-        this.applicationParams = applicationParams;
-        this.messageReceiverConfiguration = messageReceiverConfiguration;
-    }
-
     public static void main(final String[] args) {
         SpringApplication.run(Application.class, args);
-        new MessageReceiverConfiguration(applicationParams, handler, repository).receiveMessages();
     }
-
     @Bean
     public Clock utcClock() {
         return Clock.systemUTC();
