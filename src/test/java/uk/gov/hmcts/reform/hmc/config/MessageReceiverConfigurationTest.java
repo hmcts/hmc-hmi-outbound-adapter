@@ -36,6 +36,7 @@ class MessageReceiverConfigurationTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    @Disabled
     @Test
     void shouldConnectToQueue() throws InterruptedException {
         when(applicationParams.getConnectionString()).thenReturn(
@@ -48,7 +49,7 @@ class MessageReceiverConfigurationTest {
                                                activeDirectoryApiClient,
                                                hmiClient, handler
         );
-        // messageReceiverConfiguration.receiveMessages();
+        messageReceiverConfiguration.run();
     }
 
     @Disabled
@@ -56,14 +57,11 @@ class MessageReceiverConfigurationTest {
     void shouldConnectToQueue1() throws InterruptedException {
 
         InterruptedException exception = assertThrows(InterruptedException.class, () -> {
-            // messageReceiverConfigurationMock.receiveMessages();
+            messageReceiverConfigurationMock.run();
         });
         String expectedMessage = "For input string";
         String actualMessage = exception.getMessage();
 
         assertTrue(actualMessage.contains(expectedMessage));
-
-        //  doThrow(new InterruptedException()).when(messageReceiverConfigurationMock).receiveMessages();
-        //   messageReceiverConfigurationMock.receiveMessages();
     }
 }
