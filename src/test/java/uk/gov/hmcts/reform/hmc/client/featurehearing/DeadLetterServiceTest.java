@@ -12,7 +12,6 @@ import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.APPLICATIO
 import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.MESSAGE_DESERIALIZATION_ERROR;
 
 public class DeadLetterServiceTest {
-    private static final String REQUEST_BODY = "original test message";
     private static final String ERROR = "test error message";
     private DeadLetterOptions expected;
 
@@ -23,14 +22,13 @@ public class DeadLetterServiceTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         expected = new DeadLetterOptions();
-        expected.setDeadLetterErrorDescription("DeadLetterMessage(originalMessage=" + REQUEST_BODY
-                                                   + ", errorDescription=" + ERROR + ")");
+        expected.setDeadLetterErrorDescription(ERROR);
     }
 
     @Test
     void shouldHandleApplicationError() {
         expected.setDeadLetterReason(APPLICATION_PROCESSING_ERROR);
-        DeadLetterOptions result = service.handleApplicationError(REQUEST_BODY, ERROR);
+        DeadLetterOptions result = service.handleApplicationError(ERROR);
         assertEquals(expected.getDeadLetterErrorDescription(), result.getDeadLetterErrorDescription());
         assertEquals(expected.getDeadLetterReason(), result.getDeadLetterReason());
     }
@@ -38,7 +36,7 @@ public class DeadLetterServiceTest {
     @Test
     void shouldHandleParsingError() {
         expected.setDeadLetterReason(MESSAGE_DESERIALIZATION_ERROR);
-        DeadLetterOptions result = service.handleParsingError(REQUEST_BODY, ERROR);
+        DeadLetterOptions result = service.handleParsingError(ERROR);
         assertEquals(expected.getDeadLetterErrorDescription(), result.getDeadLetterErrorDescription());
         assertEquals(expected.getDeadLetterReason(), result.getDeadLetterReason());
     }

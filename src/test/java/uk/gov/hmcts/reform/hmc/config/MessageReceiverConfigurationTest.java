@@ -8,8 +8,7 @@ import org.mockito.MockitoAnnotations;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
-
-import java.time.Clock;
+import uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,6 +18,9 @@ class MessageReceiverConfigurationTest {
 
     @Mock
     private MessageReceiverConfiguration messageReceiverConfigurationMock;
+
+    @Mock
+    private HearingManagementInterfaceErrorHandler handler;
 
     @Mock
     private ApplicationParams applicationParams;
@@ -44,8 +46,9 @@ class MessageReceiverConfigurationTest {
         MessageReceiverConfiguration messageReceiverConfiguration
             = new MessageReceiverConfiguration(applicationParams,
                                                activeDirectoryApiClient,
-                                               hmiClient);
-       // messageReceiverConfiguration.receiveMessages();
+                                               hmiClient, handler
+        );
+        // messageReceiverConfiguration.receiveMessages();
     }
 
     @Disabled
@@ -53,7 +56,7 @@ class MessageReceiverConfigurationTest {
     void shouldConnectToQueue1() throws InterruptedException {
 
         InterruptedException exception = assertThrows(InterruptedException.class, () -> {
-           // messageReceiverConfigurationMock.receiveMessages();
+            // messageReceiverConfigurationMock.receiveMessages();
         });
         String expectedMessage = "For input string";
         String actualMessage = exception.getMessage();

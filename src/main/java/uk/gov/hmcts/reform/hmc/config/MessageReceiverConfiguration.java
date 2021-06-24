@@ -12,11 +12,13 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
-import uk.gov.hmcts.reform.hmc.errorhandling.*;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler;
+import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.time.Duration;
@@ -29,8 +31,7 @@ import static uk.gov.hmcts.reform.hmc.config.MessageType.DELETE_HEARING;
 @Component
 public class MessageReceiverConfiguration implements Runnable {
 
-    private final DeadLetterService deadLetterService = new DeadLetterService();
-    private final HearingManagementInterfaceErrorHandler handler = new HearingManagementInterfaceErrorHandler(deadLetterService);
+    private final HearingManagementInterfaceErrorHandler handler;
     private final ApplicationParams applicationParams;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final HearingManagementInterfaceApiClient hmiClient;
@@ -46,10 +47,13 @@ public class MessageReceiverConfiguration implements Runnable {
 
     public MessageReceiverConfiguration(ApplicationParams applicationParams,
                                         ActiveDirectoryApiClient activeDirectoryApiClient,
-                                        HearingManagementInterfaceApiClient hmiClient) {
+                                        HearingManagementInterfaceApiClient hmiClient,
+                                        HearingManagementInterfaceErrorHandler handler
+    ) {
         this.applicationParams = applicationParams;
         this.activeDirectoryApiClient = activeDirectoryApiClient;
         this.hmiClient = hmiClient;
+        this.handler = handler;
     }
 
 
@@ -84,11 +88,11 @@ public class MessageReceiverConfiguration implements Runnable {
                         log.info("Message with id '{}' handled successfully", message.getMessageId());
                     } catch (MalformedMessageException ex) {
                         handler.handleGenericError(client, message, ex);
-                    } catch (AuthenticationException | ResourceNotFoundException ex ) {
-                        log.error(ex.getMessage());
+                    } catch (AuthenticationException | ResourceNotFoundException ex) {
                         handler.handleApplicationError(client, message, ex);
                     } catch (Exception ex) {
-                        log.error(ex.getMessage());
+                        log.warn("Unexpected Error");
+                        handler.handleGenericError(client, message, ex);
                     }
                 });
     }
@@ -109,8 +113,13 @@ public class MessageReceiverConfiguration implements Runnable {
         if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
             JsonNode node = convertMessage(message.getBody());
 
-            MessageType messageType =
-                MessageType.valueOf(message.getApplicationProperties().get(MESSAGE_TYPE).toString());
+            MessageType messageType;
+            try {
+                messageType =
+                    MessageType.valueOf(message.getApplicationProperties().get(MESSAGE_TYPE).toString());
+            } catch (Exception exception) {
+                throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
+            }
 
             DefaultFutureHearingRepository defaultFutureHearingRepository =
                 new DefaultFutureHearingRepository(
@@ -119,11 +128,10 @@ public class MessageReceiverConfiguration implements Runnable {
                     hmiClient
                 );
 
-            if(messageType.equals(AMEND_HEARING) || messageType.equals(DELETE_HEARING)) {
+            if (messageType.equals(AMEND_HEARING) || messageType.equals(DELETE_HEARING)) {
                 try {
                     caseListingID = message.getApplicationProperties().get("caseListingID").toString();
                 } catch (Exception exception) {
-                    log.error(MISSING_CASE_LISTING_ID);
                     throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
                 }
             }
@@ -146,11 +154,9 @@ public class MessageReceiverConfiguration implements Runnable {
                     );
                     break;
                 default:
-                    log.error(UNSUPPORTED_MESSAGE_TYPE);
-                    throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
+                    //should not get here as no more MessageType constants
             }
         } else {
-            log.error(MISSING_MESSAGE_TYPE);
             throw new MalformedMessageException(MISSING_MESSAGE_TYPE);
         }
     }

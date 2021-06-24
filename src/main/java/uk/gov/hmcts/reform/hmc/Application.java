@@ -5,9 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
-import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
-import uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler;
-import uk.gov.hmcts.reform.hmc.repository.FutureHearingRepository;
 
 import java.time.Clock;
 
@@ -18,6 +15,7 @@ public class Application {
     public static void main(final String[] args) {
         SpringApplication.run(Application.class, args);
     }
+
     @Bean
     public Clock utcClock() {
         return Clock.systemUTC();
