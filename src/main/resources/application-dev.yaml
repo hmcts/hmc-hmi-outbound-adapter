@@ -15,9 +15,9 @@ azure:
   jms:
     servicebus:
       enabled: false
-      connection-string: ${SB_CONN_STRING}
-      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:1800000}
-      queue-name: ${SERVICE_BUS_QUEUE_NAME}
+      connection-string: ${SB_CONN_STRING:Endpoint=sb://hmc-servicebus-demo.servicebus.windows.net/;SharedAccessKeyName=lsiten;SharedAccessKey=HwilWAXv3FXJljxOQcSS1TFwUxpx+cphH7pGleyV30g=;EntityPath=rebecca-test}
+      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:20}
+      queue-name: ${SERVICE_BUS_QUEUE_NAME:rebecca-test}
   activemq:
     in-memory: true
   autoconfigure:

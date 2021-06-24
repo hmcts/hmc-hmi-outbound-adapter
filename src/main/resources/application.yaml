@@ -49,7 +49,7 @@ azure:
   jms:
     servicebus:
       connection-string: ${SB_CONN_STRING}
-      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:1800000}
+      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:60}
       queue-name: ${SERVICE_BUS_QUEUE_NAME}
 
 fh:
