@@ -11,10 +11,12 @@ import org.springframework.stereotype.Component;
 public class HearingManagementInterfaceErrorHandler {
     private final int retryAttempts = 2; //change this, gives DLQ with deliveryCount of 3
     private final DeadLetterService deadLetterService;
-    private static final String MESSAGE_PARSE_ERROR = "Unable to parse incoming message with id '{}'";
-    private static final String APPLICATION_ERROR = "Unable to process incoming message with id '{}";
-    private static final String MESSAGE_DEAD_LETTERED = "Message with id '{}' was dead lettered";
-    private static final String NO_EXCEPTION_MESSAGE = "Exception message not found";
+    public static final String MESSAGE_PARSE_ERROR = "Unable to parse incoming message with id '{}'";
+    public static final String APPLICATION_ERROR = "Unable to process incoming message with id '{}";
+    public static final String MESSAGE_DEAD_LETTERED = "Message with id '{}' was dead lettered";
+    public static final String NO_EXCEPTION_MESSAGE = "Exception message not found";
+    public static final String RETRY_MESSAGE = "Retrying message with id '{}'";
+    public static final String RETRIES_EXCEEDED = "Max delivery count reached. Message with id '{}' was dead lettered";
 
     public HearingManagementInterfaceErrorHandler(DeadLetterService deadLetterService) {
         this.deadLetterService = deadLetterService;
@@ -35,10 +37,10 @@ public class HearingManagementInterfaceErrorHandler {
         if (deliveryCount >= retryAttempts) {
             log.error(APPLICATION_ERROR, message.getMessageId(), exception);
             receiver.deadLetter(message, deadLetterService.handleApplicationError(exception.getMessage()));
-            log.warn("Max delivery count reached. Message with id '{}' was dead lettered", message.getMessageId());
+            log.warn(RETRIES_EXCEEDED, message.getMessageId());
         } else {
             receiver.abandon(message);
-            log.warn("Retrying message with id '{}'", message.getMessageId());
+            log.warn(RETRY_MESSAGE, message.getMessageId());
         }
     }
 
