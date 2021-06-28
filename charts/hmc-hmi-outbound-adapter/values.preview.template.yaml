@@ -6,7 +6,7 @@ java:
     SERVICE_BUS_QUEUE_NAME: hmc-to-hmi-{{ .Release.Name }}
   secrets:
     SB_CONN_STRING:
-      secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-to-hmi
+      secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus
       key: connectionString
   keyVaults:
     hmc:
