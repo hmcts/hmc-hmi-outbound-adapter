@@ -12,13 +12,20 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
+import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static uk.gov.hmcts.reform.hmc.config.MessageProcessor.MISSING_CASE_LISTING_ID;
+import static uk.gov.hmcts.reform.hmc.config.MessageProcessor.MISSING_MESSAGE_TYPE;
+import static uk.gov.hmcts.reform.hmc.config.MessageProcessor.UNSUPPORTED_MESSAGE_TYPE;
 
 class MessageProcessorTest {
+    private static final String MESSAGE_TYPE = "message_type";
+    private static final String CASE_LISTING_ID = "caseListingID";
 
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
@@ -45,34 +52,60 @@ class MessageProcessorTest {
         given(applicationParams.getScope()).willReturn("SCOPE");
         given(applicationParams.getClientSecret()).willReturn("CLIENT_SECRET");
         given(activeDirectoryApiClient.authenticate(requestString)).willReturn(new AuthenticationResponse());
-
     }
 
     @Test
     void shouldInitiateRequestHearing() {
+        Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put(MESSAGE_TYPE, MessageType.REQUEST_HEARING);
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        messageProcessor.processMessage(anyData, MessageType.REQUEST_HEARING, null);
+        messageProcessor.processMessage(anyData, applicationProperties);
     }
 
     @Test
     void shouldInitiateAmendHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put("caseListingID", "1234567890");
+        applicationProperties.put(MESSAGE_TYPE, MessageType.AMEND_HEARING);
+        applicationProperties.put(CASE_LISTING_ID, "1234567890");
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        messageProcessor.processMessage(anyData, MessageType.AMEND_HEARING, applicationProperties);
+        messageProcessor.processMessage(anyData, applicationProperties);
     }
 
     @Test
     void shouldInitiateDeleteHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put("caseListingID", "1234567890");
+        applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
+        applicationProperties.put(CASE_LISTING_ID, "1234567890");
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        messageProcessor.processMessage(anyData, MessageType.DELETE_HEARING, applicationProperties);
+        messageProcessor.processMessage(anyData, applicationProperties);
     }
 
     @Test
-    void shouldProcessWhenMessageTypeIsNull() {
+    void shouldThrowErrorWhenNoMessageType() {
+        Map<String, Object> applicationProperties = new HashMap<>();
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        messageProcessor.processMessage(anyData, null, null);
+        assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
+            .isInstanceOf(MalformedMessageException.class)
+            .hasMessageContaining(MISSING_MESSAGE_TYPE);
+    }
+
+    @Test
+    void shouldThrowErrorWhenNoSupportedMessageType() {
+        Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put(MESSAGE_TYPE, "invalid message type");
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
+        assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
+            .isInstanceOf(MalformedMessageException.class)
+            .hasMessageContaining(UNSUPPORTED_MESSAGE_TYPE);
+    }
+
+    @Test
+    void shouldThrowErrorWhenNoCaseListingID() {
+        Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
+        assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
+            .isInstanceOf(MalformedMessageException.class)
+            .hasMessageContaining(MISSING_CASE_LISTING_ID);
     }
 }

@@ -29,7 +29,8 @@ class MessageProcessorIT extends BaseTest {
     private static final JsonNode data = OBJECT_MAPPER.convertValue("Test data", JsonNode.class);
     private static final String TOKEN = "example-token";
     private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
-
+    private static final String MESSAGE_TYPE = "message_type";
+    private static final String CASE_LISTING_ID = "caseListingID";
 
     @MockBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
@@ -48,36 +49,40 @@ class MessageProcessorIT extends BaseTest {
 
     @Test
     void shouldInitiateRequestHearing() {
+        Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put(MESSAGE_TYPE, MessageType.REQUEST_HEARING);
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyRequestHearing(TOKEN);
 
         MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
                                                                  activeDirectoryApiClient, hmiClient);
-        messageProcessor.processMessage(data, MessageType.REQUEST_HEARING, null);
+        messageProcessor.processMessage(data, applicationProperties);
     }
 
     @Test
     void shouldInitiateDeleteHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put("caseListingID", CASE_LISTING_REQUEST_ID);
+        applicationProperties.put(CASE_LISTING_ID, CASE_LISTING_REQUEST_ID);
+        applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
                                                                  activeDirectoryApiClient, hmiClient);
-        messageProcessor.processMessage(data, MessageType.DELETE_HEARING, applicationProperties);
+        messageProcessor.processMessage(data, applicationProperties);
     }
 
     @Test
     void shouldInitiateAmendHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put("caseListingID", CASE_LISTING_REQUEST_ID);
+        applicationProperties.put(CASE_LISTING_ID, CASE_LISTING_REQUEST_ID);
+        applicationProperties.put(MESSAGE_TYPE, MessageType.AMEND_HEARING);
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
                                                                  activeDirectoryApiClient, hmiClient);
-        messageProcessor.processMessage(data, MessageType.AMEND_HEARING, applicationProperties);
+        messageProcessor.processMessage(data, applicationProperties);
     }
 
 }
