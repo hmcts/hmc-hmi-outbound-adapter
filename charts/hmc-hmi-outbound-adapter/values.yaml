@@ -16,7 +16,7 @@ java:
           alias: fh.ad.scope
         - name: HMCServiceBusConnectionString
           alias: azure.jms.servicebus.connection-string
-        - name: waitToRetryTime
+        - name: SERVICE_BUS_IDLE_TIMEOUT
           alias: azure.jms.servicebus.wait-to-retry-time
         - name: retryAttempts
           alias: azure.jms.servicebus.retry-attempts
