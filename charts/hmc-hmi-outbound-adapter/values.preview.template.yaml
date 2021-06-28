@@ -21,4 +21,4 @@ servicebus:
   serviceplan: standard
   setup:
     queues:
-      -name: hmc-to-hmi
+      - name: hmc-to-hmi
