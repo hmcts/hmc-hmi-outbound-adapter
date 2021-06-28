@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService;
 import uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler;
 
@@ -36,12 +37,14 @@ import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceEr
 import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.RETRIES_EXCEEDED;
 import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.RETRY_MESSAGE;
 
-
 @ExtendWith(MockitoExtension.class)
 public class HearingManagementInterfaceErrorHandlerTest {
 
     @Mock
     private DeadLetterService deadLetterService;
+
+    @Mock
+    private ApplicationParams applicationParams;
 
     @Mock
     private ServiceBusReceiverClient receiverClient;
@@ -69,7 +72,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new HearingManagementInterfaceErrorHandler(deadLetterService);
+        handler = new HearingManagementInterfaceErrorHandler(deadLetterService, applicationParams);
         deadLetterOptions = new DeadLetterOptions();
         deadLetterOptions.setDeadLetterErrorDescription(ERROR_MESSAGE);
     }
@@ -122,6 +125,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
         when(receivedMessage.getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(1L);
+        when(applicationParams.getRetryAttempts()).thenReturn(2);
         when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
 
         handler.handleApplicationError(receiverClient, receivedMessage, exception);
@@ -152,6 +156,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
         when(receivedMessage.getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(2L);
+        when(applicationParams.getRetryAttempts()).thenReturn(2);
         when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
 
         when(exception.getMessage()).thenReturn(ERROR_MESSAGE);

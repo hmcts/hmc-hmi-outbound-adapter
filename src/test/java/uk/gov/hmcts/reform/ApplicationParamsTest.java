@@ -75,4 +75,10 @@ class ApplicationParamsTest {
         assertEquals(VALUE,
                      applicationParams.getWaitToRetryTime());
     }
+
+    @Test
+    void shouldGetRetryAttempts() {
+        ReflectionTestUtils.setField(applicationParams, "retryAttempts", 5);
+        assertEquals(5, applicationParams.getRetryAttempts());
+    }
 }

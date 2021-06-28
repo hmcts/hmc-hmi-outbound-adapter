@@ -38,31 +38,6 @@ public class ApplicationParams {
     @Value("${azure.jms.servicebus.wait-to-retry-time}")
     private String waitToRetryTime;
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getClientSecret() {
-        return clientSecret;
-    }
-
-    public String getGrantType() {
-        return grantType;
-    }
-
-    public String getScope() {
-        return scope;
-    }
-
-    public String getQueueName() {
-        return queueName;
-    }
-
-    public String getConnectionString() {
-        return connectionString;
-    }
-
-    public String getWaitToRetryTime() {
-        return waitToRetryTime;
-    }
+    @Value("${azure.jms.servicebus.retry-attempts}")
+    private int retryAttempts;
 }

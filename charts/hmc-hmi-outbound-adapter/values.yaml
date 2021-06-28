@@ -15,8 +15,10 @@ java:
         - name: Scope
           alias: fh.ad.scope
         - name: HMCServiceBusConnectionString
-          alias: spring.jms.servicebus.connection-string
+          alias: azure.jms.servicebus.connection-string
         - name: waitToRetryTime
-          alias: spring.jms.servicebus.wait-to-retry-time
+          alias: azure.jms.servicebus.wait-to-retry-time
+        - name: retryAttempts
+          alias: azure.jms.servicebus.retry-attempts
   environment:
     HMCServiceBusQueueName: hmc-to-hmi-{{ .Values.global.environment }}

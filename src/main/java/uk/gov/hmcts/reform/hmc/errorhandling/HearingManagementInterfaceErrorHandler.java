@@ -5,11 +5,13 @@ import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
 @Slf4j
 @Component
 public class HearingManagementInterfaceErrorHandler {
-    private final int retryAttempts = 2; //change this, gives DLQ with deliveryCount of 3
+
+    private final ApplicationParams applicationParams;
     private final DeadLetterService deadLetterService;
     public static final String MESSAGE_PARSE_ERROR = "Unable to parse incoming message with id '{}'";
     public static final String APPLICATION_ERROR = "Unable to process incoming message with id '{}";
@@ -18,8 +20,10 @@ public class HearingManagementInterfaceErrorHandler {
     public static final String RETRY_MESSAGE = "Retrying message with id '{}'";
     public static final String RETRIES_EXCEEDED = "Max delivery count reached. Message with id '{}' was dead lettered";
 
-    public HearingManagementInterfaceErrorHandler(DeadLetterService deadLetterService) {
+    public HearingManagementInterfaceErrorHandler(DeadLetterService deadLetterService,
+                                                  ApplicationParams applicationParams) {
         this.deadLetterService = deadLetterService;
+        this.applicationParams = applicationParams;
     }
 
     public void handleJsonError(ServiceBusReceiverClient receiver,
@@ -34,7 +38,7 @@ public class HearingManagementInterfaceErrorHandler {
                                        ServiceBusReceivedMessage message,
                                        Exception exception) {
         final Long deliveryCount = message.getRawAmqpMessage().getHeader().getDeliveryCount();
-        if (deliveryCount >= retryAttempts) {
+        if (deliveryCount >= applicationParams.getRetryAttempts()) {
             log.error(APPLICATION_ERROR, message.getMessageId(), exception);
             receiver.deadLetter(message, deadLetterService.handleApplicationError(exception.getMessage()));
             log.warn(RETRIES_EXCEEDED, message.getMessageId());
