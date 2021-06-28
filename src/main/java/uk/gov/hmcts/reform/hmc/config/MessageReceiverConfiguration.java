@@ -50,12 +50,11 @@ public class MessageReceiverConfiguration implements Runnable {
                                         HearingManagementInterfaceApiClient hmiClient,
                                         HearingManagementInterfaceErrorHandler handler
     ) {
-        this.applicationParams = applicationParams;
         this.activeDirectoryApiClient = activeDirectoryApiClient;
+        this.applicationParams = applicationParams;
         this.hmiClient = hmiClient;
         this.handler = handler;
     }
-
 
     @Override
     @SuppressWarnings("squid:S2189")
