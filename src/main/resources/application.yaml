@@ -48,9 +48,9 @@ azure:
     instrumentation-key: ${hmc.AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
   jms:
     servicebus:
-      connection-string: ${SB_CONN_STRING}
+      connection-string: ${HMCServiceBusConnectionString}
       wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:60}
-      queue-name: ${SERVICE_BUS_QUEUE_NAME}
+      queue-name: ${HMCServiceBusQueueName}
 
 fh:
   ad:
