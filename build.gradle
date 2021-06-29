@@ -277,7 +277,6 @@ dependencies {
   implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', version: '3.0.2'
   implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '11.2'
   implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
-//implementation group: 'org.springframework.boot', name: 'spring-boot-starter-activemq'
 
   implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
   implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
