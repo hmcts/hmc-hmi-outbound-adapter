@@ -45,7 +45,7 @@ public class MessageProcessor {
                     log.info("Message of type AMEND_HEARING received");
                     defaultFutureHearingRepository.amendHearingRequest(
                         message,
-                        applicationProperties.get("caseListingID").toString()
+                        applicationProperties.get(CASE_LISTING_ID).toString()
                     );
                     break;
                 case DELETE_HEARING:
