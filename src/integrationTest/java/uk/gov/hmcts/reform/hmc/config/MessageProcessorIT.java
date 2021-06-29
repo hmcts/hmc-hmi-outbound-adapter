@@ -52,7 +52,9 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyRequestHearing(TOKEN);
 
         MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
-                                                                 activeDirectoryApiClient, hmiClient);
+                                                                 activeDirectoryApiClient,
+                                                                 hmiClient,
+                                                                 defaultFutureHearingRepository);
         messageProcessor.processMessage(data, MessageType.REQUEST_HEARING, null);
     }
 
@@ -64,7 +66,9 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
-                                                                 activeDirectoryApiClient, hmiClient);
+                                                                 activeDirectoryApiClient,
+                                                                 hmiClient,
+                                                                 defaultFutureHearingRepository);
         messageProcessor.processMessage(data, MessageType.DELETE_HEARING, applicationProperties);
     }
 
@@ -76,7 +80,9 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
-                                                                 activeDirectoryApiClient, hmiClient);
+                                                                 activeDirectoryApiClient,
+                                                                 hmiClient,
+                                                                 defaultFutureHearingRepository);
         messageProcessor.processMessage(data, MessageType.AMEND_HEARING, applicationProperties);
     }
 

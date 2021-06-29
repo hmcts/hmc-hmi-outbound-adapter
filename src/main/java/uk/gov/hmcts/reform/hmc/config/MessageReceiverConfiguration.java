@@ -4,6 +4,7 @@ import com.azure.core.amqp.AmqpRetryOptions;
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusClientBuilder;
 import com.azure.messaging.servicebus.ServiceBusReceiverClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -16,7 +17,6 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 
-import java.time.Duration;
 import javax.annotation.PostConstruct;
 
 @Slf4j
@@ -25,17 +25,17 @@ public class MessageReceiverConfiguration implements Runnable {
 
     private final ApplicationParams applicationParams;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
+    private final MessageProcessor messageProcessor;
     private final HearingManagementInterfaceApiClient hmiClient;
     private static final String MESSAGE_TYPE = "message_type";
-    private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
-        .modules(new Jdk8Module())
-        .build();
 
     public MessageReceiverConfiguration(ApplicationParams applicationParams,
                                         ActiveDirectoryApiClient activeDirectoryApiClient,
-                                        HearingManagementInterfaceApiClient hmiClient) {
+                                        HearingManagementInterfaceApiClient hmiClient,
+                                        MessageProcessor messageProcessor) {
         this.activeDirectoryApiClient = activeDirectoryApiClient;
         this.applicationParams = applicationParams;
+        this.messageProcessor = messageProcessor;
         this.hmiClient = hmiClient;
     }
 
@@ -43,7 +43,7 @@ public class MessageReceiverConfiguration implements Runnable {
     @SuppressWarnings("squid:S2189")
     @PostConstruct
     public void run() {
-        log.info("Creating Session receiver");
+        log.info("Creating service bus receiver client");
 
         ServiceBusReceiverClient client = new ServiceBusClientBuilder()
             .connectionString(applicationParams.getConnectionString())
@@ -69,9 +69,6 @@ public class MessageReceiverConfiguration implements Runnable {
                         if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
                             MessageType.valueOf(message.getApplicationProperties().get(MESSAGE_TYPE).toString());
                         }
-                        MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
-                                                                                 activeDirectoryApiClient,
-                                                                                 hmiClient);
                         messageProcessor.processMessage(convertMessage(message.getBody()),
                                                         messageType, message.getApplicationProperties());
                         client.complete(message);
@@ -86,13 +83,13 @@ public class MessageReceiverConfiguration implements Runnable {
 
     private AmqpRetryOptions retryOptions() {
         AmqpRetryOptions retryOptions = new AmqpRetryOptions();
-        retryOptions.setTryTimeout(Duration.ofSeconds(Integer.valueOf(applicationParams.getWaitToRetryTime())));
+        retryOptions.setMaxRetries(Integer.valueOf(applicationParams.getMaxRetryAttempts()));
 
         return retryOptions;
     }
 
-    private static JsonNode convertMessage(BinaryData message) {
-        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        return OBJECT_MAPPER.convertValue(message, JsonNode.class);
+    private static JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(message.toString());
     }
 }

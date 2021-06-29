@@ -17,43 +17,39 @@ public class MessageProcessor {
     private final ApplicationParams applicationParams;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final HearingManagementInterfaceApiClient hmiClient;
+    private final DefaultFutureHearingRepository futureHearingRepository;
     private static final String CASE_LISTING_ID = "hearing_id";
 
     public MessageProcessor(ApplicationParams applicationParams,
                             ActiveDirectoryApiClient activeDirectoryApiClient,
-                            HearingManagementInterfaceApiClient hmiClient) {
+                            HearingManagementInterfaceApiClient hmiClient,
+                            DefaultFutureHearingRepository futureHearingRepository) {
         this.applicationParams = applicationParams;
         this.activeDirectoryApiClient = activeDirectoryApiClient;
         this.hmiClient = hmiClient;
+        this.futureHearingRepository = futureHearingRepository;
     }
 
     public void processMessage(JsonNode message, MessageType messageType, Map<String, Object> applicationProperties) {
         if (messageType != null) {
 
-            DefaultFutureHearingRepository defaultFutureHearingRepository =
-                new DefaultFutureHearingRepository(
-                    activeDirectoryApiClient,
-                    applicationParams,
-                    hmiClient
-                );
-
             switch (messageType) {
                 case REQUEST_HEARING:
-                    log.info("Message of type REQUEST_HEARING received");
-                    defaultFutureHearingRepository.createHearingRequest(message);
+                    log.debug("Message of type REQUEST_HEARING received");
+                    futureHearingRepository.createHearingRequest(message);
                     break;
                 case AMEND_HEARING:
-                    log.info("Message of type AMEND_HEARING received");
-                    defaultFutureHearingRepository.amendHearingRequest(
+                    log.debug("Message of type AMEND_HEARING received");
+                    futureHearingRepository.amendHearingRequest(
                         message,
                         applicationProperties.get(CASE_LISTING_ID).toString()
                     );
                     break;
                 case DELETE_HEARING:
-                    log.info("Message of type DELETE_HEARING received");
-                    defaultFutureHearingRepository.deleteHearingRequest(
+                    log.debug("Message of type DELETE_HEARING received");
+                    futureHearingRepository.deleteHearingRequest(
                         message,
-                        applicationProperties.get("caseListingID").toString()
+                        applicationProperties.get(CASE_LISTING_ID).toString()
                     );
                     break;
                 default:
