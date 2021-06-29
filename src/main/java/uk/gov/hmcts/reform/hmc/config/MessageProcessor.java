@@ -17,6 +17,7 @@ public class MessageProcessor {
     private final ApplicationParams applicationParams;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final HearingManagementInterfaceApiClient hmiClient;
+    private static final String CASE_LISTING_ID = "hearing_id";
 
     public MessageProcessor(ApplicationParams applicationParams,
                             ActiveDirectoryApiClient activeDirectoryApiClient,
