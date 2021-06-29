@@ -24,7 +24,7 @@ public class MessageProcessor {
     private static final String MESSAGE_TYPE = "message_type";
 
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
-                            @Qualifier("DefaultObjectMapper") ObjectMapper objectMapper) {
+                            ObjectMapper objectMapper) {
         this.futureHearingRepository = futureHearingRepository;
         this.objectMapper = objectMapper;
     }
