@@ -122,7 +122,7 @@ To run all local checks execute the following command:
   ./gradlew check
 ```
 
-Additionally, [SonarQube](https://sonarcloud.io/dashboard?id=uk.gov.hmcts.reform%3Accd-message-publisher)
+Additionally, [SonarQube](https://sonarcloud.io/dashboard?id=uk.gov.hmcts.reform%3Ahmc-hmi-outbound-adapter)
 analyses are performed on all remote code.
 
 ## License
