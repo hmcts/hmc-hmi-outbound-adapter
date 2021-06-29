@@ -15,9 +15,9 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
-import uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 
 import java.time.Duration;
 import javax.annotation.PostConstruct;
@@ -26,7 +26,7 @@ import javax.annotation.PostConstruct;
 @Component
 public class MessageReceiverConfiguration implements Runnable {
 
-    private final HearingManagementInterfaceErrorHandler handler;
+    private final ServiceBusMessageErrorHandler errorHandler;
     private final ApplicationParams applicationParams;
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final HearingManagementInterfaceApiClient hmiClient;
@@ -35,11 +35,11 @@ public class MessageReceiverConfiguration implements Runnable {
         .modules(new Jdk8Module())
         .build();
 
-    public MessageReceiverConfiguration(HearingManagementInterfaceErrorHandler handler,
+    public MessageReceiverConfiguration(ServiceBusMessageErrorHandler errorHandler,
                                         ApplicationParams applicationParams,
                                         ActiveDirectoryApiClient activeDirectoryApiClient,
                                         HearingManagementInterfaceApiClient hmiClient) {
-        this.handler = handler;
+        this.errorHandler = errorHandler;
         this.activeDirectoryApiClient = activeDirectoryApiClient;
         this.applicationParams = applicationParams;
         this.hmiClient = hmiClient;
@@ -83,12 +83,12 @@ public class MessageReceiverConfiguration implements Runnable {
                         client.complete(message);
                         log.info("Message with id '{}' handled successfully", message.getMessageId());
                     } catch (MalformedMessageException ex) {
-                        handler.handleGenericError(client, message, ex);
+                        errorHandler.handleGenericError(client, message, ex);
                     } catch (AuthenticationException | ResourceNotFoundException ex) {
-                        handler.handleApplicationError(client, message, ex);
+                        errorHandler.handleApplicationError(client, message, ex);
                     } catch (Exception ex) {
                         log.warn("Unexpected Error");
-                        handler.handleGenericError(client, message, ex);
+                        errorHandler.handleGenericError(client, message, ex);
                     }
                 });
     }

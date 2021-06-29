@@ -22,7 +22,6 @@ public class MessageProcessor {
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final HearingManagementInterfaceApiClient hmiClient;
     private static final String MESSAGE_TYPE = "message_type";
-    private String caseListingID;
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header caseListingID";
     public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
@@ -52,7 +51,7 @@ public class MessageProcessor {
                     applicationParams,
                     hmiClient
                 );
-
+            String caseListingID = null;
             if (messageType.equals(AMEND_HEARING) || messageType.equals(DELETE_HEARING)) {
                 try {
                     caseListingID = applicationProperties.get("caseListingID").toString();
@@ -79,7 +78,7 @@ public class MessageProcessor {
                     );
                     break;
                 default:
-                    //should not get here as no more MessageType constants
+                    throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
             }
         } else {
             throw new MalformedMessageException(MISSING_MESSAGE_TYPE);

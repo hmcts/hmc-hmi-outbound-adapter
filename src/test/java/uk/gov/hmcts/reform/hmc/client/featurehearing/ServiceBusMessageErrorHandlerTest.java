@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService;
-import uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 
 import java.util.List;
 
@@ -30,15 +30,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.APPLICATION_PROCESSING_ERROR;
 import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.MESSAGE_DESERIALIZATION_ERROR;
-import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.APPLICATION_ERROR;
-import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.MESSAGE_DEAD_LETTERED;
-import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.MESSAGE_PARSE_ERROR;
-import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.NO_EXCEPTION_MESSAGE;
-import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.RETRIES_EXCEEDED;
-import static uk.gov.hmcts.reform.hmc.errorhandling.HearingManagementInterfaceErrorHandler.RETRY_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.APPLICATION_ERROR;
+import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.MESSAGE_DEAD_LETTERED;
+import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.MESSAGE_PARSE_ERROR;
+import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.NO_EXCEPTION_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.RETRIES_EXCEEDED;
+import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.RETRY_MESSAGE;
 
 @ExtendWith(MockitoExtension.class)
-public class HearingManagementInterfaceErrorHandlerTest {
+public class ServiceBusMessageErrorHandlerTest {
 
     @Mock
     private DeadLetterService deadLetterService;
@@ -64,7 +64,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
     @Mock
     private AmqpAnnotatedMessage amqpAnnotatedMessage;
 
-    private HearingManagementInterfaceErrorHandler handler;
+    private ServiceBusMessageErrorHandler handler;
     private DeadLetterOptions deadLetterOptions;
     private static final String MESSAGE_ID = "1234567";
     private static final String ERROR_MESSAGE = "This is a test error message";
@@ -72,7 +72,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new HearingManagementInterfaceErrorHandler(deadLetterService, applicationParams);
+        handler = new ServiceBusMessageErrorHandler(deadLetterService, applicationParams);
         deadLetterOptions = new DeadLetterOptions();
         deadLetterOptions.setDeadLetterErrorDescription(ERROR_MESSAGE);
     }
@@ -83,7 +83,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
         deadLetterOptions.setDeadLetterReason(MESSAGE_DESERIALIZATION_ERROR);
         deadLetterOptions.setDeadLetterErrorDescription(ERROR_MESSAGE);
 
-        Logger logger = (Logger) LoggerFactory.getLogger(HearingManagementInterfaceErrorHandler.class);
+        Logger logger = (Logger) LoggerFactory.getLogger(ServiceBusMessageErrorHandler.class);
 
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
@@ -116,7 +116,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
         deadLetterOptions.setDeadLetterReason(APPLICATION_PROCESSING_ERROR);
         deadLetterOptions.setDeadLetterErrorDescription(ERROR_MESSAGE);
 
-        Logger logger = (Logger) LoggerFactory.getLogger(HearingManagementInterfaceErrorHandler.class);
+        Logger logger = (Logger) LoggerFactory.getLogger(ServiceBusMessageErrorHandler.class);
 
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
@@ -147,7 +147,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
         deadLetterOptions.setDeadLetterReason(APPLICATION_PROCESSING_ERROR);
         deadLetterOptions.setDeadLetterErrorDescription(ERROR_MESSAGE);
 
-        Logger logger = (Logger) LoggerFactory.getLogger(HearingManagementInterfaceErrorHandler.class);
+        Logger logger = (Logger) LoggerFactory.getLogger(ServiceBusMessageErrorHandler.class);
 
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
@@ -184,7 +184,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
         deadLetterOptions.setDeadLetterReason(APPLICATION_PROCESSING_ERROR);
         deadLetterOptions.setDeadLetterErrorDescription(ERROR_MESSAGE);
 
-        Logger logger = (Logger) LoggerFactory.getLogger(HearingManagementInterfaceErrorHandler.class);
+        Logger logger = (Logger) LoggerFactory.getLogger(ServiceBusMessageErrorHandler.class);
 
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
@@ -216,7 +216,7 @@ public class HearingManagementInterfaceErrorHandlerTest {
         deadLetterOptions.setDeadLetterReason(APPLICATION_PROCESSING_ERROR);
         deadLetterOptions.setDeadLetterErrorDescription(NO_EXCEPTION_MESSAGE);
 
-        Logger logger = (Logger) LoggerFactory.getLogger(HearingManagementInterfaceErrorHandler.class);
+        Logger logger = (Logger) LoggerFactory.getLogger(ServiceBusMessageErrorHandler.class);
 
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();

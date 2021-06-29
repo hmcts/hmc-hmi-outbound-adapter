@@ -18,7 +18,5 @@ java:
           alias: azure.jms.servicebus.connection-string
         - name: SERVICE_BUS_IDLE_TIMEOUT
           alias: azure.jms.servicebus.wait-to-retry-time
-        - name: retryAttempts
-          alias: azure.jms.servicebus.retry-attempts
   environment:
     HMCServiceBusQueueName: hmc-to-hmi-{{ .Values.global.environment }}

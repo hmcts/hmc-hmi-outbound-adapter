@@ -9,7 +9,7 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
 @Slf4j
 @Component
-public class HearingManagementInterfaceErrorHandler {
+public class ServiceBusMessageErrorHandler {
 
     private final ApplicationParams applicationParams;
     private final DeadLetterService deadLetterService;
@@ -20,8 +20,8 @@ public class HearingManagementInterfaceErrorHandler {
     public static final String RETRY_MESSAGE = "Retrying message with id '{}'";
     public static final String RETRIES_EXCEEDED = "Max delivery count reached. Message with id '{}' was dead lettered";
 
-    public HearingManagementInterfaceErrorHandler(DeadLetterService deadLetterService,
-                                                  ApplicationParams applicationParams) {
+    public ServiceBusMessageErrorHandler(DeadLetterService deadLetterService,
+                                         ApplicationParams applicationParams) {
         this.deadLetterService = deadLetterService;
         this.applicationParams = applicationParams;
     }
