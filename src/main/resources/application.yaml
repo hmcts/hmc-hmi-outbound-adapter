@@ -47,7 +47,7 @@ azure:
   jms:
     servicebus:
       connection-string: ${HMC_SERVICE_BUS_CONNECTION_STRING}
-      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:60}
+      max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}
       queue-name: ${HMC_SERVICE_BUS_QUEUE}
 
 fh:

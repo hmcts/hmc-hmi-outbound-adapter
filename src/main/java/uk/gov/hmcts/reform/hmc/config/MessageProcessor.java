@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
@@ -18,11 +19,14 @@ import java.util.Map;
 public class MessageProcessor {
 
     private final DefaultFutureHearingRepository futureHearingRepository;
+    private final ObjectMapper objectMapper;
     private static final String CASE_LISTING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
 
-    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository) {
+    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
+                            @Qualifier("DefaultObjectMapper") ObjectMapper objectMapper) {
         this.futureHearingRepository = futureHearingRepository;
+        this.objectMapper = objectMapper;
     }
 
     public void processMessage(ServiceBusReceiverClient client, ServiceBusReceivedMessage message) {
@@ -78,8 +82,7 @@ public class MessageProcessor {
 
     }
 
-    private static JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readTree(message.toString());
+    private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
+        return objectMapper.readTree(message.toString());
     }
 }

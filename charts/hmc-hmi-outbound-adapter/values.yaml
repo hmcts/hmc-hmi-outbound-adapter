@@ -17,4 +17,4 @@ java:
         - name: HMCServiceBusConnectionString
           alias: azure.jms.servicebus.connection-string
   environment:
-    HMCServiceBusQueueName: hmc-to-hmi-{{ .Values.global.environment }}
+    HMC_SERVICE_BUS_QUEUE: hmc-to-hmi-{{ .Values.global.environment }}

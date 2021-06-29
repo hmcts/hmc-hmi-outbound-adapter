@@ -3,9 +3,9 @@ java:
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
   environment:
-    HMCServiceBusQueueName: hmc-to-hmi
+    HMC_SERVICE_BUS_QUEUE: hmc-to-hmi
   secrets:
-    HMCServiceBusConnectionString:
+    HMC_SERVICE_BUS_CONNECTION_STRING:
       secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-to-hmi
       key: connectionString
   keyVaults:

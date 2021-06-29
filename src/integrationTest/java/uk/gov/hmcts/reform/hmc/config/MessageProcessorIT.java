@@ -38,7 +38,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyRequestHearing(TOKEN);
 
-        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository);
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, OBJECT_MAPPER);
         messageProcessor.processMessage(data, MessageType.REQUEST_HEARING, null);
     }
 
@@ -49,7 +49,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
-        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository);
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, OBJECT_MAPPER);
         messageProcessor.processMessage(data, MessageType.DELETE_HEARING, applicationProperties);
     }
 
@@ -60,7 +60,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
-        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository);
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, OBJECT_MAPPER);
         messageProcessor.processMessage(data, MessageType.AMEND_HEARING, applicationProperties);
     }
 
