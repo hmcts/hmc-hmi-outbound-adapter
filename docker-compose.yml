@@ -23,7 +23,5 @@ services:
       - LOGBACK_REQUIRE_THREAD
       - LOGBACK_REQUIRE_ALERT_LEVEL=false
       - LOGBACK_REQUIRE_ERROR_CODE=false
-      # Comment below line to use real Azure Service Bus
-      - SPRING_PROFILES_ACTIVE= dev
     ports:
       - $SERVER_PORT:$SERVER_PORT
