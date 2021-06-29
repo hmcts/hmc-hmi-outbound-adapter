@@ -3,7 +3,7 @@ java:
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
   environment:
-    HMCServiceBusQueueName: hmc-to-hmi-{{ .Release.Name }}
+    HMCServiceBusQueueName: hmc-to-hmi
   secrets:
     HMCServiceBusConnectionString:
       secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-to-hmi
@@ -21,4 +21,4 @@ servicebus:
   serviceplan: standard
   setup:
     queues:
-      -name: hmc-to-hmi
+      - name: hmc-to-hmi

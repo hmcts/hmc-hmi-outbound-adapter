@@ -19,8 +19,6 @@ spring:
     name: HMC HMI Outbound Adapter
   jackson:
     property-naming-strategy: SNAKE_CASE
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
 #  datasource:
 #    driver-class-name: org.postgresql.Driver
 #    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_OPTIONS:}
@@ -48,9 +46,9 @@ azure:
     instrumentation-key: ${hmc.AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
   jms:
     servicebus:
-      connection-string: ${HMCServiceBusConnectionString}
+      connection-string: ${HMC_SERVICE_BUS_CONNECTION_STRING}
       wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:60}
-      queue-name: ${HMCServiceBusQueueName}
+      queue-name: ${HMC_SERVICE_BUS_QUEUE}
       retry-attempts: ${SERVICE_BUS_RETRIES:5}
 
 fh:

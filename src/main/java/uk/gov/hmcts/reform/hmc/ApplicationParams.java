@@ -35,9 +35,6 @@ public class ApplicationParams {
     @Value("${azure.jms.servicebus.connection-string}")
     private String connectionString;
 
-    @Value("${azure.jms.servicebus.wait-to-retry-time}")
-    private String waitToRetryTime;
-
-    @Value("${azure.jms.servicebus.retry-attempts}")
-    private int retryAttempts;
+    @Value("${azure.jms.servicebus.max-retry-attempts}")
+    private String maxRetryAttempts;
 }

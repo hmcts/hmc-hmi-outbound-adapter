@@ -1,8 +1,14 @@
 package uk.gov.hmcts.reform.hmc.config;
 
+import com.azure.core.util.BinaryData;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
@@ -18,39 +24,43 @@ import static uk.gov.hmcts.reform.hmc.config.MessageType.DELETE_HEARING;
 @Component
 public class MessageProcessor {
 
-    private final ApplicationParams applicationParams;
-    private final ActiveDirectoryApiClient activeDirectoryApiClient;
-    private final HearingManagementInterfaceApiClient hmiClient;
+    private final DefaultFutureHearingRepository futureHearingRepository;
+    private static final String CASE_LISTING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header caseListingID";
     public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
 
-    public MessageProcessor(ApplicationParams applicationParams,
-                            ActiveDirectoryApiClient activeDirectoryApiClient,
-                            HearingManagementInterfaceApiClient hmiClient
-    ) {
-        this.activeDirectoryApiClient = activeDirectoryApiClient;
-        this.applicationParams = applicationParams;
-        this.hmiClient = hmiClient;
+    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository) {
+        this.futureHearingRepository = futureHearingRepository;
     }
 
-    public void processMessage(JsonNode message, Map<String, Object> applicationProperties) {
-        if (applicationProperties.containsKey(MESSAGE_TYPE)) {
-            MessageType messageType;
-            try {
-                messageType =
-                    MessageType.valueOf(applicationProperties.get(MESSAGE_TYPE).toString());
-            } catch (Exception exception) {
-                throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
-            }
+    public void processMessage(ServiceBusReceiverClient client, ServiceBusReceivedMessage message) {
+        try {
+            log.info("Received message with id '{}'", message.getMessageId());
+            if (applicationProperties.containsKey(MESSAGE_TYPE)) {
+                MessageType messageType;
+                try {
+                    messageType =
+                        MessageType.valueOf(applicationProperties.get(MESSAGE_TYPE).toString());
+                } catch (Exception exception) {
+                    throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
+                }
+            processMessage(convertMessage(message.getBody()),
+                                            messageType, message.getApplicationProperties()
+            );
+            client.complete(message);
+            log.info("Message with id '{}' handled successfully", message.getMessageId());
+        } catch (RestClientException ex) {
+            log.error(ex.getMessage());
+        } catch (Exception ex) {
+            log.error(ex.getMessage());
+        }
+    }
 
-            DefaultFutureHearingRepository defaultFutureHearingRepository =
-                new DefaultFutureHearingRepository(
-                    activeDirectoryApiClient,
-                    applicationParams,
-                    hmiClient
-                );
+    public void processMessage(JsonNode message, MessageType messageType, Map<String, Object> applicationProperties) {
+        if (messageType != null) {
+
             String caseListingID = null;
             if (messageType.equals(AMEND_HEARING) || messageType.equals(DELETE_HEARING)) {
                 try {
@@ -62,18 +72,18 @@ public class MessageProcessor {
 
             switch (messageType) {
                 case REQUEST_HEARING:
-                    log.info("Message of type REQUEST_HEARING received");
-                    defaultFutureHearingRepository.createHearingRequest(message);
+                    log.debug("Message of type REQUEST_HEARING received");
+                    futureHearingRepository.createHearingRequest(message);
                     break;
                 case AMEND_HEARING:
-                    log.info("Message of type AMEND_HEARING received");
-                    defaultFutureHearingRepository.amendHearingRequest(
+                    log.debug("Message of type AMEND_HEARING received");
+                    futureHearingRepository.amendHearingRequest(
                         message, caseListingID
                     );
                     break;
                 case DELETE_HEARING:
-                    log.info("Message of type DELETE_HEARING received");
-                    defaultFutureHearingRepository.deleteHearingRequest(
+                    log.debug("Message of type DELETE_HEARING received");
+                    futureHearingRepository.deleteHearingRequest(
                         message, caseListingID
                     );
                     break;
@@ -83,5 +93,11 @@ public class MessageProcessor {
         } else {
             throw new MalformedMessageException(MISSING_MESSAGE_TYPE);
         }
+
+    }
+
+    private static JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(message.toString());
     }
 }

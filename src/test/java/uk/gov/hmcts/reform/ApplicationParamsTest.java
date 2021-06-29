@@ -70,10 +70,10 @@ class ApplicationParamsTest {
     }
 
     @Test
-    void shouldGetWaitToRetryTime() {
-        ReflectionTestUtils.setField(applicationParams, "waitToRetryTime", VALUE);
+    void shouldGetMaxRetryAttempts() {
+        ReflectionTestUtils.setField(applicationParams, "maxRetryAttempts", VALUE);
         assertEquals(VALUE,
-                     applicationParams.getWaitToRetryTime());
+                     applicationParams.getMaxRetryAttempts());
     }
 
     @Test
