@@ -7,10 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.BaseTest;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.util.HashMap;
@@ -30,18 +27,8 @@ class MessageProcessorIT extends BaseTest {
     private static final String TOKEN = "example-token";
     private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
 
-
     @MockBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
-
-    @Autowired
-    private ApplicationParams applicationParams;
-
-    @Autowired
-    private ActiveDirectoryApiClient activeDirectoryApiClient;
-
-    @Autowired
-    private HearingManagementInterfaceApiClient hmiClient;
 
     @Autowired
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
@@ -51,38 +38,29 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyRequestHearing(TOKEN);
 
-        MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
-                                                                 activeDirectoryApiClient,
-                                                                 hmiClient,
-                                                                 defaultFutureHearingRepository);
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository);
         messageProcessor.processMessage(data, MessageType.REQUEST_HEARING, null);
     }
 
     @Test
     void shouldInitiateDeleteHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put("caseListingID", CASE_LISTING_REQUEST_ID);
+        applicationProperties.put("hearing_id", CASE_LISTING_REQUEST_ID);
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
-        MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
-                                                                 activeDirectoryApiClient,
-                                                                 hmiClient,
-                                                                 defaultFutureHearingRepository);
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository);
         messageProcessor.processMessage(data, MessageType.DELETE_HEARING, applicationProperties);
     }
 
     @Test
     void shouldInitiateAmendHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put("caseListingID", CASE_LISTING_REQUEST_ID);
+        applicationProperties.put("hearing_id", CASE_LISTING_REQUEST_ID);
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
-        MessageProcessor messageProcessor = new MessageProcessor(applicationParams,
-                                                                 activeDirectoryApiClient,
-                                                                 hmiClient,
-                                                                 defaultFutureHearingRepository);
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository);
         messageProcessor.processMessage(data, MessageType.AMEND_HEARING, applicationProperties);
     }
 

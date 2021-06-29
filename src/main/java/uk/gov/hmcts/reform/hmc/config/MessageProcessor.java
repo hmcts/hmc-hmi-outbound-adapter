@@ -1,11 +1,14 @@
 package uk.gov.hmcts.reform.hmc.config;
 
+import com.azure.core.util.BinaryData;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.reform.hmc.ApplicationParams;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
+import org.springframework.web.client.RestClientException;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.util.Map;
@@ -14,20 +17,31 @@ import java.util.Map;
 @Component
 public class MessageProcessor {
 
-    private final ApplicationParams applicationParams;
-    private final ActiveDirectoryApiClient activeDirectoryApiClient;
-    private final HearingManagementInterfaceApiClient hmiClient;
     private final DefaultFutureHearingRepository futureHearingRepository;
     private static final String CASE_LISTING_ID = "hearing_id";
+    private static final String MESSAGE_TYPE = "message_type";
 
-    public MessageProcessor(ApplicationParams applicationParams,
-                            ActiveDirectoryApiClient activeDirectoryApiClient,
-                            HearingManagementInterfaceApiClient hmiClient,
-                            DefaultFutureHearingRepository futureHearingRepository) {
-        this.applicationParams = applicationParams;
-        this.activeDirectoryApiClient = activeDirectoryApiClient;
-        this.hmiClient = hmiClient;
+    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository) {
         this.futureHearingRepository = futureHearingRepository;
+    }
+
+    public void processMessage(ServiceBusReceiverClient client, ServiceBusReceivedMessage message) {
+        try {
+            log.info("Received message with id '{}'", message.getMessageId());
+            MessageType messageType = null;
+            if (message.getApplicationProperties().containsKey(MESSAGE_TYPE)) {
+                messageType = MessageType.valueOf(message.getApplicationProperties().get(MESSAGE_TYPE).toString());
+            }
+            processMessage(convertMessage(message.getBody()),
+                                            messageType, message.getApplicationProperties()
+            );
+            client.complete(message);
+            log.info("Message with id '{}' handled successfully", message.getMessageId());
+        } catch (RestClientException ex) {
+            log.error(ex.getMessage());
+        } catch (Exception ex) {
+            log.error(ex.getMessage());
+        }
     }
 
     public void processMessage(JsonNode message, MessageType messageType, Map<String, Object> applicationProperties) {
@@ -62,5 +76,10 @@ public class MessageProcessor {
             log.info("Message is missing custom header message_type");
         }
 
+    }
+
+    private static JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(message.toString());
     }
 }

@@ -1,5 +1,8 @@
 package uk.gov.hmcts.reform.hmc.config;
 
+import com.azure.core.util.BinaryData;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -20,6 +23,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class MessageProcessorTest {
 
@@ -41,13 +45,16 @@ class MessageProcessorTest {
     @Mock
     private DefaultFutureHearingRepository futureHearingRepository;
 
+    @Mock
+    private ServiceBusReceiverClient client;
+
+    @Mock
+    private ServiceBusReceivedMessage message;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        messageProcessor = new MessageProcessor(applicationParams,
-                                                activeDirectoryApiClient,
-                                                hmiClient,
-                                                futureHearingRepository);
+        messageProcessor = new MessageProcessor(futureHearingRepository);
         requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
@@ -59,8 +66,12 @@ class MessageProcessorTest {
 
     @Test
     void shouldInitiateRequestHearing() {
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        messageProcessor.processMessage(anyData, MessageType.REQUEST_HEARING, null);
+        Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put("hearing_id", "1234567890");
+        applicationProperties.put("message_type", MessageType.REQUEST_HEARING);
+        when(message.getApplicationProperties()).thenReturn(applicationProperties);
+        when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
+        messageProcessor.processMessage(client, message);
         verify(futureHearingRepository).createHearingRequest(any());
     }
 
@@ -68,8 +79,10 @@ class MessageProcessorTest {
     void shouldInitiateAmendHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
         applicationProperties.put("hearing_id", "1234567890");
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        messageProcessor.processMessage(anyData, MessageType.AMEND_HEARING, applicationProperties);
+        applicationProperties.put("message_type", MessageType.AMEND_HEARING);
+        when(message.getApplicationProperties()).thenReturn(applicationProperties);
+        when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
+        messageProcessor.processMessage(client, message);
         verify(futureHearingRepository).amendHearingRequest(any(), any());
     }
 
@@ -77,8 +90,10 @@ class MessageProcessorTest {
     void shouldInitiateDeleteHearing() {
         Map<String, Object> applicationProperties = new HashMap<>();
         applicationProperties.put("hearing_id", "1234567890");
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
-        messageProcessor.processMessage(anyData, MessageType.DELETE_HEARING, applicationProperties);
+        applicationProperties.put("message_type", MessageType.DELETE_HEARING);
+        when(message.getApplicationProperties()).thenReturn(applicationProperties);
+        when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
+        messageProcessor.processMessage(client, message);
         verify(futureHearingRepository).deleteHearingRequest(any(), any());
     }
 
