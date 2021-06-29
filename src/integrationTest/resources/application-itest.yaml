@@ -14,6 +14,6 @@ fh:
 azure:
   jms:
     servicebus:
-      connection-string: ${HMCServiceBusConnectionString:Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]}
+      connection-string: ${HMC_SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]}
       wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:20}
       queue-name: ${HMCServiceBusQueueName:hmc-to-hmi-queue}
