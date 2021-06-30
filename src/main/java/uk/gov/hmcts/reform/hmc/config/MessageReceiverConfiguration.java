@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
 import java.time.Duration;
-import javax.annotation.PostConstruct;
 
 @Slf4j
 @Component
