@@ -4,13 +4,14 @@ import com.azure.core.amqp.AmqpRetryOptions;
 import com.azure.messaging.servicebus.ServiceBusClientBuilder;
 import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
 @Slf4j
 @Component
-public class MessageReceiverConfiguration implements CommandLineRunner {
+public class MessageReceiverConfiguration implements ApplicationListener<ApplicationReadyEvent> {
 
     private final ApplicationParams applicationParams;
     private final MessageProcessor messageProcessor;
@@ -23,7 +24,7 @@ public class MessageReceiverConfiguration implements CommandLineRunner {
 
     @Override
     @SuppressWarnings("squid:S2189")
-    public void run(String... args) {
+    public void onApplicationEvent(final ApplicationReadyEvent event) {
         log.info("Creating service bus receiver client");
 
         ServiceBusReceiverClient client = new ServiceBusClientBuilder()
