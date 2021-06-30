@@ -70,9 +70,9 @@ class ApplicationParamsTest {
     }
 
     @Test
-    void shouldGetMaxRetryAttempts() {
-        ReflectionTestUtils.setField(applicationParams, "maxRetryAttempts", VALUE);
+    void shouldGetExponentialMultiplier() {
+        ReflectionTestUtils.setField(applicationParams, "exponentialMultiplier", VALUE);
         assertEquals(VALUE,
-                     applicationParams.getMaxRetryAttempts());
+                     applicationParams.getExponentialMultiplier());
     }
 }
