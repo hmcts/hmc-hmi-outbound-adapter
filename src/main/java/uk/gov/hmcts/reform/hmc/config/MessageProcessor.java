@@ -25,6 +25,7 @@ public class MessageProcessor {
 
     private final ServiceBusMessageErrorHandler errorHandler;
     private final DefaultFutureHearingRepository futureHearingRepository;
+    private final ObjectMapper objectMapper;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header caseListingID";
@@ -35,6 +36,7 @@ public class MessageProcessor {
                             ServiceBusMessageErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
+        this.objectMapper = objectMapper;
     }
 
     public void processMessage(ServiceBusReceiverClient client, ServiceBusReceivedMessage message) {
@@ -103,8 +105,7 @@ public class MessageProcessor {
         }
     }
 
-    private static JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readTree(message.toString());
+    private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
+        return objectMapper.readTree(message.toString());
     }
 }

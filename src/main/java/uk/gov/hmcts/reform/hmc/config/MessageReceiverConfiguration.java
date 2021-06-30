@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.config;
 
+import com.azure.core.amqp.AmqpRetryMode;
 import com.azure.core.amqp.AmqpRetryOptions;
 import com.azure.messaging.servicebus.ServiceBusClientBuilder;
 import com.azure.messaging.servicebus.ServiceBusReceiverClient;
@@ -7,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
+import java.time.Duration;
 import javax.annotation.PostConstruct;
 
 @Slf4j
@@ -52,8 +54,8 @@ public class MessageReceiverConfiguration implements Runnable {
 
     private AmqpRetryOptions retryOptions() {
         AmqpRetryOptions retryOptions = new AmqpRetryOptions();
-        retryOptions.setMaxRetries(Integer.valueOf(applicationParams.getMaxRetryAttempts()));
-
+        retryOptions.setMode(AmqpRetryMode.EXPONENTIAL)
+            .setDelay(Duration.ofSeconds(Long.valueOf(applicationParams.getExponentialMultiplier())));
         return retryOptions;
     }
 }

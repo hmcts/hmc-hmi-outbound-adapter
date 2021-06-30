@@ -47,7 +47,8 @@ azure:
   jms:
     servicebus:
       connection-string: ${HMC_SERVICE_BUS_CONNECTION_STRING}
-      wait-to-retry-time: ${SERVICE_BUS_IDLE_TIMEOUT:60}
+      # should be an integer that is interpreted as seconds
+      exponential-multiplier: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER:2}
       queue-name: ${HMC_SERVICE_BUS_QUEUE}
       retry-attempts: ${SERVICE_BUS_RETRIES:5}
 

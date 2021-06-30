@@ -60,7 +60,7 @@ class MessageProcessorTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        messageProcessor = new MessageProcessor(futureHearingRepository, errorHandler);
+        messageProcessor = new MessageProcessor(futureHearingRepository, errorHandler, OBJECT_MAPPER);
         String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
