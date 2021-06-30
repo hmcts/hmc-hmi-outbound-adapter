@@ -28,7 +28,7 @@ public class MessageProcessor {
     private final ObjectMapper objectMapper;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
-    public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header caseListingID";
+    public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
     public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
 
