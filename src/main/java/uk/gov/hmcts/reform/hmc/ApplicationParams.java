@@ -35,6 +35,6 @@ public class ApplicationParams {
     @Value("${azure.jms.servicebus.connection-string}")
     private String connectionString;
 
-    @Value("${azure.jms.servicebus.max-retry-attempts}")
-    private String maxRetryAttempts;
+    @Value("${azure.jms.servicebus.exponential-multiplier}")
+    private String exponentialMultiplier;
 }
