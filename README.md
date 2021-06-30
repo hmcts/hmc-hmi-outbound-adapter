@@ -1,7 +1,7 @@
 # hmc-hmi-outbound-adapter
 
 [![Build Status](https://travis-ci.org/hmcts/spring-boot-template.svg?branch=master)](https://travis-ci.org/hmcts/hmc-hmi-outbound-adapter)
-
+ 
 
 ## Notes
 
