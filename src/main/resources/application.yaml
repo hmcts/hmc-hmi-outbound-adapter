@@ -50,7 +50,7 @@ azure:
       # should be an integer that is interpreted as seconds
       exponential-multiplier: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER:2}
       queue-name: ${HMC_SERVICE_BUS_QUEUE}
-      retry-attempts: ${SERVICE_BUS_RETRIES:5}
+      max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}
 
 fh:
   ad:

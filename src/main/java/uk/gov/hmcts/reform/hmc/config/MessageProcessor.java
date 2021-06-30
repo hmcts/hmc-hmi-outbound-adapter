@@ -33,7 +33,7 @@ public class MessageProcessor {
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
 
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
-                            ServiceBusMessageErrorHandler errorHandler) {
+                            ServiceBusMessageErrorHandler errorHandler, ObjectMapper objectMapper) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
         this.objectMapper = objectMapper;
