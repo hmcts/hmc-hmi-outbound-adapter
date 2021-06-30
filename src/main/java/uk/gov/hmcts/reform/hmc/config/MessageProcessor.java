@@ -8,11 +8,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
-import uk.gov.hmcts.reform.hmc.ApplicationParams;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.util.Map;
@@ -24,47 +23,55 @@ import static uk.gov.hmcts.reform.hmc.config.MessageType.DELETE_HEARING;
 @Component
 public class MessageProcessor {
 
+    private final ServiceBusMessageErrorHandler errorHandler;
     private final DefaultFutureHearingRepository futureHearingRepository;
-    private static final String CASE_LISTING_ID = "hearing_id";
+    private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header caseListingID";
     public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
 
-    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository) {
+    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
+                            ServiceBusMessageErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
     }
 
     public void processMessage(ServiceBusReceiverClient client, ServiceBusReceivedMessage message) {
         try {
             log.info("Received message with id '{}'", message.getMessageId());
-            if (applicationProperties.containsKey(MESSAGE_TYPE)) {
-                MessageType messageType;
-                try {
-                    messageType =
-                        MessageType.valueOf(applicationProperties.get(MESSAGE_TYPE).toString());
-                } catch (Exception exception) {
-                    throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
-                }
-            processMessage(convertMessage(message.getBody()),
-                                            messageType, message.getApplicationProperties()
+            processMessage(
+                convertMessage(message.getBody()),
+                message.getApplicationProperties()
             );
             client.complete(message);
             log.info("Message with id '{}' handled successfully", message.getMessageId());
-        } catch (RestClientException ex) {
-            log.error(ex.getMessage());
+
+        } catch (MalformedMessageException ex) {
+            errorHandler.handleGenericError(client, message, ex);
+        } catch (AuthenticationException | ResourceNotFoundException ex) {
+            errorHandler.handleApplicationError(client, message, ex);
+        } catch (JsonProcessingException ex) {
+            errorHandler.handleJsonError(client, message, ex);
         } catch (Exception ex) {
-            log.error(ex.getMessage());
+            log.warn("Unexpected Error");
+            errorHandler.handleGenericError(client, message, ex);
         }
     }
 
-    public void processMessage(JsonNode message, MessageType messageType, Map<String, Object> applicationProperties) {
-        if (messageType != null) {
-
+    public void processMessage(JsonNode message, Map<String, Object> applicationProperties) {
+        if (applicationProperties.containsKey(MESSAGE_TYPE)) {
+            MessageType messageType;
+            try {
+                messageType =
+                    MessageType.valueOf(applicationProperties.get(MESSAGE_TYPE).toString());
+            } catch (Exception exception) {
+                throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
+            }
             String caseListingID = null;
             if (messageType.equals(AMEND_HEARING) || messageType.equals(DELETE_HEARING)) {
                 try {
-                    caseListingID = applicationProperties.get("caseListingID").toString();
+                    caseListingID = applicationProperties.get(HEARING_ID).toString();
                 } catch (Exception exception) {
                     throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
                 }
@@ -90,10 +97,10 @@ public class MessageProcessor {
                 default:
                     throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
             }
+
         } else {
             throw new MalformedMessageException(MISSING_MESSAGE_TYPE);
         }
-
     }
 
     private static JsonNode convertMessage(BinaryData message) throws JsonProcessingException {

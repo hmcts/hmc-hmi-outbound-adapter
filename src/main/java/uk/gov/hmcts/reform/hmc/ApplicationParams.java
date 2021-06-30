@@ -36,5 +36,5 @@ public class ApplicationParams {
     private String connectionString;
 
     @Value("${azure.jms.servicebus.max-retry-attempts}")
-    private String maxRetryAttempts;
+    private int maxRetryAttempts;
 }

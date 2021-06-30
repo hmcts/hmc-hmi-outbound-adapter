@@ -38,7 +38,7 @@ public class ServiceBusMessageErrorHandler {
                                        ServiceBusReceivedMessage message,
                                        Exception exception) {
         final Long deliveryCount = message.getRawAmqpMessage().getHeader().getDeliveryCount();
-        if (deliveryCount >= applicationParams.getRetryAttempts()) {
+        if (deliveryCount >= applicationParams.getMaxRetryAttempts()) {
             log.error(APPLICATION_ERROR, message.getMessageId(), exception);
             receiver.deadLetter(message, deadLetterService.handleApplicationError(exception.getMessage()));
             log.warn(RETRIES_EXCEEDED, message.getMessageId());

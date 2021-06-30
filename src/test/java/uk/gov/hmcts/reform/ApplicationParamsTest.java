@@ -71,14 +71,7 @@ class ApplicationParamsTest {
 
     @Test
     void shouldGetMaxRetryAttempts() {
-        ReflectionTestUtils.setField(applicationParams, "maxRetryAttempts", VALUE);
-        assertEquals(VALUE,
-                     applicationParams.getMaxRetryAttempts());
-    }
-
-    @Test
-    void shouldGetRetryAttempts() {
-        ReflectionTestUtils.setField(applicationParams, "retryAttempts", 5);
-        assertEquals(5, applicationParams.getRetryAttempts());
+        ReflectionTestUtils.setField(applicationParams, "maxRetryAttempts", 5);
+        assertEquals(5, applicationParams.getMaxRetryAttempts());
     }
 }

@@ -125,7 +125,7 @@ public class ServiceBusMessageErrorHandlerTest {
         when(receivedMessage.getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(1L);
-        when(applicationParams.getRetryAttempts()).thenReturn(2);
+        when(applicationParams.getMaxRetryAttempts()).thenReturn(2);
         when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
 
         handler.handleApplicationError(receiverClient, receivedMessage, exception);
@@ -156,7 +156,7 @@ public class ServiceBusMessageErrorHandlerTest {
         when(receivedMessage.getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(2L);
-        when(applicationParams.getRetryAttempts()).thenReturn(2);
+        when(applicationParams.getMaxRetryAttempts()).thenReturn(2);
         when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
 
         when(exception.getMessage()).thenReturn(ERROR_MESSAGE);
