@@ -5,6 +5,9 @@ import com.azure.core.amqp.AmqpRetryOptions;
 import com.azure.messaging.servicebus.ServiceBusClientBuilder;
 import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
@@ -13,7 +16,7 @@ import javax.annotation.PostConstruct;
 
 @Slf4j
 @Component
-public class MessageReceiverConfiguration implements Runnable {
+public class MessageReceiverConfiguration {
 
     private final ApplicationParams applicationParams;
     private final MessageProcessor messageProcessor;
@@ -24,9 +27,9 @@ public class MessageReceiverConfiguration implements Runnable {
         this.messageProcessor = messageProcessor;
     }
 
-    @Override
+    @Async
+    @EventListener(ApplicationStartedEvent.class)
     @SuppressWarnings("squid:S2189")
-    @PostConstruct
     public void run() {
         log.info("Creating service bus receiver client");
 
