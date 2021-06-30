@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.APPLICATION_PROCESSING_ERROR;
 import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.MESSAGE_DESERIALIZATION_ERROR;
 
-public class DeadLetterServiceTest {
+class DeadLetterServiceTest {
     private static final String ERROR = "test error message";
     private DeadLetterOptions expected;
 

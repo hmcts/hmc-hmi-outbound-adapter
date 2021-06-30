@@ -38,7 +38,7 @@ import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandle
 import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.RETRY_MESSAGE;
 
 @ExtendWith(MockitoExtension.class)
-public class ServiceBusMessageErrorHandlerTest {
+class ServiceBusMessageErrorHandlerTest {
 
     @Mock
     private DeadLetterService deadLetterService;
