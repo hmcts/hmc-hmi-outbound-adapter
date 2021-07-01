@@ -15,9 +15,8 @@ public class QueueWriter {
 
     private static final String CONNECTION_STRING_KEY = "CONNECTION_STRING";
     private static final String QUEUE_NAME = "QUEUE";
-    private static final String MESSAGE_BODY = "MESSAGE";
 
-    private static final String[] REQUIRED_ENV = {CONNECTION_STRING_KEY, QUEUE_NAME, MESSAGE_BODY};
+    private static final String[] REQUIRED_ENV = {CONNECTION_STRING_KEY, QUEUE_NAME};
 
     public static void main(String[] args) {
         logger.info("Starting queue writer util");
