@@ -15,6 +15,8 @@ public class QueueWriter {
 
     private static final String CONNECTION_STRING_KEY = "CONNECTION_STRING";
     private static final String QUEUE_NAME = "QUEUE";
+    private static final String MESSAGE_TYPE = "MESSAGE_TYPE";
+    private static final String HEARING_ID = "HEARING_ID";
 
     private static final String[] REQUIRED_ENV = {CONNECTION_STRING_KEY, QUEUE_NAME};
 
@@ -42,12 +44,24 @@ public class QueueWriter {
             .queueName(System.getenv(QUEUE_NAME))
             .buildClient();
 
+        ServiceBusMessage serviceBusMessage = new ServiceBusMessage("{\n" +
+                                                                        "  \"request\": {\n" +
+                                                                        "    \"queue\":\"one\"\n" +
+                                                                        "  }\n" +
+                                                                        "}\n");
+
+        serviceBusMessage
+            .getApplicationProperties()
+            .put("message_type", System.getenv(MESSAGE_TYPE) != null ? System.getenv(MESSAGE_TYPE) : null);
+        serviceBusMessage
+            .getApplicationProperties()
+            .put("hearing_id", System.getenv(HEARING_ID) != null ? System.getenv(HEARING_ID) : null);
+
         // send one message to the queue
-        senderClient.sendMessage(new ServiceBusMessage("{\n" +
-                                                           "  \"request\": {\n" +
-                                                           "    \"testing\":\"value\"\n" +
-                                                           "  }\n" +
-                                                           "}\n"));
+        senderClient.sendMessage(serviceBusMessage);
+
         logger.info("Sent a single message to the queue: " + System.getenv(QUEUE_NAME));
+
+        senderClient.close();
     }
 }
