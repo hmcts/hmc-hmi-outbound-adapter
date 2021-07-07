@@ -187,7 +187,8 @@ sonarqube {
     property "sonar.projectName", "Reform :: hmc-hmi-outbound-adapter"
     property "sonar.projectKey", "uk.gov.hmcts.reform:hmc-hmi-outbound-adapter"
     property "sonar.coverage.jacoco.xmlReportPaths", "${jacocoTestReport.reports.xml.destination.path}"
-    property "sonar.coverage.exclusions", "**/hmi/Application.java,**/TempController.java"
+    property "sonar.exclusions", "src/main/java/uk/gov/hmcts/reform/hmc/Application.java," +
+      "src/main/java/uk/gov/hmcts/reform/hmc/config/MessageReceiverConfiguration.java"
   }
 }
 
@@ -282,6 +283,13 @@ dependencies {
 
   implementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
   implementation group: 'javax.inject', name: 'javax.inject', version: '1'
+  implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.0.2'
+  implementation group: 'com.azure', name: 'azure-core', version: '1.13.0'
+
+  implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.14.0'
+  implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: '2.14.0'
+
+
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
 

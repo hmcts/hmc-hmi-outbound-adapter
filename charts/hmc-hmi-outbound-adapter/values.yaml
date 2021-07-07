@@ -14,4 +14,7 @@ java:
           alias: fh.ad.client-secret
         - name: Scope
           alias: fh.ad.scope
+        - name: HMCServiceBusConnectionString
+          alias: azure.jms.servicebus.connection-string
   environment:
+    HMC_SERVICE_BUS_QUEUE: hmc-to-hmi-{{ .Values.global.environment }}

@@ -49,7 +49,35 @@ class ApplicationParamsTest {
     @Test
     void shouldGetDestinationSystem() {
         ReflectionTestUtils.setField(applicationParams, "destinationSystem", VALUE);
+        assertEquals(
+            VALUE,
+            applicationParams.getDestinationSystem()
+        );
+    }
+
+    @Test
+    void shouldGetConnectionString() {
+        ReflectionTestUtils.setField(applicationParams, "connectionString", VALUE);
         assertEquals(VALUE,
-                     applicationParams.getDestinationSystem());
+                     applicationParams.getConnectionString());
+    }
+
+    @Test
+    void shouldGetQueueName() {
+        ReflectionTestUtils.setField(applicationParams, "queueName", VALUE);
+        assertEquals(VALUE,
+                     applicationParams.getQueueName());
+    }
+
+    @Test
+    void shouldGetExponentialMultiplier() {
+        ReflectionTestUtils.setField(applicationParams, "exponentialMultiplier", VALUE);
+        assertEquals(VALUE,
+                     applicationParams.getExponentialMultiplier());
+    }
+
+    @Test void shouldGetMaxRetryAttempts() {
+        ReflectionTestUtils.setField(applicationParams, "maxRetryAttempts", 5);
+        assertEquals(5, applicationParams.getMaxRetryAttempts());
     }
 }

@@ -88,6 +88,43 @@ docker image rm <image-id>
 
 There is no need to remove postgres and java or similar core images.
 
+## Azure Service Bus & Local Testing
+
+### Azure Service Bus
+
+To enable publishing to an Azure Service Bus destination:
+
+1. Set the Azure Service Bus connection string in the `HMC_SERVICE_BUS_CONNECTION_STRING` environment variable
+1. Set the Azure Service Bus queue name in the `HMC_SERVICE_BUS_QUEUE` environment variable
+1. Restart the application
+
+## Developing
+
+### Unit tests
+
+To run all unit tests execute the following command:
+```bash
+  ./gradlew test
+```
+
+### Integration tests
+
+To run all integration tests execute the following command:
+```bash
+  ./gradlew integration
+```
+
+### Code quality checks
+We use [Checkstyle](http://checkstyle.sourceforge.net/).
+To run all local checks execute the following command:
+
+```bash
+  ./gradlew check
+```
+
+Additionally, [SonarQube](https://sonarcloud.io/dashboard?id=uk.gov.hmcts.reform%3Ahmc-hmi-outbound-adapter)
+analyses are performed on all remote code.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
