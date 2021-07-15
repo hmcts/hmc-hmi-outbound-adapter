@@ -12,7 +12,7 @@ def product = "rpe"
 def component = "spring-boot-template"
 
 withNightlyPipeline(type, product, component) {
-  enableFortifyScan()
+  enableFortifyScan('ccd-aat')
   after('fortify-scan') {
     steps.archiveArtifacts allowEmptyArchive: true, artifacts: '**/Fortify Scan/**/*'
   }
