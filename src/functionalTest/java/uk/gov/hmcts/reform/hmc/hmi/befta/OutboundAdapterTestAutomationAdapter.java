@@ -21,6 +21,16 @@ public class OutboundAdapterTestAutomationAdapter implements TestAutomationAdapt
     }
 
     @Override
+    public String getNewS2SToken(String clientId, String clientKey) {
+        return null;
+    }
+
+    @Override
+    public String getNewS2STokenWithEnvVars(String envVarNameForId, String envVarNameForKey) {
+        return null;
+    }
+
+    @Override
     public void authenticate(UserData user, String preferredTokenClientId) throws ExecutionException {
 
     }
@@ -34,7 +44,7 @@ public class OutboundAdapterTestAutomationAdapter implements TestAutomationAdapt
     public BeftaTestDataLoader getDataLoader() {
         return new BeftaTestDataLoader() {
             @Override
-            public void loadTestDataIfNecessary() {
+            public void loadDataIfNotLoadedVeryRecently() {
 
             }
 
