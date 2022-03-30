@@ -16,6 +16,7 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.util.Collections;
@@ -33,7 +34,14 @@ class FutureHearingErrorDecoderTest {
     private String methodKey = null;
     private Response response;
     private byte[] byteArrray;
-    private String inputString = "This response message should be logged";
+    private static final String INPUT_STRING = "{\n"
+        + "    \"errCode\": \"1000\",\n"
+        + "    \"errorDesc\": \"'300' is not a valid value for 'caseCourt.locationId'\",\n"
+        + "    \"errorLinkId\": null,\n"
+        + "    \"exception\": null\n"
+        + "}";
+    private static final String EXPECTED_ERROR = "Response from FH failed with error code 1000, error message "
+        + "''300' is not a valid value for 'caseCourt.locationId''";
     private RequestTemplate template;
 
     @InjectMocks
@@ -42,7 +50,7 @@ class FutureHearingErrorDecoderTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        byteArrray = inputString.getBytes();
+        byteArrray = INPUT_STRING.getBytes();
     }
 
     @Test
@@ -61,13 +69,13 @@ class FutureHearingErrorDecoderTest {
 
         Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
 
-        assertThat(exception).isInstanceOf(AuthenticationException.class);
+        assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         assertEquals(INVALID_REQUEST, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(inputString, logsList.get(0)
+        assertEquals(EXPECTED_ERROR, logsList.get(0)
             .getMessage());
     }
 
@@ -93,7 +101,7 @@ class FutureHearingErrorDecoderTest {
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(inputString, logsList.get(0)
+        assertEquals(EXPECTED_ERROR, logsList.get(0)
             .getMessage());
     }
 
@@ -119,7 +127,7 @@ class FutureHearingErrorDecoderTest {
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(inputString, logsList.get(0)
+        assertEquals(EXPECTED_ERROR, logsList.get(0)
             .getMessage());
     }
 
@@ -145,7 +153,7 @@ class FutureHearingErrorDecoderTest {
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(inputString, logsList.get(0)
+        assertEquals(EXPECTED_ERROR, logsList.get(0)
             .getMessage());
     }
 }

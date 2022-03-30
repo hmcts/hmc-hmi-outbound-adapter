@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.config;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -10,6 +11,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
+import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +35,9 @@ class MessageProcessorIT extends BaseTest {
     @MockBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
 
+    @MockBean
+    private MessageSenderConfiguration messageSenderConfiguration;
+
     @Autowired
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
 
@@ -40,19 +45,20 @@ class MessageProcessorIT extends BaseTest {
     private ServiceBusMessageErrorHandler errorHandler;
 
     @Test
-    void shouldInitiateRequestHearing() {
+    void shouldInitiateRequestHearing() throws JsonProcessingException {
         Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put(HEARING_ID, CASE_LISTING_REQUEST_ID);
         applicationProperties.put(MESSAGE_TYPE, MessageType.REQUEST_HEARING);
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyRequestHearing(TOKEN);
 
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
-                                                                 OBJECT_MAPPER);
+                                                                 messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
     }
 
     @Test
-    void shouldInitiateDeleteHearing() {
+    void shouldInitiateDeleteHearing() throws JsonProcessingException {
         Map<String, Object> applicationProperties = new HashMap<>();
         applicationProperties.put(HEARING_ID, CASE_LISTING_REQUEST_ID);
         applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
@@ -60,12 +66,12 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
-                                                                 OBJECT_MAPPER);
+                                                                 messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
     }
 
     @Test
-    void shouldInitiateAmendHearing() {
+    void shouldInitiateAmendHearing() throws JsonProcessingException {
         Map<String, Object> applicationProperties = new HashMap<>();
         applicationProperties.put(HEARING_ID, CASE_LISTING_REQUEST_ID);
         applicationProperties.put(MESSAGE_TYPE, MessageType.AMEND_HEARING);
@@ -73,7 +79,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
-                                                                 OBJECT_MAPPER);
+                                                                 messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
     }
 

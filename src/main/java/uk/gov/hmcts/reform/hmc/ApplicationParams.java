@@ -29,11 +29,17 @@ public class ApplicationParams {
     @Value("${fh.hmi.destination-system}")
     private String destinationSystem;
 
-    @Value("${azure.jms.servicebus.queue-name}")
-    private String queueName;
+    @Value("${azure.jms.servicebus.outbound-queue-name}")
+    private String outboundQueueName;
 
-    @Value("${azure.jms.servicebus.connection-string}")
-    private String connectionString;
+    @Value("${azure.jms.servicebus.inbound-queue-name}")
+    private String inboundQueueName;
+
+    @Value("${azure.jms.servicebus.outbound-connection-string}")
+    private String outboundConnectionString;
+
+    @Value("${azure.jms.servicebus.inbound-connection-string}")
+    private String inboundConnectionString;
 
     @Value("${azure.jms.servicebus.exponential-multiplier}")
     private String exponentialMultiplier;

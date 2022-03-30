@@ -56,17 +56,31 @@ class ApplicationParamsTest {
     }
 
     @Test
-    void shouldGetConnectionString() {
-        ReflectionTestUtils.setField(applicationParams, "connectionString", VALUE);
+    void shouldGetOutboundConnectionString() {
+        ReflectionTestUtils.setField(applicationParams, "outboundConnectionString", VALUE);
         assertEquals(VALUE,
-                     applicationParams.getConnectionString());
+                     applicationParams.getOutboundConnectionString());
     }
 
     @Test
-    void shouldGetQueueName() {
-        ReflectionTestUtils.setField(applicationParams, "queueName", VALUE);
+    void shouldGetOutboundQueueName() {
+        ReflectionTestUtils.setField(applicationParams, "outboundQueueName", VALUE);
         assertEquals(VALUE,
-                     applicationParams.getQueueName());
+                     applicationParams.getOutboundQueueName());
+    }
+
+    @Test
+    void shouldGetInboundConnectionString() {
+        ReflectionTestUtils.setField(applicationParams, "inboundConnectionString", VALUE);
+        assertEquals(VALUE,
+                     applicationParams.getInboundConnectionString());
+    }
+
+    @Test
+    void shouldGetInboundQueueName() {
+        ReflectionTestUtils.setField(applicationParams, "inboundQueueName", VALUE);
+        assertEquals(VALUE,
+                     applicationParams.getInboundQueueName());
     }
 
     @Test

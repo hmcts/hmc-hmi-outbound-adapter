@@ -42,7 +42,12 @@ public class WiremockFixtures {
         .modules(new Jdk8Module())
         .build();
 
-    public static String TEST_BODY = "This is a test message";
+    public static String TEST_BODY = "{\n"
+        + "    \"errCode\": \"1000\",\n"
+        + "    \"errorDesc\": \"'300' is not a valid value for 'caseCourt.locationId'\",\n"
+        + "    \"errorLinkId\": null,\n"
+        + "    \"exception\": null\n"
+        + "}";
 
     private WiremockFixtures() {
     }

@@ -1,19 +1,21 @@
 package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
-import com.google.common.io.CharStreams;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
-import feign.Util;
 import feign.codec.ErrorDecoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Reader;
+import java.io.InputStreamReader;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+@Slf4j
 public class FutureHearingErrorDecoder implements ErrorDecoder {
-    private static final Logger LOG = LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
     public static final String INVALID_REQUEST = "Missing or invalid request parameters";
     public static final String INVALID_SECRET = "Authentication error";
     public static final String SERVER_ERROR = "Server error";
@@ -21,42 +23,31 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
 
     @Override
     public Exception decode(String methodKey, Response response) {
+        ErrorDetails errorDetails = getResponseBody(response, ErrorDetails.class)
+            .orElseThrow(() -> new AuthenticationException(SERVER_ERROR));
+        log.error(String.format("Response from FH failed with error code %s, error message '%s'",
+                  errorDetails.getErrorCode(),
+                  errorDetails.getErrorDescription()));
 
-        String message = null;
-        Reader reader = null;
-
-        try {
-            reader = response.body().asReader(Util.UTF_8);
-            message = CharStreams.toString(reader);
-            reader.close();
-
-        } catch (IOException exception) {
-            LOG.error(exception.getMessage());
-        } finally {
-
-            try {
-
-                if (reader != null) {
-                    reader.close();
-                }
-
-            } catch (IOException exception) {
-                LOG.error(exception.getMessage());
-            }
-        }
-
-        if (message != null) {
-            LOG.error(message);
-        }
         switch (response.status()) {
             case 400:
-                return new AuthenticationException(INVALID_REQUEST);
+                return new BadFutureHearingRequestException(INVALID_REQUEST, errorDetails);
             case 401:
                 return new AuthenticationException(INVALID_SECRET);
             case 404:
                 return new ResourceNotFoundException(REQUEST_NOT_FOUND);
             default:
                 return new AuthenticationException(SERVER_ERROR);
+        }
+    }
+
+    private <T> Optional<T> getResponseBody(Response response, Class<T> klass) {
+        try {
+            String bodyJson = new BufferedReader(new InputStreamReader(response.body().asInputStream()))
+                .lines().parallel().collect(Collectors.joining("\n"));
+            return Optional.ofNullable(new ObjectMapper().readValue(bodyJson, klass));
+        } catch (IOException e) {
+            return Optional.empty();
         }
     }
 }

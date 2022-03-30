@@ -10,6 +10,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
+import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 
 import java.time.Duration;
 
@@ -33,10 +34,10 @@ public class MessageReceiverConfiguration {
         log.info("Creating service bus receiver client");
 
         ServiceBusReceiverClient client = new ServiceBusClientBuilder()
-            .connectionString(applicationParams.getConnectionString())
+            .connectionString(applicationParams.getOutboundConnectionString())
             .retryOptions(retryOptions())
             .receiver()
-            .queueName(applicationParams.getQueueName())
+            .queueName(applicationParams.getOutboundQueueName())
             .buildClient();
 
         while (true) {
