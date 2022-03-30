@@ -13,5 +13,6 @@ public class HearingManagementInterfaceResponse {
     @JsonProperty("response code")
     private Integer responseCode;
 
+    @JsonProperty("description")
     private String description;
 }
