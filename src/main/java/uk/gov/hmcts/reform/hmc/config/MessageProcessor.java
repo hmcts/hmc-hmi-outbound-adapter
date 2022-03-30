@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
@@ -82,7 +83,8 @@ public class MessageProcessor {
             switch (messageType) {
                 case REQUEST_HEARING:
                     log.debug("Message of type REQUEST_HEARING received");
-                    futureHearingRepository.createHearingRequest(message);
+                    HearingManagementInterfaceResponse response = futureHearingRepository.createHearingRequest(message);
+                    log.info("PRINTING RESPONSE FROM HMI: " + String.valueOf(response.getResponseCode()));
                     break;
                 case AMEND_HEARING:
                     log.debug("Message of type AMEND_HEARING received");
