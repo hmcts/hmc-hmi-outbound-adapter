@@ -122,7 +122,7 @@ public class MessageProcessor {
             syncMessage = SyncMessage.builder()
                 .listAssistHttpStatus(202)
                 .build();
-        } catch (AuthenticationException ex) {
+        } catch (BadFutureHearingRequestException ex) {
             ErrorDetails errorDetails = ex.getErrorDetails();
             syncMessage = SyncMessage.builder()
                 .listAssistHttpStatus(400)
