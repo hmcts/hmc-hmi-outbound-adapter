@@ -84,8 +84,9 @@ public class MessageProcessor {
                 case REQUEST_HEARING:
                     log.debug("Message of type REQUEST_HEARING received");
                     HearingManagementInterfaceResponse response = futureHearingRepository.createHearingRequest(message);
-                    log.info("PRINTING RESPONSE FROM HMI: " + String.valueOf(response.getResponseCode()) + "| " +
-                        response.getDescription());
+                    log.info("PRINTING RESPONSE FROM HMI: " + String.valueOf(response.getResponseCode())
+                                 + "| "
+                                 + response.getDescription());
                     break;
                 case AMEND_HEARING:
                     log.debug("Message of type AMEND_HEARING received");
