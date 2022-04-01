@@ -15,6 +15,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -64,10 +65,10 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        void shouldThrow400AuthenticationException() {
+        void shouldThrow400BadFutureHearingRequestException() {
             stubPostMethodThrowingAuthenticationError(400, GET_TOKEN_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.retrieveAuthToken())
-                .isInstanceOf(AuthenticationException.class)
+                .isInstanceOf(BadFutureHearingRequestException.class)
                 .hasMessageContaining(INVALID_REQUEST);
         }
 
@@ -101,11 +102,11 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        void shouldThrow400AuthenticationException() {
+        void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(400, HMI_REQUEST_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
-                .isInstanceOf(AuthenticationException.class)
+                .isInstanceOf(BadFutureHearingRequestException.class)
                 .hasMessageContaining(INVALID_REQUEST);
         }
 
@@ -142,11 +143,11 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        void shouldThrow400AuthenticationException() {
+        void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.amendHearingRequest(data, CASE_LISTING_REQUEST_ID))
-                .isInstanceOf(AuthenticationException.class)
+                .isInstanceOf(BadFutureHearingRequestException.class)
                 .hasMessageContaining(INVALID_REQUEST);
         }
 
@@ -183,11 +184,11 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        void shouldThrow400AuthenticationException() {
+        void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
             assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
-                .isInstanceOf(AuthenticationException.class)
+                .isInstanceOf(BadFutureHearingRequestException.class)
                 .hasMessageContaining(INVALID_REQUEST);
         }
 

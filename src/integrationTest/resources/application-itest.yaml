@@ -14,8 +14,10 @@ fh:
 azure:
   jms:
     servicebus:
-      connection-string: ${HMC_SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]}
+      outbound-connection-string: Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]
+      inbound-connection-string: Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]
       # should be an integer that is interpreted as seconds
       exponential-multiplier: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER:2}
-      queue-name: ${HMC_SERVICE_BUS_QUEUE:hmc-to-hmi}
+      outbound-queue-name: hmc-to-hmi
+      inbound-queue-name: hmc-from-hmi
       max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}

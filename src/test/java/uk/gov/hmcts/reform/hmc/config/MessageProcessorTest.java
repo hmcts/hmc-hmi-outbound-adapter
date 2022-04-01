@@ -17,6 +17,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
+import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,9 +27,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static uk.gov.hmcts.reform.hmc.config.MessageProcessor.MISSING_CASE_LISTING_ID;
-import static uk.gov.hmcts.reform.hmc.config.MessageProcessor.MISSING_MESSAGE_TYPE;
-import static uk.gov.hmcts.reform.hmc.config.MessageProcessor.UNSUPPORTED_MESSAGE_TYPE;
+import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MISSING_CASE_LISTING_ID;
+import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MISSING_MESSAGE_TYPE;
+import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.UNSUPPORTED_MESSAGE_TYPE;
 
 class MessageProcessorTest {
     private static final String MESSAGE_TYPE = "message_type";
@@ -57,10 +58,14 @@ class MessageProcessorTest {
     @Mock
     private ServiceBusMessageErrorHandler errorHandler;
 
+    @Mock
+    private MessageSenderConfiguration messageSenderConfiguration;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        messageProcessor = new MessageProcessor(futureHearingRepository, errorHandler, OBJECT_MAPPER);
+        messageProcessor = new MessageProcessor(futureHearingRepository, errorHandler, 
+            messageSenderConfiguration, OBJECT_MAPPER);
         String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
