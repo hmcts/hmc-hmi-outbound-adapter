@@ -2,23 +2,13 @@ package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
-import lombok.SneakyThrows;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.format.annotation.DateTimeFormat;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.TimeZone;
 import java.util.UUID;
 
 public class HearingManagementInterfaceRequestInterceptor implements RequestInterceptor {
