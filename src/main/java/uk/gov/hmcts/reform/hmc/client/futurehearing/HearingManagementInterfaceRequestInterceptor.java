@@ -15,6 +15,7 @@ public class HearingManagementInterfaceRequestInterceptor implements RequestInte
 
     private final ApplicationParams applicationParams;
     private final Clock clock;
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
     public HearingManagementInterfaceRequestInterceptor(ApplicationParams applicationParams,
                                                         @Qualifier("utcClock") Clock clock) {
@@ -24,12 +25,11 @@ public class HearingManagementInterfaceRequestInterceptor implements RequestInte
 
     @Override
     public void apply(RequestTemplate template) {
-        String formatted =  DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
-            .format(Instant.now(clock).atZone(ZoneId.of("UTC")));
+        String formattedValue =  dateTimeFormatter.format(Instant.now(clock).atZone(ZoneId.of("UTC")));
 
         template.header("Source-System", applicationParams.getSourceSystem());
         template.header("Destination-System", applicationParams.getDestinationSystem());
-        template.header("Request-Created-At", formatted);
+        template.header("Request-Created-At", formattedValue);
         template.header("transactionIdHMCTS", String.valueOf(UUID.randomUUID()));
     }
 }
