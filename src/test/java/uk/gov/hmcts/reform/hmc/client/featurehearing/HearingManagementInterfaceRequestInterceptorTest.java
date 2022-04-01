@@ -72,6 +72,6 @@ class HearingManagementInterfaceRequestInterceptorTest {
         assertThat(template.headers().get("transactionIdHMCTS")).containsOnly(String.valueOf(transactionId));
         assertThat(template.headers().get("Source-System")).containsOnly(SOURCE_SYSTEM);
         assertThat(template.headers().get("Destination-System")).containsOnly(DESTINATION_SYSTEM);
-        assertThat(template.headers().get("Request-Created-At")).containsOnly(fixedClock.instant().toString());
+        assertThat(template.headers().get("Request-Created-At")).containsOnly("2021-06-10T04:00:00Z");
     }
 }
