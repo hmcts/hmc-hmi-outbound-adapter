@@ -50,9 +50,7 @@ public class MessageReceiverConfiguration {
 
         client.receiveMessages(1)
             .forEach(
-                message -> {
-                    messageProcessor.processMessage(client, message);
-                });
+                message -> messageProcessor.processMessage(client, message));
     }
 
     private AmqpRetryOptions retryOptions() {
