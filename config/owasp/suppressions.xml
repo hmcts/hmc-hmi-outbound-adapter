@@ -200,4 +200,8 @@
     <cve>CVE-2022-22978</cve>
   </suppress>
 
+  <suppress>
+    <cve>CVE-2022-22950</cve>
+  </suppress>
+
 </suppressions>
