@@ -44,6 +44,8 @@ class FutureHearingErrorDecoderTest {
         + "error message ''300' is not a valid value for 'caseCourt.locationId''";
     private RequestTemplate template;
 
+    private final Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
+
     @InjectMocks
     private FutureHearingErrorDecoder futureHearingErrorDecoder;
 
@@ -51,12 +53,12 @@ class FutureHearingErrorDecoderTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         byteArrray = INPUT_STRING.getBytes();
+        logger.setLevel(Level.INFO);
     }
 
     @Test
     void shouldThrowAuthenticationExceptionWith400Error() {
 
-        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -82,7 +84,6 @@ class FutureHearingErrorDecoderTest {
     @Test
     void shouldThrowAuthenticationExceptionWith401Error() {
 
-        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -108,7 +109,6 @@ class FutureHearingErrorDecoderTest {
     @Test
     void shouldThrowResourceNotFoundExceptionWith404Error() {
 
-        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -134,7 +134,6 @@ class FutureHearingErrorDecoderTest {
     @Test
     void shouldThrowAuthenticationExceptionWith500Error() {
 
-        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -160,7 +159,6 @@ class FutureHearingErrorDecoderTest {
     @Test
     void shouldLogPayloadsInDebug() {
 
-        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         logger.setLevel(Level.DEBUG);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
