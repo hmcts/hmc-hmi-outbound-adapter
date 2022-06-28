@@ -25,7 +25,8 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
     public Exception decode(String methodKey, Response response) {
         ErrorDetails errorDetails = getResponseBody(response, ErrorDetails.class)
             .orElseThrow(() -> new AuthenticationException(SERVER_ERROR));
-        log.error(String.format("Response from FH failed with error code %s, error message '%s'",
+        log.error(String.format("Response from FH failed with HTTP code %s, error code %s, error message '%s'",
+                  response.status(),
                   errorDetails.getErrorCode(),
                   errorDetails.getErrorDescription()));
 

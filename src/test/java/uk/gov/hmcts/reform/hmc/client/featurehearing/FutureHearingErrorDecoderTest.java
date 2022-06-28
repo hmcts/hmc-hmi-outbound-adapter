@@ -40,8 +40,8 @@ class FutureHearingErrorDecoderTest {
         + "    \"errorLinkId\": null,\n"
         + "    \"exception\": null\n"
         + "}";
-    private static final String EXPECTED_ERROR = "Response from FH failed with error code 1000, error message "
-        + "''300' is not a valid value for 'caseCourt.locationId''";
+    private static final String EXPECTED_ERROR = "Response from FH failed with HTTP code %s, error code 1000, "
+        + "error message ''300' is not a valid value for 'caseCourt.locationId''";
     private RequestTemplate template;
 
     @InjectMocks
@@ -75,7 +75,7 @@ class FutureHearingErrorDecoderTest {
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(EXPECTED_ERROR, logsList.get(0)
+        assertEquals(String.format(EXPECTED_ERROR, 400), logsList.get(0)
             .getMessage());
     }
 
@@ -101,7 +101,7 @@ class FutureHearingErrorDecoderTest {
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(EXPECTED_ERROR, logsList.get(0)
+        assertEquals(String.format(EXPECTED_ERROR, 401), logsList.get(0)
             .getMessage());
     }
 
@@ -127,7 +127,7 @@ class FutureHearingErrorDecoderTest {
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(EXPECTED_ERROR, logsList.get(0)
+        assertEquals(String.format(EXPECTED_ERROR, 404), logsList.get(0)
             .getMessage());
     }
 
@@ -153,7 +153,7 @@ class FutureHearingErrorDecoderTest {
         assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
-        assertEquals(EXPECTED_ERROR, logsList.get(0)
+        assertEquals(String.format(EXPECTED_ERROR, 500), logsList.get(0)
             .getMessage());
     }
 }
