@@ -156,4 +156,35 @@ class FutureHearingErrorDecoderTest {
         assertEquals(String.format(EXPECTED_ERROR, 500), logsList.get(0)
             .getMessage());
     }
+
+    @Test
+    void shouldLogPayloadsInDebug() {
+
+        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
+        logger.setLevel(Level.DEBUG);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        response = Response.builder()
+            .body(byteArrray)
+            .status(400)
+            .request(Request.create(HttpMethod.POST, "/api", Collections.emptyMap(), null, Util.UTF_8, template))
+            .build();
+
+        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+
+        assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
+        assertEquals(INVALID_REQUEST, exception.getMessage());
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(2, logsList.size());
+        assertEquals(Level.ERROR, logsList.get(0)
+            .getLevel());
+        assertEquals(String.format(EXPECTED_ERROR, 400), logsList.get(0)
+            .getMessage());
+        assertEquals(Level.DEBUG, logsList.get(1)
+            .getLevel());
+        assertEquals("Error payload from FH (HTTP 400): " + INPUT_STRING, logsList.get(1)
+            .getMessage());
+    }
 }

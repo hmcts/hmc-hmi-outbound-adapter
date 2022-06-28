@@ -10,7 +10,9 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -29,6 +31,15 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                   response.status(),
                   errorDetails.getErrorCode(),
                   errorDetails.getErrorDescription()));
+
+        if (log.isDebugEnabled()) {
+            try (InputStream is = response.body().asInputStream()) {
+                String payload = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                log.debug(String.format("Error payload from FH (HTTP %s): %s", response.status(), payload));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         switch (response.status()) {
             case 400:
