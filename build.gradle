@@ -277,12 +277,6 @@ ext.libraries = [
   ]
 ]
 
-configurations.all {
-  // CVE-2022-22978 CVE-2020-5408
-  exclude module: 'spring-security-rsa'
-  exclude module: 'spring-security-crypto'
-}
-
 dependencies {
   compile "com.fasterxml.jackson.core:jackson-databind:2.13.2.2"
   compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.13.2'
@@ -294,7 +288,9 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
-  implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign'
+  implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', {
+    exclude group: "org.springframework.security", module: "spring-security-crypto"
+  }
   implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '11.2'
   implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
 
