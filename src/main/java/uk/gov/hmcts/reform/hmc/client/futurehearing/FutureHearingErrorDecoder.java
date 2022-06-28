@@ -37,7 +37,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                 String payload = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                 log.debug(String.format("Error payload from FH (HTTP %s): %s", response.status(), payload));
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Unable to read payload from FH", e);
             }
         }
 
