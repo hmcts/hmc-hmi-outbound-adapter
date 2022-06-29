@@ -188,7 +188,7 @@ sonarqube {
     property "sonar.projectKey", "uk.gov.hmcts.reform:hmc-hmi-outbound-adapter"
     property "sonar.coverage.jacoco.xmlReportPaths", "${jacocoTestReport.reports.xml.destination.path}"
     property "sonar.exclusions", "src/main/java/uk/gov/hmcts/reform/hmc/Application.java," +
-      "src/main/java/uk/gov/hmcts/reform/hmc/config/MessageReceiverConfiguration.java,**/MessageSenderConfiguration.java,**/MessageProcessor.java"
+    "src/main/java/uk/gov/hmcts/reform/hmc/config/MessageReceiverConfiguration.java,**/MessageSenderConfiguration.java,**/MessageProcessor.java"
   }
 }
 
@@ -203,7 +203,7 @@ def versions = [
   springfoxSwagger: '3.0.0',
   testcontainers  : '1.15.2',
   jetty           : '9.4.43.v20210629',
-  netty           : '4.1.74.Final'
+  netty           : '4.1.77.Final'
 ]
 
 ext['spring-framework.version'] = '5.3.18'
@@ -297,8 +297,8 @@ dependencies {
 
   implementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
   implementation group: 'javax.inject', name: 'javax.inject', version: '1'
-  implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.0.2'
-  implementation group: 'com.azure', name: 'azure-core', version: '1.13.0'
+  implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.8.0'
+  implementation group: 'com.azure', name: 'azure-core', version: '1.28.0'
 
   implementation group: 'net.minidev', name: 'json-smart', version: '2.4.7'
 
