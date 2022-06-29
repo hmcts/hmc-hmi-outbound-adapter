@@ -6,3 +6,18 @@ fh:
     client-secret: CLIENT_SECRET
     scope: SCOPE
     grant-type: GRANT_TYPE
+  hmi:
+    host: http://localhost:${wiremock.server.port:5000}
+    source-system: SOURCE_SYSTEM
+    destination-system: DESTINATION_SYSTEM
+
+azure:
+  jms:
+    servicebus:
+      outbound-connection-string: Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]
+      inbound-connection-string: Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]
+      # should be an integer that is interpreted as seconds
+      exponential-multiplier: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER:2}
+      outbound-queue-name: hmc-to-hmi
+      inbound-queue-name: hmc-from-hmi
+      max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}

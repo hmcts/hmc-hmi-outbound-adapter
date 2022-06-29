@@ -11,7 +11,7 @@ import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VAL
     url = "${fh.ad.host}",
     configuration = {FutureHearingApiClientConfig.class}
 )
-public interface FutureHearingApiClient {
+public interface ActiveDirectoryApiClient {
 
     String GET_TOKEN = "${fh.ad.get-token-url}";
 

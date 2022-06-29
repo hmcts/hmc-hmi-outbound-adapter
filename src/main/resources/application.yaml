@@ -14,12 +14,11 @@ management:
 #If you use a database then uncomment below lines and update db properties accordingly
 spring:
   config:
-    import: "optional:configtree:/mnt/secrets/"
+    import: "optional:configtree:/mnt/secrets/hmc/"
   application:
     name: HMC HMI Outbound Adapter
   jackson:
     property-naming-strategy: SNAKE_CASE
-
 #  datasource:
 #    driver-class-name: org.postgresql.Driver
 #    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_OPTIONS:}
@@ -45,6 +44,15 @@ spring:
 azure:
   application-insights:
     instrumentation-key: ${hmc.AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+  jms:
+    servicebus:
+      outbound-connection-string: ${HMC_SERVICE_BUS_OUTBOUND_CONNECTION_STRING}
+      outbound-queue-name: ${HMC_SERVICE_BUS_OUTBOUND_QUEUE}
+      # should be an integer that is interpreted as seconds
+      exponential-multiplier: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER:2}
+      max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}
+      inbound-connection-string: ${HMC_SERVICE_BUS_INBOUND_CONNECTION_STRING}
+      inbound-queue-name: ${HMC_SERVICE_BUS_INBOUND_QUEUE}
 
 fh:
   ad:
@@ -54,6 +62,10 @@ fh:
     client-secret: ${CLIENT_SECRET:client-secret}
     scope: ${SCOPE:scope}
     grant-type: ${GRANT_TYPE:grant-type}
+  hmi:
+    host: ${HMI_BASE_URL:base/url}
+    source-system: ${HMI_SOURCE_SYSTEM:source-system}
+    destination-system: ${HMI_DESTINATION_SYSTEM:destination-system}
 
 feign:
   okhttp:
