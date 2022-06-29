@@ -175,14 +175,18 @@ class FutureHearingErrorDecoderTest {
         assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         assertEquals(INVALID_REQUEST, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals(2, logsList.size());
+        assertEquals(3, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0)
             .getLevel());
         assertEquals(String.format(EXPECTED_ERROR, 400), logsList.get(0)
             .getMessage());
         assertEquals(Level.DEBUG, logsList.get(1)
             .getLevel());
-        assertEquals("Error payload from FH (HTTP 400): " + INPUT_STRING, logsList.get(1)
+        assertEquals("Request to FH - URL: /api, Method: POST, Payload: n/a", logsList.get(1)
+            .getMessage());
+        assertEquals(Level.DEBUG, logsList.get(2)
+            .getLevel());
+        assertEquals("Error payload from FH (HTTP 400): " + INPUT_STRING, logsList.get(2)
             .getMessage());
     }
 }
