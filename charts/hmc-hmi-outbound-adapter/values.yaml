@@ -1,0 +1,33 @@
+java:
+  applicationPort: 4558
+  image: 'hmctspublic.azurecr.io/hmc/hmi-outbound-adapter:latest'
+  ingressHost: hmc-hmi-outbound-adapter-{{ .Values.global.environment }}.service.core-compute-{{ .Values.global.environment }}.internal
+  aadIdentityName: hmc
+  keyVaults:
+    hmc:
+      secrets:
+        - name: AppInsightsInstrumentationKey
+          alias: azure.application-insights.instrumentation-key
+        - name: ClientId
+          alias: CLIENT_ID
+        - name: ClientSecret
+          alias: CLIENT_SECRET
+        - name: Scope
+          alias: SCOPE
+        - name: hmc-servicebus-connection-string
+          alias: HMC_SERVICE_BUS_OUTBOUND_CONNECTION_STRING
+        - name: hmc-servicebus-connection-string
+          alias: HMC_SERVICE_BUS_INBOUND_CONNECTION_STRING
+        - name: fh-get-token-url
+          alias: FH_GET_TOKEN_URL
+  environment:
+    HMC_SERVICE_BUS_OUTBOUND_QUEUE: hmc-to-hmi-{{ .Values.global.environment }}
+    HMC_SERVICE_BUS_INBOUND_QUEUE: hmc-from-hmi-{{ .Values.global.environment }}
+    HMI_BASE_URL: https://hmi-apim.test.platform.hmcts.net/hmi
+    HMI_SOURCE_SYSTEM: CFT
+    HMI_DESTINATION_SYSTEM: SNL
+    GRANT_TYPE: client_credentials
+    FH_BASE_URL: https://login.microsoftonline.com
+
+servicebus:
+  enabled: false

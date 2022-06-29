@@ -8,7 +8,20 @@ properties([
 @Library("Infrastructure")
 
 def type = "java"
-def product = "rpe"
+def product = "hmc"
 def component = "spring-boot-template"
 
-withNightlyPipeline(type, product, component) {}
+withNightlyPipeline(type, product, component) {
+  enableFortifyScan('hmc-aat')
+  after('fortify-scan') {
+    steps.archiveArtifacts allowEmptyArchive: true, artifacts: '**/Fortify Scan/**/*'
+  }
+}
+
+// env variables needed for BEFTA.
+env.IDAM_URL = "https://idam-api.aat.platform.hmcts.net"
+env.S2S_URL = "http://rpe-service-auth-provider-aat.service.core-compute-aat.internal"
+env.BEFTA_S2S_CLIENT_ID = "ccd_gw"
+env.BEFTA_RESPONSE_HEADER_CHECK_POLICY="JUST_WARN"
+env.OAUTH2_CLIENT_ID = "ccd_gateway"
+env.OAUTH2_REDIRECT_URI = "https://www-ccd.aat.platform.hmcts.net/oauth2redirect"
