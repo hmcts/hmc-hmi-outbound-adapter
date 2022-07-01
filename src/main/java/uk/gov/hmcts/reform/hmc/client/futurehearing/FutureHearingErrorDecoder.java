@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.Request;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +35,15 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
 
         if (log.isDebugEnabled()) {
             try (InputStream is = response.body().asInputStream()) {
-                String payload = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                log.debug(String.format("Error payload from FH (HTTP %s): %s", response.status(), payload));
+                Request request = response.request();
+                String responsePayload = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                String requestPayload = request.body() == null ? "n/a" :
+                    new String(request.body(), StandardCharsets.UTF_8);
+                log.debug(String.format("Request to FH - URL: %s, Method: %s, Payload: %s",
+                          request.url(),
+                          request.httpMethod().toString(),
+                          requestPayload));
+                log.debug(String.format("Error payload from FH (HTTP %s): %s", response.status(), responsePayload));
             } catch (IOException e) {
                 log.error("Unable to read payload from FH", e);
             }
