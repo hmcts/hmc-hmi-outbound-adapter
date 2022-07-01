@@ -1,18 +1,18 @@
 package uk.gov.hmcts.reform.hmc;
 
+import org.springframework.boot.LazyInitializationExcludeFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
-import org.springframework.scheduling.annotation.EnableAsync;
+import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
 
 import java.time.Clock;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
 @EnableFeignClients
-@EnableAsync
-@SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
+@SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, it's not a utility class
 public class Application {
     public static void main(final String[] args) {
         SpringApplication.run(Application.class, args);
@@ -21,5 +21,12 @@ public class Application {
     @Bean
     public Clock utcClock() {
         return Clock.systemUTC();
+    }
+
+    @Bean
+    static LazyInitializationExcludeFilter lazyInitExcludeFilter() {
+        return LazyInitializationExcludeFilter.forBeanTypes(
+                MessageReceiverConfiguration.class
+        );
     }
 }
