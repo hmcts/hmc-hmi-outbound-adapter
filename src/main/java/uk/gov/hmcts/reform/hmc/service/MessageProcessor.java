@@ -55,6 +55,7 @@ public class MessageProcessor {
                 convertMessage(message.getBody()),
                 message.getApplicationProperties()
             );
+            log.debug("Sending message : {} ", message);
             client.complete(message);
             log.info("Message with id '{}' handled successfully", message.getMessageId());
 
