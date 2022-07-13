@@ -25,7 +25,7 @@ public class OpenApiConfiguration {
             )
             .externalDocs(new ExternalDocumentation()
                 .description("README")
-                .url("https://github.com/hmcts/hmc-cft-hearing-service#readme"));
+                .url("https://github.com/hmcts/hmc-hmi-outbound-adapter#readme"));
     }
 
 }
