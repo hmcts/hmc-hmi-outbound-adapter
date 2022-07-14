@@ -4,7 +4,6 @@ import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusErrorContext;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
-import com.azure.messaging.servicebus.models.DeadLetterOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +32,7 @@ public class MessageProcessor {
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
     public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
+    public static final String MESSAGE_SUCCESS = "Message with id '{}' handled successfully";
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
     private static final String LA_SYNC_HEARING_RESPONSE = "LA_SYNC_HEARING_RESPONSE";
 
@@ -48,7 +48,9 @@ public class MessageProcessor {
         log.debug("processMessage messageContext");
         var message = messageContext.getMessage();
         var processingResult = tryProcessMessage(message);
-        finaliseMessage(messageContext, processingResult);
+        if (processingResult.resultType.equals(MessageProcessingResultType.SUCCESS)) {
+            log.info(MESSAGE_SUCCESS, messageContext.getMessage().getMessageId());
+        }
     }
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
@@ -97,34 +99,6 @@ public class MessageProcessor {
 
     public void processException(ServiceBusErrorContext context) {
         log.error("Processed message queue handle error {}", context.getErrorSource(), context.getException());
-    }
-
-    private void finaliseMessage(
-            ServiceBusReceivedMessageContext messageContext,
-            MessageProcessingResult processingResult
-    ) {
-        log.debug("finaliseMessage messageContext, processingResult");
-        var message = messageContext.getMessage();
-        log.debug(processingResult.resultType.name());
-        switch (processingResult.resultType) {
-            case SUCCESS:
-                messageContext.complete();
-                break;
-            case UNRECOVERABLE_FAILURE:
-                messageContext.deadLetter(
-                        new DeadLetterOptions()
-                                .setDeadLetterErrorDescription("Message processing error")
-                                .setDeadLetterReason(processingResult.exception.getMessage())
-                );
-                break;
-            default:
-                log.debug(
-                        "Letting processed message with ID {} return to the queue. Delivery attempt {}.",
-                        message.getMessageId(),
-                        message.getDeliveryCount() + 1
-                );
-                break;
-        }
     }
 
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
