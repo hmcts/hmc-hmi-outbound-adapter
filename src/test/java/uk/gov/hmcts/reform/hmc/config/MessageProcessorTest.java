@@ -13,6 +13,7 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 
@@ -53,6 +54,9 @@ class MessageProcessorTest {
     @Mock
     private ServiceBusReceivedMessage message = mock(ServiceBusReceivedMessage.class);
 
+    @Mock
+    private ServiceBusMessageErrorHandler errorHandler;
+
     private JsonNode anyData;
 
 
@@ -60,7 +64,7 @@ class MessageProcessorTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
-                futureHearingRepository,
+                futureHearingRepository, errorHandler,
                 messageSenderConfiguration,
                 objectMapper);
         anyData = objectMapper.convertValue("test data", JsonNode.class);

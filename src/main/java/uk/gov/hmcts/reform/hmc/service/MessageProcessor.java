@@ -14,8 +14,11 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceRe
 import uk.gov.hmcts.reform.hmc.config.MessageSenderConfiguration;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.util.Map;
@@ -25,6 +28,7 @@ import java.util.function.Supplier;
 @Service
 public class MessageProcessor {
 
+    private final ServiceBusMessageErrorHandler errorHandler;
     private final DefaultFutureHearingRepository futureHearingRepository;
     private final MessageSenderConfiguration messageSenderConfiguration;
     private final ObjectMapper objectMapper;
@@ -37,20 +41,19 @@ public class MessageProcessor {
     private static final String LA_SYNC_HEARING_RESPONSE = "LA_SYNC_HEARING_RESPONSE";
 
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
+                            ServiceBusMessageErrorHandler errorHandler,
                             MessageSenderConfiguration messageSenderConfiguration,
                             ObjectMapper objectMapper) {
+        this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
         this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
     }
 
     public void processMessage(ServiceBusReceivedMessageContext messageContext) {
-        log.debug("processMessage messageContext");
         var message = messageContext.getMessage();
         var processingResult = tryProcessMessage(message);
-        if (processingResult.resultType.equals(MessageProcessingResultType.SUCCESS)) {
-            log.info(MESSAGE_SUCCESS, messageContext.getMessage().getMessageId());
-        }
+        finaliseMessage(messageContext, processingResult);
     }
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
@@ -101,6 +104,31 @@ public class MessageProcessor {
         log.error("Processed message queue handle error {}", context.getErrorSource(), context.getException());
     }
 
+    private void finaliseMessage(ServiceBusReceivedMessageContext messageContext,
+                                 MessageProcessingResult processingResult) {
+        var message = messageContext.getMessage();
+        switch (processingResult.resultType) {
+            case SUCCESS:
+                log.debug(MESSAGE_SUCCESS, messageContext.getMessage().getMessageId());
+                break;
+            case APPLICATION_ERROR:
+                errorHandler.handleApplicationError(messageContext, processingResult.exception);
+                break;
+            case GENERIC_ERROR:
+                errorHandler.handleGenericError(messageContext, processingResult.exception);
+                break;
+            case JSON_ERROR:
+                errorHandler.handleJsonError(messageContext, (JsonProcessingException) processingResult.exception);
+                break;
+            default:
+                log.info("Letting 'processed envelope' message with ID {} return to the queue. Delivery attempt {}.",
+                        message.getMessageId(),
+                        message.getDeliveryCount() + 1
+                );
+                break;
+        }
+    }
+
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
             log.debug(
@@ -117,13 +145,15 @@ public class MessageProcessor {
             log.debug("Processed message with ID {} processed successfully", message.getMessageId());
             return new MessageProcessingResult(MessageProcessingResultType.SUCCESS);
 
-        // TODO: decide what's Unrecoverable and what's Potentially Recoverable!
-        } catch (MalformedMessageException | BadFutureHearingRequestException | JsonProcessingException ex) {
-            log.error("Invalid processed message with ID {}", message.getMessageId(), ex);
-            return new MessageProcessingResult(MessageProcessingResultType.UNRECOVERABLE_FAILURE, ex);
+        } catch (MalformedMessageException ex) {
+            return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
+        } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
+            return new MessageProcessingResult(MessageProcessingResultType.APPLICATION_ERROR, ex);
+        } catch (JsonProcessingException ex) {
+            return new MessageProcessingResult(MessageProcessingResultType.JSON_ERROR, ex);
         } catch (Exception ex) {
             log.warn("Unexpected Error");
-            return new MessageProcessingResult(MessageProcessingResultType.POTENTIALLY_RECOVERABLE_FAILURE);
+            return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         }
     }
 
@@ -170,8 +200,9 @@ public class MessageProcessor {
 
     enum MessageProcessingResultType {
         SUCCESS,
-        UNRECOVERABLE_FAILURE,
-        POTENTIALLY_RECOVERABLE_FAILURE
+        GENERIC_ERROR,
+        APPLICATION_ERROR,
+        JSON_ERROR
     }
 
 }

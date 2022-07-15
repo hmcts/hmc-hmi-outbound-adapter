@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.BaseTest;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 
@@ -38,6 +40,9 @@ class MessageProcessorIT extends BaseTest {
     @MockBean
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
 
+    @Autowired
+    private ServiceBusMessageErrorHandler errorHandler;
+
     @Test
     void shouldInitiateRequestHearing() throws JsonProcessingException {
         Map<String, Object> applicationProperties = new HashMap<>();
@@ -46,7 +51,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyRequestHearing(TOKEN);
 
-        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository,
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
                                                                  messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).createHearingRequest(any());
@@ -60,7 +65,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
-        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository,
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
                                                                  messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).deleteHearingRequest(any(), any());
@@ -74,7 +79,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
-        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository,
+        MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
                                                                  messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).amendHearingRequest(any(), any());
