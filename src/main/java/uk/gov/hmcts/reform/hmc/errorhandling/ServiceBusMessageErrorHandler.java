@@ -1,8 +1,6 @@
 package uk.gov.hmcts.reform.hmc.errorhandling;
 
-import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
-import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,33 +25,11 @@ public class ServiceBusMessageErrorHandler {
         this.applicationParams = applicationParams;
     }
 
-    public void handleJsonError(ServiceBusReceiverClient receiver,
-                                ServiceBusReceivedMessage message,
-                                JsonProcessingException exception) {
-        log.error(MESSAGE_PARSE_ERROR, message.getMessageId(), exception);
-        receiver.deadLetter(message, deadLetterService.handleParsingError(exception.getMessage()));
-        log.warn(MESSAGE_DEAD_LETTERED, message.getMessageId());
-    }
-
     public void handleJsonError(ServiceBusReceivedMessageContext messageContext,
                                 JsonProcessingException exception) {
         log.error(MESSAGE_PARSE_ERROR, messageContext.getMessage().getMessageId(), exception);
         messageContext.deadLetter(deadLetterService.handleParsingError(exception.getMessage()));
         log.warn(MESSAGE_DEAD_LETTERED, messageContext.getMessage().getMessageId());
-    }
-
-    public void handleApplicationError(ServiceBusReceiverClient receiver,
-                                       ServiceBusReceivedMessage message,
-                                       Exception exception) {
-        final Long deliveryCount = message.getRawAmqpMessage().getHeader().getDeliveryCount();
-        if (deliveryCount >= applicationParams.getMaxRetryAttempts()) {
-            log.error(APPLICATION_ERROR, message.getMessageId(), exception);
-            receiver.deadLetter(message, deadLetterService.handleApplicationError(exception.getMessage()));
-            log.warn(RETRIES_EXCEEDED, message.getMessageId());
-        } else {
-            receiver.abandon(message);
-            log.warn(RETRY_MESSAGE, message.getMessageId());
-        }
     }
 
     public void handleApplicationError(ServiceBusReceivedMessageContext messageContext,
@@ -67,18 +43,6 @@ public class ServiceBusMessageErrorHandler {
             messageContext.abandon();
             log.warn(RETRY_MESSAGE, messageContext.getMessage().getMessageId());
         }
-    }
-
-    public void handleGenericError(ServiceBusReceiverClient receiver,
-                                   ServiceBusReceivedMessage message,
-                                   Exception exception) {
-        log.error(APPLICATION_ERROR, message.getMessageId(), exception);
-        if (exception.getMessage() != null) {
-            receiver.deadLetter(message, deadLetterService.handleApplicationError(exception.getMessage()));
-        } else {
-            receiver.deadLetter(message, deadLetterService.handleApplicationError(NO_EXCEPTION_MESSAGE));
-        }
-        log.warn(MESSAGE_DEAD_LETTERED, message.getMessageId());
     }
 
     public void handleGenericError(ServiceBusReceivedMessageContext messageContext,
