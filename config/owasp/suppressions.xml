@@ -74,4 +74,10 @@
     <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
   </suppress>
 
+  <suppress>
+    <notes> Eclipse Jetty versions 9.4.0 thru 9.4.46 </notes>
+    <cve>CVE-2022-2047</cve>
+    <cve>CVE-2022-2048</cve>
+  </suppress>
+
 </suppressions>
