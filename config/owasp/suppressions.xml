@@ -73,5 +73,10 @@
     <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
     <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
   </suppress>
+  
+  <suppress>
+    <cve>CVE-2022-2047</cve>
+    <cve>CVE-2022-2048</cve>
+  </suppress>
 
 </suppressions>
