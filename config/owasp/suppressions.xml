@@ -79,4 +79,10 @@
     <cve>CVE-2022-2048</cve>
   </suppress>
 
+  <suppress>
+    <notes></notes>
+    <cve>CVE-2022-2047</cve>
+    <cve>CVE-2022-2048</cve>
+  </suppress>
+
 </suppressions>
