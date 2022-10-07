@@ -78,7 +78,12 @@
     <cve>CVE-2022-2047</cve>
     <cve>CVE-2022-2048</cve>
   </suppress>
-  
+
+  <suppress until="2022-11-01">
+    <cve>CVE-2022-42003</cve>
+    <cve>CVE-2022-42004</cve>
+  </suppress>
+
   <suppress>
     <notes>
       https://tools.hmcts.net/jira/browse/HMAN-417
