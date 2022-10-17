@@ -24,6 +24,11 @@ import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.NO_DEFINED;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.TYPE_INBOUND;
+
 @Slf4j
 @Service
 public class MessageProcessor {
@@ -148,13 +153,25 @@ public class MessageProcessor {
         } catch (MalformedMessageException ex) {
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
+            logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.APPLICATION_ERROR, ex);
         } catch (JsonProcessingException ex) {
             return new MessageProcessingResult(MessageProcessingResultType.JSON_ERROR, ex);
         } catch (Exception ex) {
-            log.warn("Unexpected Error");
+            logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         }
+    }
+
+    private void logErrors(ServiceBusReceivedMessage message, Exception exception ) {
+        log.error("Unexpected Error",exception);
+        log.error(
+            "Error occurred during service bus processing. Service:{} . Type: {}. Method: {}. Hearing ID: {}.",
+            HMC_HMI_OUTBOUND_ADAPTER,
+            TYPE_INBOUND,
+            READ,
+            message.getApplicationProperties().getOrDefault(HEARING_ID, NO_DEFINED)
+        );
     }
 
 
