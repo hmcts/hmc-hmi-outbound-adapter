@@ -163,8 +163,8 @@ public class MessageProcessor {
         }
     }
 
-    private void logErrors(ServiceBusReceivedMessage message, Exception exception ) {
-        log.error("Unexpected Error",exception);
+    private void logErrors(ServiceBusReceivedMessage message, Exception exception) {
+        log.error("Unexpected Error", exception);
         log.error(
             "Error occurred during service bus processing. Service:{} . Type: {}. Method: {}. Hearing ID: {}.",
             HMC_HMI_OUTBOUND_ADAPTER,

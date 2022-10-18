@@ -40,7 +40,6 @@ public class MessageSenderConfiguration {
             log.debug("Message has been sent to the Queue {}", applicationParams.getOutboundQueueName());
         } catch (Exception e) {
             log.error("Error while sending the message to queue:{}", e.getMessage());
-
             log.error(
                 "Error occurred during service bus processing. Service:{} . Type: {}. Method: {}. Hearing ID: {}.",
                 HMC_HMI_OUTBOUND_ADAPTER,
