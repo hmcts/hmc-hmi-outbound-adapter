@@ -12,7 +12,5 @@ public final class Constants {
     public static final String READ = "<READ>";
     public static final String TYPE_INBOUND = "Inbound Queue";
     public static final String TYPE_OUTBOUND = "Outbound Queue";
-    public static final String TYPE_TOPIC = "TOPIC";
-
     public static final String NO_DEFINED = "NO_DEFINED";
 }

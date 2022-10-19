@@ -107,6 +107,13 @@ public class MessageProcessor {
 
     public void processException(ServiceBusErrorContext context) {
         log.error("Processed message queue handle error {}", context.getErrorSource(), context.getException());
+        log.error(
+            "Error occurred during service bus processing. Service:{} . Type: {}. Method: {}. Hearing ID: {}.",
+            HMC_HMI_OUTBOUND_ADAPTER,
+            TYPE_INBOUND,
+            READ,
+            NO_DEFINED
+        );
     }
 
     private void finaliseMessage(ServiceBusReceivedMessageContext messageContext,
