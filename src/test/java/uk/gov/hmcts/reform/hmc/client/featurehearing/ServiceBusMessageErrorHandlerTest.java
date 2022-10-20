@@ -139,7 +139,7 @@ class ServiceBusMessageErrorHandlerTest {
         handler.handleApplicationError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals(1, logsList.size());
+        assertEquals(2, logsList.size());
         assertEquals(Level.WARN, logsList.get(0)
             .getLevel());
 
