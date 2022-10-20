@@ -10,7 +10,7 @@ public final class Constants {
     public static final String  HMC_HMI_OUTBOUND_ADAPTER = "<Hmc hmi outbound adapter>";
     public static final String WRITE = "<WRITE>";
     public static final String READ = "<READ>";
-    public static final String TYPE_INBOUND = "Inbound Queue";
-    public static final String TYPE_OUTBOUND = "Outbound Queue";
+    public static final String TYPE_INBOUND = "hmc-to-hmi";
+    public static final String TYPE_OUTBOUND = "hmc-from-hmi";
     public static final String NO_DEFINED = "NO_DEFINED";
 }
