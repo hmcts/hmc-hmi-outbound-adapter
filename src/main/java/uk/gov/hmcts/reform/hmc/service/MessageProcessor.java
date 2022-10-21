@@ -24,10 +24,11 @@ import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.NO_DEFINED;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.TYPE_INBOUND;
 
 @Slf4j
 @Service
@@ -108,9 +109,9 @@ public class MessageProcessor {
     public void processException(ServiceBusErrorContext context) {
         log.error("Processed message queue handle error {}", context.getErrorSource(), context.getException());
         log.error(
-            "Error occurred during service bus processing. Service:{} . Type: {}. Method: {}. Hearing ID: {}.",
+            ERROR_PROCESSING_MESSAGE,
             HMC_HMI_OUTBOUND_ADAPTER,
-            TYPE_INBOUND,
+            HMC_TO_HMI,
             READ,
             NO_DEFINED
         );
@@ -173,9 +174,9 @@ public class MessageProcessor {
     private void logErrors(ServiceBusReceivedMessage message, Exception exception) {
         log.error("Unexpected Error", exception);
         log.error(
-            "Error occurred during service bus processing. Service:{} . Type: {}. Method: {}. Hearing ID: {}.",
+            ERROR_PROCESSING_MESSAGE,
             HMC_HMI_OUTBOUND_ADAPTER,
-            TYPE_INBOUND,
+            HMC_TO_HMI,
             READ,
             message.getApplicationProperties().getOrDefault(HEARING_ID, NO_DEFINED)
         );

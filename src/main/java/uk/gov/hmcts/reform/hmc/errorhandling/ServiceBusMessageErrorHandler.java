@@ -6,10 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.NO_DEFINED;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.TYPE_INBOUND;
+
 
 @Slf4j
 @Component
@@ -48,9 +50,9 @@ public class ServiceBusMessageErrorHandler {
             messageContext.abandon();
             log.warn(RETRY_MESSAGE, messageContext.getMessage().getMessageId());
             log.error(
-                "Error occurred during service bus processing. Service:{} . Type: {}. Method: {}. Hearing ID: {}.",
+                ERROR_PROCESSING_MESSAGE,
                 HMC_HMI_OUTBOUND_ADAPTER,
-                TYPE_INBOUND,
+                HMC_TO_HMI,
                 READ,
                 NO_DEFINED
             );
