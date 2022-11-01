@@ -91,7 +91,7 @@
 
   <suppress>
     <notes>
-      https://tools.hmcts.net/jira/browse/HMAN-451
+      https://tools.hmcts.net/jira/browse/HMAN-439
     </notes>
     <cve>CVE-2022-42003</cve>
     <cve>CVE-2022-42004</cve>
