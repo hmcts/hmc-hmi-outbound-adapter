@@ -7,6 +7,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.azure.core.amqp.models.AmqpAnnotatedMessage;
 import com.azure.core.amqp.models.AmqpMessageHeader;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.azure.messaging.servicebus.models.DeadLetterOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,7 +26,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.APPLICATION_PROCESSING_ERROR;
@@ -48,6 +51,9 @@ class ServiceBusMessageErrorHandlerTest {
 
     @Mock
     private ServiceBusReceiverClient receiverClient;
+
+    @Mock
+    private ServiceBusReceivedMessageContext messageContext = mock(ServiceBusReceivedMessageContext.class);
 
     @Mock
     private ServiceBusReceivedMessage receivedMessage;
@@ -89,12 +95,13 @@ class ServiceBusMessageErrorHandlerTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
+        given(messageContext.getMessage()).willReturn(receivedMessage);
+        given(messageContext.getMessage().getMessageId()).willReturn(MESSAGE_ID);
         when(jsonProcessingException.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleParsingError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
-        doNothing().when(receiverClient).deadLetter(receivedMessage, deadLetterOptions);
+        doNothing().when(messageContext).deadLetter(deadLetterOptions);
 
-        handler.handleJsonError(receiverClient, receivedMessage, jsonProcessingException);
+        handler.handleJsonError(messageContext, jsonProcessingException);
 
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(2, logsList.size());
@@ -122,13 +129,14 @@ class ServiceBusMessageErrorHandlerTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        when(receivedMessage.getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
+        given(messageContext.getMessage()).willReturn(receivedMessage);
+        when(messageContext.getMessage().getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(1L);
         when(applicationParams.getMaxRetryAttempts()).thenReturn(2);
         when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
 
-        handler.handleApplicationError(receiverClient, receivedMessage, exception);
+        handler.handleApplicationError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
@@ -153,7 +161,8 @@ class ServiceBusMessageErrorHandlerTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        when(receivedMessage.getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
+        given(messageContext.getMessage()).willReturn(receivedMessage);
+        when(messageContext.getMessage().getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(2L);
         when(applicationParams.getMaxRetryAttempts()).thenReturn(2);
@@ -161,9 +170,9 @@ class ServiceBusMessageErrorHandlerTest {
 
         when(exception.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleApplicationError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
-        doNothing().when(receiverClient).deadLetter(receivedMessage, deadLetterOptions);
+        doNothing().when(messageContext).deadLetter(deadLetterOptions);
 
-        handler.handleApplicationError(receiverClient, receivedMessage, exception);
+        handler.handleApplicationError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(2, logsList.size());
@@ -190,12 +199,13 @@ class ServiceBusMessageErrorHandlerTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
+        given(messageContext.getMessage()).willReturn(receivedMessage);
+        given(messageContext.getMessage().getMessageId()).willReturn(MESSAGE_ID);
         when(exception.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleApplicationError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
-        doNothing().when(receiverClient).deadLetter(receivedMessage, deadLetterOptions);
+        doNothing().when(messageContext).deadLetter(deadLetterOptions);
 
-        handler.handleGenericError(receiverClient, receivedMessage, exception);
+        handler.handleGenericError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(2, logsList.size());
@@ -222,12 +232,13 @@ class ServiceBusMessageErrorHandlerTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        when(receivedMessage.getMessageId()).thenReturn(MESSAGE_ID);
+        given(messageContext.getMessage()).willReturn(receivedMessage);
+        given(messageContext.getMessage().getMessageId()).willReturn(MESSAGE_ID);
         when(exception.getMessage()).thenReturn(null);
         when(deadLetterService.handleApplicationError(NO_EXCEPTION_MESSAGE)).thenReturn(deadLetterOptions);
-        doNothing().when(receiverClient).deadLetter(receivedMessage, deadLetterOptions);
+        doNothing().when(messageContext).deadLetter(deadLetterOptions);
 
-        handler.handleGenericError(receiverClient, receivedMessage, exception);
+        handler.handleGenericError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(2, logsList.size());

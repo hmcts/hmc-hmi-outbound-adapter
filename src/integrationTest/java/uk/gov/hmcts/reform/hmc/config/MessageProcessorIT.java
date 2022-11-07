@@ -16,6 +16,8 @@ import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyAmendHearing;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyDeleteHearing;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyRequestHearing;
@@ -33,12 +35,9 @@ class MessageProcessorIT extends BaseTest {
     private static final String HEARING_ID = "hearing_id";
 
     @MockBean
-    private MessageReceiverConfiguration messageReceiverConfiguration;
-
-    @MockBean
     private MessageSenderConfiguration messageSenderConfiguration;
 
-    @Autowired
+    @MockBean
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
 
     @Autowired
@@ -55,6 +54,7 @@ class MessageProcessorIT extends BaseTest {
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
                                                                  messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
+        verify(defaultFutureHearingRepository).createHearingRequest(any());
     }
 
     @Test
@@ -68,6 +68,7 @@ class MessageProcessorIT extends BaseTest {
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
                                                                  messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
+        verify(defaultFutureHearingRepository).deleteHearingRequest(any(), any());
     }
 
     @Test
@@ -81,6 +82,7 @@ class MessageProcessorIT extends BaseTest {
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
                                                                  messageSenderConfiguration, OBJECT_MAPPER);
         messageProcessor.processMessage(data, applicationProperties);
+        verify(defaultFutureHearingRepository).amendHearingRequest(any(), any());
     }
 
 }

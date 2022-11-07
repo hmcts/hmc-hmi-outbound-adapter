@@ -2,15 +2,13 @@ package uk.gov.hmcts.reform.hmc.config;
 
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
-import com.azure.messaging.servicebus.ServiceBusReceiverClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
@@ -22,23 +20,30 @@ import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MISSING_CASE_LISTING_ID;
-import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MISSING_MESSAGE_TYPE;
-import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.UNSUPPORTED_MESSAGE_TYPE;
 
 class MessageProcessorTest {
-    private static final String MESSAGE_TYPE = "message_type";
-    private static final String HEARING_ID = "hearing_id";
 
-    private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
-        .modules(new Jdk8Module())
-        .build();
     private MessageProcessor messageProcessor;
+    private static final String HEARING_ID = "hearing_id";
+    private static final String MESSAGE_TYPE = "message_type";
+    public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
+    public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
+    public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
+
+    @Mock
+    private DefaultFutureHearingRepository futureHearingRepository;
+
+    @Mock
+    private MessageSenderConfiguration messageSenderConfiguration;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @Mock
     private ApplicationParams applicationParams;
@@ -47,25 +52,22 @@ class MessageProcessorTest {
     private ActiveDirectoryApiClient activeDirectoryApiClient;
 
     @Mock
-    private DefaultFutureHearingRepository futureHearingRepository;
-
-    @Mock
-    private ServiceBusReceiverClient client;
-
-    @Mock
-    private ServiceBusReceivedMessage message;
+    private ServiceBusReceivedMessage message = mock(ServiceBusReceivedMessage.class);
 
     @Mock
     private ServiceBusMessageErrorHandler errorHandler;
 
-    @Mock
-    private MessageSenderConfiguration messageSenderConfiguration;
+    private JsonNode anyData;
+
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        messageProcessor = new MessageProcessor(futureHearingRepository, errorHandler, 
-            messageSenderConfiguration, OBJECT_MAPPER);
+        messageProcessor = new MessageProcessor(
+                futureHearingRepository, errorHandler,
+                messageSenderConfiguration,
+                objectMapper);
+        anyData = objectMapper.convertValue("test data", JsonNode.class);
         String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
@@ -81,7 +83,11 @@ class MessageProcessorTest {
         applicationProperties.put(MESSAGE_TYPE, MessageType.REQUEST_HEARING);
         when(message.getApplicationProperties()).thenReturn(applicationProperties);
         when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
-        messageProcessor.processMessage(client, message);
+        try {
+            messageProcessor.processMessage(anyData, applicationProperties);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         verify(futureHearingRepository).createHearingRequest(any());
     }
 
@@ -92,7 +98,11 @@ class MessageProcessorTest {
         applicationProperties.put(MESSAGE_TYPE, MessageType.AMEND_HEARING);
         when(message.getApplicationProperties()).thenReturn(applicationProperties);
         when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
-        messageProcessor.processMessage(client, message);
+        try {
+            messageProcessor.processMessage(anyData, applicationProperties);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         verify(futureHearingRepository).amendHearingRequest(any(), any());
     }
 
@@ -103,14 +113,17 @@ class MessageProcessorTest {
         applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
         when(message.getApplicationProperties()).thenReturn(applicationProperties);
         when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
-        messageProcessor.processMessage(client, message);
+        try {
+            messageProcessor.processMessage(anyData, applicationProperties);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         verify(futureHearingRepository).deleteHearingRequest(any(), any());
     }
 
     @Test
     void shouldThrowErrorWhenMessageTypeIsNull() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
             .hasMessageContaining(MISSING_MESSAGE_TYPE);
@@ -121,14 +134,14 @@ class MessageProcessorTest {
         Map<String, Object> applicationProperties = new HashMap<>();
         when(message.getApplicationProperties()).thenReturn(applicationProperties);
         when(message.getBody()).thenReturn(BinaryData.fromString("invalid data"));
-        messageProcessor.processMessage(client, message);
-        verify(errorHandler).handleJsonError(any(), any(), any());
+        assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
+                .isInstanceOf(MalformedMessageException.class)
+                .hasMessageContaining(MISSING_MESSAGE_TYPE);
     }
 
     @Test
     void shouldThrowErrorWhenNoMessageType() {
         Map<String, Object> applicationProperties = new HashMap<>();
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
             .hasMessageContaining(MISSING_MESSAGE_TYPE);
@@ -138,7 +151,6 @@ class MessageProcessorTest {
     void shouldThrowErrorWhenNoSupportedMessageType() {
         Map<String, Object> applicationProperties = new HashMap<>();
         applicationProperties.put(MESSAGE_TYPE, "invalid message type");
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
             .hasMessageContaining(UNSUPPORTED_MESSAGE_TYPE);
@@ -148,7 +160,6 @@ class MessageProcessorTest {
     void shouldThrowErrorWhenNoCaseListingID() {
         Map<String, Object> applicationProperties = new HashMap<>();
         applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
-        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
             .hasMessageContaining(MISSING_CASE_LISTING_ID);
