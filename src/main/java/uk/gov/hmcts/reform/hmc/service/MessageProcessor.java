@@ -77,17 +77,20 @@ public class MessageProcessor {
 
             switch (messageType) {
                 case REQUEST_HEARING:
-                    log.debug("Message of type REQUEST_HEARING received");
+                    log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
+                              caseListingID, message);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
                         .createHearingRequest(message), caseListingID);
                     break;
                 case AMEND_HEARING:
-                    log.debug("Message of type AMEND_HEARING received");
+                    log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
+                              caseListingID, message);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
                         .amendHearingRequest(message, caseListingID), caseListingID);
                     break;
                 case DELETE_HEARING:
-                    log.debug("Message of type DELETE_HEARING received");
+                    log.debug("Message of type DELETE_HEARING received for caseListingID: {} ,{}",
+                              caseListingID, message);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
                         .deleteHearingRequest(message, caseListingID), caseListingID);
                     break;

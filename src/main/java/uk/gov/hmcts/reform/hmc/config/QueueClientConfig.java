@@ -23,6 +23,7 @@ public class QueueClientConfig {
     public ServiceBusProcessorClient processedMessageQueueClient(
             MessageProcessor messageHandler) {
         log.info("Creating & returning new service bus processor client.");
+        log.debug("Connected to outboundConnection {}", applicationParams.getOutboundConnectionString());
         return new ServiceBusClientBuilder()
             .connectionString(applicationParams.getOutboundConnectionString())
             .processor()
