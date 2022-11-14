@@ -108,11 +108,9 @@
     <notes>
       CVE-2022-31690 refer https://tools.hmcts.net/jira/browse/HMAN-454
       CVE-2022-31692 refer https://tools.hmcts.net/jira/browse/HMAN-454
-      CVE-2022-42252 refer https://tools.hmcts.net/jira/browse/HMAN-455
     </notes>
     <cve>CVE-2022-31690</cve>
     <cve>CVE-2022-31692</cve>
-    <cve>CVE-2022-42252</cve>
   </suppress>
 
 </suppressions>
