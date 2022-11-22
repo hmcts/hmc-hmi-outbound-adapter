@@ -81,16 +81,6 @@
 
   <suppress>
     <notes>
-      https://tools.hmcts.net/jira/browse/HMAN-423
-    </notes>
-    <cve>CVE-2022-38749</cve>
-    <cve>CVE-2022-38750</cve>
-    <cve>CVE-2022-38751</cve>
-    <cve>CVE-2022-38752</cve>
-  </suppress>
-
-  <suppress>
-    <notes>
       https://tools.hmcts.net/jira/browse/HMAN-439
     </notes>
     <cve>CVE-2022-42003</cve>
