@@ -70,3 +70,11 @@ fh:
 feign:
   okhttp:
     enabled: true
+
+LOGGING:
+  LEVEL:
+    uk:
+      gov:
+        hmcts:
+          reform:
+            hmc: INFO
