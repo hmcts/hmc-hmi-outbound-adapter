@@ -58,14 +58,6 @@
     </notes>
     <vulnerabilityName>CVE-2020-5408</vulnerabilityName>
   </suppress>
-
-  <suppress>
-    <notes><![CDATA[
-   file name: okhttp-3.14.9.jar
-   ]]></notes>
-    <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
-    <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
-  </suppress>
   <!--End of false positives section -->
 
   <suppress>
