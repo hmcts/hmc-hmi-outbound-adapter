@@ -6,6 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.NO_DEFINED;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
+
+
 @Slf4j
 @Component
 public class ServiceBusMessageErrorHandler {
@@ -42,6 +49,13 @@ public class ServiceBusMessageErrorHandler {
         } else {
             messageContext.abandon();
             log.warn(RETRY_MESSAGE, messageContext.getMessage().getMessageId());
+            log.error(
+                ERROR_PROCESSING_MESSAGE,
+                HMC_HMI_OUTBOUND_ADAPTER,
+                HMC_TO_HMI,
+                READ,
+                NO_DEFINED
+            );
         }
     }
 

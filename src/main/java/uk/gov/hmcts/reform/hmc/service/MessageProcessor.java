@@ -24,6 +24,12 @@ import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.NO_DEFINED;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
+
 @Slf4j
 @Service
 public class MessageProcessor {
@@ -105,6 +111,13 @@ public class MessageProcessor {
 
     public void processException(ServiceBusErrorContext context) {
         log.error("Processed message queue handle error {}", context.getErrorSource(), context.getException());
+        log.error(
+            ERROR_PROCESSING_MESSAGE,
+            HMC_HMI_OUTBOUND_ADAPTER,
+            HMC_TO_HMI,
+            READ,
+            NO_DEFINED
+        );
     }
 
     private void finaliseMessage(ServiceBusReceivedMessageContext messageContext,
@@ -151,13 +164,25 @@ public class MessageProcessor {
         } catch (MalformedMessageException ex) {
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
+            logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.APPLICATION_ERROR, ex);
         } catch (JsonProcessingException ex) {
             return new MessageProcessingResult(MessageProcessingResultType.JSON_ERROR, ex);
         } catch (Exception ex) {
-            log.warn("Unexpected Error");
+            logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         }
+    }
+
+    private void logErrors(ServiceBusReceivedMessage message, Exception exception) {
+        log.error("Unexpected Error", exception);
+        log.error(
+            ERROR_PROCESSING_MESSAGE,
+            HMC_HMI_OUTBOUND_ADAPTER,
+            HMC_TO_HMI,
+            READ,
+            message.getApplicationProperties().getOrDefault(HEARING_ID, NO_DEFINED)
+        );
     }
 
 
