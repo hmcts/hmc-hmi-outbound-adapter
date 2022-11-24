@@ -69,7 +69,6 @@
   <!--End of false positives section -->
 
   <suppress>
-    <cve>CVE-2019-19919</cve>
     <cve>CVE-2022-31684</cve>
     <cve>CVE-2020-11022</cve>
     <cve>CVE-2020-11023</cve>
