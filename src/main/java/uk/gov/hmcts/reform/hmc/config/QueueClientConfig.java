@@ -43,7 +43,7 @@ public class QueueClientConfig {
         AmqpRetryOptions retryOptions = new AmqpRetryOptions();
         retryOptions
             .setMode(AmqpRetryMode.EXPONENTIAL)
-            .setMaxDelay(Duration.ofDays(1L))
+            .setTryTimeout(Duration.ofDays(1L))
             .setDelay(Duration.ofSeconds(Long.valueOf(applicationParams.getExponentialMultiplier())));
         return retryOptions;
     }
