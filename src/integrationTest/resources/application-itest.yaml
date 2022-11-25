@@ -18,6 +18,7 @@ azure:
       inbound-connection-string: Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]
       # should be an integer that is interpreted as seconds
       exponential-multiplier: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER:2}
+      exponential-multiplier-max-retries: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER_MAX_RETRIES:2}
       outbound-queue-name: hmc-to-hmi
       inbound-queue-name: hmc-from-hmi
       max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}
