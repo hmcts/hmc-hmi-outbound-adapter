@@ -5,92 +5,14 @@
   <suppress>
     <notes>False Positives
       List of False Positives: https://github.com/jeremylong/DependencyCheck/issues?q=label%3A%22FP+Report%22
-      Things to note:
-        Update org.owasp.dependencycheck to v7.x.x or remove org.owasp.dependencycheck then
-        update uk.gov.hmcts.java version which introduces dependencycheck v7.x.x
-        Note that updating the uk.gov.hmcts.java pulls in other dependency versions which may have cves assigned
       CVE-2016-1000027 refer https://tools.hmcts.net/jira/browse/HMAN-236
     </notes>
     <cve>CVE-2016-1000027</cve>
-    <cve>CVE-2018-11039</cve>
-    <cve>CVE-2018-1257</cve>
-    <cve>CVE-2020-5421</cve>
-    <cve>CVE-2018-11040</cve>
-    <cve>CVE-2013-4152</cve>
-    <cve>CVE-2014-0054</cve>
-    <cve>CVE-2013-7315</cve>
-    <cve>CVE-2013-7315</cve>
-  </suppress>
-
-  <suppress>
-    <notes>
-      <![CDATA[
-        file name: spring-plugin-core-2.0.0.RELEASE.jar
-        file name: spring-plugin-metadata-2.0.0.RELEASE.jar
-      ]]>
-      https://tools.hmcts.net/jira/browse/HMAN-235
-      CVEs are on transitive dependencies of springfox-swagger2 which hasn't been updated in about 2 years
-      CVE-2022-22970 refer https://tools.hmcts.net/jira/browse/HMAN-266
-      CVE-2022-22950 refer https://tools.hmcts.net/jira/browse/HMAN-316
-    </notes>
-    <cve>CVE-2022-22965</cve>
-    <cve>CVE-2022-22968</cve>
-    <cve>CVE-2022-22970</cve>
-    <cve>CVE-2022-22950</cve>
-  </suppress>
-
-  <suppress>
-    <notes>
-      <![CDATA[ file name: tomcat-embed-core-9.0.63.jar]]>
-      FP https://github.com/jeremylong/DependencyCheck/issues/4634
-      CVE-2022-34305 refer https://tools.hmcts.net/jira/browse/HMAN-330
-    </notes>
-    <cve>CVE-2022-34305</cve>
-  </suppress>
-
-  <suppress>
-    <notes>
-      <![CDATA[ file name: spring-security-crypto-5.7.2.jar]]>
-      FP https://github.com/jeremylong/DependencyCheck/issues/4629
-    </notes>
-    <vulnerabilityName>CVE-2020-5408</vulnerabilityName>
   </suppress>
   <!--End of false positives section -->
 
-  <suppress>
-    <notes>
-      <![CDATA[file name: spring-security-rsa-1.0.10.RELEASE.jar]]>
-      CVE-2022-22978 refer https://tools.hmcts.net/jira/browse/HMAN-288
-    </notes>
-    <cve>CVE-2022-22976</cve>
-    <cve>CVE-2022-22978</cve>
-  </suppress>
+  <!--Please add all the temporary suppressions under the below section-->
 
-  <suppress>
-    <notes><![CDATA[
-   file name: okhttp-3.14.9.jar
-   ]]></notes>
-    <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
-    <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
-  </suppress>
+  <!--End of temporary suppressions section -->
 
-  <suppress>
-    <cve>CVE-2022-2047</cve>
-    <cve>CVE-2022-2048</cve>
-  </suppress>
-
-  <suppress>
-    <notes>
-      https://tools.hmcts.net/jira/browse/HMAN-439
-    </notes>
-    <cve>CVE-2022-42003</cve>
-    <cve>CVE-2022-42004</cve>
-  </suppress>
-
-  <suppress>
-    <notes>
-      https://tools.hmcts.net/jira/browse/HMAN-417
-    </notes>
-    <cve>CVE-2022-25857</cve>
-  </suppress>
 </suppressions>
