@@ -7,7 +7,7 @@ plugins {
   id 'org.owasp.dependencycheck' version '6.5.3'
   id 'com.github.ben-manes.versions' version '0.38.0'
   id 'org.sonarqube' version '3.1.1'
-  id 'uk.gov.hmcts.java' version '0.12.2'
+  id 'uk.gov.hmcts.java' version '0.12.33'
   id 'com.github.spacialcircumstances.gradle-cucumber-reporting' version '0.1.23'
 }
 
@@ -202,14 +202,14 @@ def versions = [
   springCloud     : '2020.0.1',
   springfoxSwagger: '3.0.0',
   testcontainers  : '1.15.2',
-  jetty           : '9.4.43.v20210629',
+  jetty           : '9.4.49.v20220914',
   netty           : '4.1.77.Final'
 ]
 
 ext['spring-framework.version'] = '5.3.21'
 ext['spring-security.version'] = '5.7.5'
 ext['log4j2.version'] = '2.17.1'
-ext['jackson.version'] = '2.13.2'
+ext['jackson.version'] = '2.14.1'
 ext['snakeyaml.version'] = '1.33'
 
 // before committing a change, make sure task still works
@@ -224,6 +224,7 @@ dependencyUpdates {
   }
 }
 
+apply from: './gradle/suppress.gradle'
 dependencyCheck {
   suppressionFile = 'config/owasp/suppressions.xml'
 }
@@ -279,10 +280,7 @@ ext.libraries = [
 ]
 
 dependencies {
-  compile "com.fasterxml.jackson.core:jackson-databind:2.13.2.2"
-  compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.13.2'
-  compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-jaxb-annotations', version: '2.13.2'
-  compile group: 'org.yaml', name: 'snakeyaml', version: '1.32'
+  compile group: 'org.yaml', name: 'snakeyaml', version: '1.33'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
@@ -291,13 +289,17 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
   implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign'
-  implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '11.2'
+  implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '12.1'
+  implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.10.0'
+  implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: '1.7.21'
+  implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-common', version: '1.7.21'
+  implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk7', version: '1.7.21'
+  implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: '1.7.21'
   implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
 
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
   implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
 
-  implementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
   implementation group: 'javax.inject', name: 'javax.inject', version: '1'
   implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.8.0'
   implementation group: 'com.azure', name: 'azure-core', version: '1.28.0'
@@ -352,6 +354,8 @@ dependencies {
   implementation group: 'io.netty', name: 'netty-transport-native-epoll', version: versions.netty
   implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: versions.netty
   implementation group: 'io.netty', name: 'netty-transport-native-unix-common', version: versions.netty
+  implementation group: 'io.projectreactor.netty', name: 'reactor-netty-core', version: '1.1.0'
+  implementation group: 'io.projectreactor.netty', name: 'reactor-netty-http', version: '1.1.0'
 
   testImplementation libraries.junit5
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', {
@@ -364,6 +368,8 @@ dependencies {
   testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.9'
 
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner'
+  testImplementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
+
   integrationTestImplementation sourceSets.main.runtimeClasspath
   integrationTestImplementation sourceSets.test.runtimeClasspath
 
