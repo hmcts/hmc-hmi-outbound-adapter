@@ -44,9 +44,6 @@ public class ApplicationParams {
     @Value("${azure.jms.servicebus.exponential-multiplier}")
     private String exponentialMultiplier;
 
-    @Value("${azure.jms.servicebus.exponential-multiplier-max-retries}")
-    private String exponentialMultiplierMaxRetries;
-
     @Value("${azure.jms.servicebus.max-retry-attempts}")
     private int maxRetryAttempts;
 }

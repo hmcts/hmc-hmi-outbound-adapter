@@ -34,6 +34,7 @@ public class QueueClientConfig {
             .processor()
             .queueName(applicationParams.getOutboundQueueName())
             .receiveMode(ServiceBusReceiveMode.PEEK_LOCK)
+            .disableAutoComplete()
             .processMessage(messageHandler::processMessage)
             .processError(messageHandler::processException)
             .buildProcessorClient();
@@ -43,7 +44,7 @@ public class QueueClientConfig {
         AmqpRetryOptions retryOptions = new AmqpRetryOptions();
         retryOptions
             .setMode(AmqpRetryMode.EXPONENTIAL)
-            .setMaxRetries(Integer.valueOf((applicationParams.getExponentialMultiplierMaxRetries())))
+            .setMaxRetries(Integer.valueOf((applicationParams.getMaxRetryAttempts())))
             .setDelay(Duration.ofSeconds(Long.valueOf(applicationParams.getExponentialMultiplier())));
         return retryOptions;
     }
