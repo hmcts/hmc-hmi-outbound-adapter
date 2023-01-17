@@ -29,7 +29,7 @@ java:
     GRANT_TYPE: client_credentials
     FH_BASE_URL: https://login.microsoftonline.com
     SERVICE_BUS_EXPONENTIAL_MULTIPLIER: 60
-    SERVICE_BUS_MAX_RETRIES: 13
+    SERVICE_BUS_MAX_RETRIES: 10
 
 servicebus:
   enabled: false
