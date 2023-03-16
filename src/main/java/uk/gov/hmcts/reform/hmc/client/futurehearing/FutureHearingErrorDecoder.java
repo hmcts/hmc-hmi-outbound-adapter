@@ -62,12 +62,14 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
     }
 
     private <T> Optional<T> getResponseBody(Response response, Class<T> klass) {
+        String bodyJson = null;
         try {
-            String bodyJson = new BufferedReader(new InputStreamReader(response.body().asInputStream()))
+            bodyJson = new BufferedReader(new InputStreamReader(response.body().asInputStream()))
                 .lines().parallel().collect(Collectors.joining("\n"));
             return Optional.ofNullable(new ObjectMapper().readValue(bodyJson, klass));
         } catch (IOException e) {
-            log.error("Unable to read response from FH", e);
+            log.error(String.format("Response from FH failed with error code %s, error message %s",
+                                    response.status(), bodyJson));
             return Optional.empty();
         }
     }
