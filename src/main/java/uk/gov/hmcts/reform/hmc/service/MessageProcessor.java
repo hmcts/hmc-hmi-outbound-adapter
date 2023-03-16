@@ -200,7 +200,8 @@ public class MessageProcessor {
                 .listAssistHttpStatus(202)
                 .build();
         } catch (BadFutureHearingRequestException ex) {
-            log.error(MESSAGE_ERROR +  ex.getErrorDetails().getErrorCode() + WITH_ERROR + ex.getMessage());
+            log.error(MESSAGE_ERROR + ex.getErrorDetails().getErrorCode() + WITH_ERROR + ex.getMessage()
+                          + HEARING_ID + hearingId);
             ErrorDetails errorDetails = ex.getErrorDetails();
             syncMessage = SyncMessage.builder()
                 .listAssistHttpStatus(400)
