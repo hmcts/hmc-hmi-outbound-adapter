@@ -27,8 +27,10 @@ import java.util.function.Supplier;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_ERROR;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.NO_DEFINED;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.WITH_ERROR;
 
 @Slf4j
 @Service
@@ -162,11 +164,13 @@ public class MessageProcessor {
             return new MessageProcessingResult(MessageProcessingResultType.SUCCESS);
 
         } catch (MalformedMessageException ex) {
+            logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
             logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.APPLICATION_ERROR, ex);
         } catch (JsonProcessingException ex) {
+            logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.JSON_ERROR, ex);
         } catch (Exception ex) {
             logErrors(message, ex);
@@ -196,6 +200,7 @@ public class MessageProcessor {
                 .listAssistHttpStatus(202)
                 .build();
         } catch (BadFutureHearingRequestException ex) {
+            log.error(MESSAGE_ERROR +  ex.getErrorDetails().getErrorCode() + WITH_ERROR + ex.getMessage());
             ErrorDetails errorDetails = ex.getErrorDetails();
             syncMessage = SyncMessage.builder()
                 .listAssistHttpStatus(400)
