@@ -67,6 +67,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                 .lines().parallel().collect(Collectors.joining("\n"));
             return Optional.ofNullable(new ObjectMapper().readValue(bodyJson, klass));
         } catch (IOException e) {
+            log.error("Unable to read response from FH", e);
             return Optional.empty();
         }
     }
