@@ -198,7 +198,7 @@ def versions = [
   mapstruct       : '1.4.2.Final',
   reformLogging   : '5.1.9',
   springBoot      : springBoot.class.package.implementationVersion,
-  springCloud     : '2020.0.1',
+  springCloud     : '2022.0.1',
   springfoxSwagger: '3.0.0',
   testcontainers  : '1.15.2',
   jetty           : '9.4.49.v20220914',
