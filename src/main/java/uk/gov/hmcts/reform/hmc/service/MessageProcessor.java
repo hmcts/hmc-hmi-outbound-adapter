@@ -62,7 +62,6 @@ public class MessageProcessor {
         var message = messageContext.getMessage();
         var processingResult = tryProcessMessage(message);
         finaliseMessage(messageContext, processingResult);
-        messageContext.complete();
     }
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
