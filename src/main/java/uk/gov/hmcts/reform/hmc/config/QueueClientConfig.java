@@ -29,6 +29,7 @@ public class QueueClientConfig {
             .processor()
             .queueName(applicationParams.getOutboundQueueName())
             .receiveMode(ServiceBusReceiveMode.PEEK_LOCK)
+            .disableAutoComplete()
             .processMessage(messageHandler::processMessage)
             .processError(messageHandler::processException)
             .buildProcessorClient();
