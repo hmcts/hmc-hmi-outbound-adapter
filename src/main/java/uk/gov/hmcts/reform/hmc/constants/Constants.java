@@ -15,7 +15,7 @@ public final class Constants {
         + "Service:{} . Entity: {}. Method: {}. Hearing ID: {}.";
     public static final String HMC_TO_HMI = "hmc-to-hmi";
     public static final String HMC_FROM_HMI = "hmc-from-hmi";
-    public static final String NO_DEFINED = "NO_DEFINED";
+    public static final String NOT_DEFINED = "NOT_DEFINED";
     public static final String MESSAGE_ERROR = "Error for message with id ";
     public static final String WITH_ERROR = " with error ";
 }
