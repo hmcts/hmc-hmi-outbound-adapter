@@ -1,7 +1,7 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabledManagers": ["helm-requirements","gradle-wrapper"],
+  "labels": ["dependencies"],
   "extends": ["local>hmcts/.github:renovate-config"],
-  "labels": ["Renovate-dependencies"],
   "helm-requirements":
   {
     "fileMatch": ["\\Chart.yaml$"],
