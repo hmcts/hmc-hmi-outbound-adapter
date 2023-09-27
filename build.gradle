@@ -19,9 +19,7 @@ java {
   }
 }
 
-application {
-  mainClass = 'uk.gov.hmcts.reform.hmc.Application'
-}
+mainClassName = 'uk.gov.hmcts.reform.hmc.Application'
 
 configurations.configureEach {
   resolutionStrategy {
@@ -407,7 +405,7 @@ dependencies {
 
 bootJar {
   getArchiveFileName().set(provider {
-    'hmc-hmi-outbound-adapter.jar'
+    'hmc-hmi-outbound-adapter'
   })
 
   manifest {
