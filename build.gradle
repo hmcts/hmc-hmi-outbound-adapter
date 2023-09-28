@@ -6,15 +6,36 @@ plugins {
   id 'org.springframework.boot' version '2.4.9'
   id 'com.github.ben-manes.versions' version '0.38.0'
   id 'org.sonarqube' version '3.1.1'
-  id 'uk.gov.hmcts.java' version '0.12.41'
+  id 'uk.gov.hmcts.java' version '0.12.43'
   id 'com.github.spacialcircumstances.gradle-cucumber-reporting' version '0.1.23'
 }
 
 group = 'uk.gov.hmcts.reform'
 version = '0.0.1'
 
-sourceCompatibility = 11
-targetCompatibility = 11
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(17)
+  }
+}
+
+configurations.configureEach {
+  resolutionStrategy {
+    eachDependency { details ->
+      if (details.requested.group == 'org.projectlombok' && details.requested.name == 'lombok') {
+        details.useVersion '1.18.28'
+      }
+    }
+  }
+
+  tasks.withType(Copy).configureEach {
+    duplicatesStrategy 'exclude'
+  }
+}
+
+jacoco {
+  toolVersion = "0.8.8"
+}
 
 
 sourceSets {
@@ -194,7 +215,7 @@ sonarqube {
 def versions = [
   junit           : '5.7.1',
   junitPlatform   : '1.7.1',
-  lombok          : '1.18.8',
+  lombok          : '1.18.28',
   mapstruct       : '1.4.2.Final',
   reformLogging   : '5.1.9',
   springBoot      : springBoot.class.package.implementationVersion,
@@ -279,7 +300,7 @@ ext.libraries = [
 ]
 
 dependencies {
-  compile group: 'org.yaml', name: 'snakeyaml', version: '1.33'
+  implementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
@@ -377,7 +398,7 @@ dependencies {
   functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '8.7.11'
   functionalTestImplementation libraries.junit5
 
-  testCompile 'com.github.hmcts:fortify-client:1.2.0:all'
+  testImplementation 'com.github.hmcts:fortify-client:1.2.0:all'
 }
 
 mainClassName = 'uk.gov.hmcts.reform.hmc.Application'
