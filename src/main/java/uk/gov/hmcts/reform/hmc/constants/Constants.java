@@ -12,7 +12,7 @@ public final class Constants {
     public static final String READ = "<READ>";
 
     public static final String ERROR_PROCESSING_MESSAGE = "Error occurred during service bus processing. "
-        + "Service:{} . Entity: {}. Method: {}. Hearing ID: {}.";
+        + "Service:{} .Entity:{}. Method:{}. Hearing ID: {}.";
     public static final String HMC_TO_HMI = "hmc-to-hmi";
     public static final String HMC_FROM_HMI = "hmc-from-hmi";
     public static final String NOT_DEFINED = "NOT_DEFINED";
