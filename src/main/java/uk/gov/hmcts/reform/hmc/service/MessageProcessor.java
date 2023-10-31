@@ -28,7 +28,7 @@ import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSA
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_ERROR;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.NO_DEFINED;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.NOT_DEFINED;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.WITH_ERROR;
 
@@ -119,7 +119,7 @@ public class MessageProcessor {
             HMC_HMI_OUTBOUND_ADAPTER,
             HMC_TO_HMI,
             READ,
-            NO_DEFINED
+            NOT_DEFINED
         );
     }
 
@@ -186,7 +186,7 @@ public class MessageProcessor {
             HMC_HMI_OUTBOUND_ADAPTER,
             HMC_TO_HMI,
             READ,
-            message.getApplicationProperties().getOrDefault(HEARING_ID, NO_DEFINED)
+            message.getApplicationProperties().getOrDefault(HEARING_ID, NOT_DEFINED)
         );
     }
 
