@@ -31,7 +31,7 @@ steps:
       --platform linux/arm64/v8
       .
     when:
-      - pull-base-image-arm6
+      - pull-base-image-arm64
     retries: 3
     retryDelay: 5
 
