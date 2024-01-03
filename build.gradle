@@ -415,6 +415,10 @@ bootJar {
   }
 }
 
+jar {
+  enabled = false
+}
+
 wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
