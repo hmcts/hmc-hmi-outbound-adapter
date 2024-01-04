@@ -371,12 +371,14 @@ dependencies {
   implementation group: 'io.netty', name: 'netty-handler', version: versions.netty
   implementation group: 'io.netty', name: 'netty-handler-proxy', version: versions.netty
   implementation group: 'io.netty', name: 'netty-resolver', version: versions.netty
-  implementation group: 'io.netty', name: 'netty-resolver-dns', version: versions.netty
-  implementation group: 'io.netty', name: 'netty-resolver-dns-native-macos', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-resolver-dns', version: '4.1.104.Final'
+  implementation group: 'io.netty', name: 'netty-resolver-dns-native-macos', version: '4.1.104.Final'
   implementation group: 'io.netty', name: 'netty-transport', version: versions.netty
   implementation group: 'io.netty', name: 'netty-transport-native-epoll', version: versions.netty
-  implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: versions.netty
-  implementation group: 'io.netty', name: 'netty-transport-native-unix-common', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: '4.1.104.Final'
+  implementation group: 'io.netty', name: 'netty-transport-classes-kqueue', version: '4.1.104.Final'
+  implementation group: 'io.netty', name: 'netty-resolver-dns-classes-macos', version: '4.1.104.Final'
+  implementation group: 'io.netty', name: 'netty-transport-native-unix-common', version: '4.1.104.Final'
   implementation group: 'io.projectreactor.netty', name: 'reactor-netty-core', version: '1.1.14'
   implementation group: 'io.projectreactor.netty', name: 'reactor-netty-http', version: '1.1.14'
 
