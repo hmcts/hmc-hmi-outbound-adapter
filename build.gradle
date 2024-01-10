@@ -229,7 +229,7 @@ def versions = [
 ext['spring-framework.version'] = '5.3.31'
 ext['spring-security.version'] = '5.7.11'
 ext['log4j2.version'] = '2.17.2'
-ext['jackson.version'] = '2.16.0'
+ext['jackson.version'] = '2.16.1'
 ext['snakeyaml.version'] = '1.33'
 
 // before committing a change, make sure task still works
