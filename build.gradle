@@ -251,13 +251,13 @@ dependencyCheck {
 
 dependencyManagement {
   dependencies {
-    dependency group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.68'
+    dependency group: 'org.bouncycastle', name: 'bcpkix-jdk18on', version: '1.77'
     // CVE-2018-10237 - Unbounded memory allocation
-    dependencySet(group: 'com.google.guava', version: '30.1.1-jre') {
+    dependencySet(group: 'com.google.guava', version: '33.0.0-jre') {
       entry 'guava'
     }
     // Remove once BEFTA rest-assured is updated
-    dependencySet(group: 'io.rest-assured', version: '4.3.0') {
+    dependencySet(group: 'io.rest-assured', version: '4.3.3') {
       entry 'json-path'
       entry 'xml-path'
     }
@@ -267,7 +267,7 @@ dependencyManagement {
       entry 'tomcat-embed-websocket'
     }
     //CVE-2021-22044
-    dependencySet(group: 'org.springframework.cloud', version: '3.0.5') {
+    dependencySet(group: 'org.springframework.cloud', version: '3.0.6') {
       entry 'spring-cloud-openfeign-core'
       entry 'spring-cloud-starter-openfeign'
       entry 'spring-cloud-starter-contract-stub-runner'
