@@ -25,7 +25,19 @@ public class HearingStatusAuditServiceImpl implements HearingStatusAuditService 
     }
 
     @Override
-    public HearingStatusAudit mapHearingStatusAuditDetails(String hearingServiceId,
+    public void saveStatusAuditTriageDetails(String hearingServiceId, String hearingId, String status,
+                                       LocalDateTime statusUpdateDateTime, String hearingEvent,
+                                       String source, String target, JsonNode errorDescription,
+                                       String requestVersion) {
+
+        HearingStatusAudit hearingStatusAudit = mapHearingStatusAuditDetails(hearingServiceId,
+                                                                             hearingId,  status,  statusUpdateDateTime,
+                                                                             hearingEvent, source,  target,
+                                                                             errorDescription, requestVersion);
+        saveHearingStatusAudit(hearingStatusAudit);
+    }
+
+    private HearingStatusAudit mapHearingStatusAuditDetails(String hearingServiceId,
                                                            String hearingId, String status,
                                                            LocalDateTime statusUpdatedTime,
                                                            String hearingEvent,
@@ -53,9 +65,7 @@ public class HearingStatusAuditServiceImpl implements HearingStatusAuditService 
         return  hearingStatusAudit;
     }
 
-    @Override
-    public void saveHearingStatusAudit(HearingStatusAudit hearingStatusAudit) {
-
+    private void saveHearingStatusAudit(HearingStatusAudit hearingStatusAudit) {
         HearingStatusAuditEntity hearingStatusAuditEntity = hearingStatusAuditMapper
             .modelToEntity(hearingStatusAudit);
         hearingStatusAuditRepository.save(hearingStatusAuditEntity);
