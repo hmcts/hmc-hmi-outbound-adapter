@@ -18,4 +18,10 @@ public final class Constants {
     public static final String NOT_DEFINED = "NOT_DEFINED";
     public static final String MESSAGE_ERROR = "Error for message with id ";
     public static final String WITH_ERROR = " with error ";
+    public static final String UPDATE_HEARING_REQUEST = "update-hearing-request";
+    public static final String CREATE_HEARING_REQUEST = "create-hearing-request";
+    public static final String DELETE_HEARING_REQUEST = "delete-hearing-request";
+    public static final String HMI_TARGET = "hmi";
+    public static final String FH_TARGET = "fh";
+    public static final String HMC_TARGET = "hmc";
 }

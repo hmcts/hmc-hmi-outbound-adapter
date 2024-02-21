@@ -9,10 +9,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationRequest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.model.HearingStatusAudit;
 import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Repository("defaultFutureHearingRepository")
@@ -22,16 +19,13 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     private final ActiveDirectoryApiClient activeDirectoryApiClient;
     private final ApplicationParams applicationParams;
     private static final String BEARER = "Bearer ";
-    private final HearingStatusAuditService hearingStatusAuditService;
 
     public DefaultFutureHearingRepository(ActiveDirectoryApiClient activeDirectoryApiClient,
                                           ApplicationParams applicationParams,
-                                          HearingManagementInterfaceApiClient hmiClient,
-                                          HearingStatusAuditService hearingStatusAuditService) {
+                                          HearingManagementInterfaceApiClient hmiClient) {
         this.activeDirectoryApiClient = activeDirectoryApiClient;
         this.applicationParams = applicationParams;
         this.hmiClient = hmiClient;
-        this.hearingStatusAuditService = hearingStatusAuditService;
     }
 
     public AuthenticationResponse retrieveAuthToken() {
@@ -46,12 +40,6 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     @Override
     public HearingManagementInterfaceResponse createHearingRequest(JsonNode data) {
         log.debug("CreateHearingRequest sent to FH : {}", data.toString());
-        // TODO validate the mapped values
-        hearingStatusAuditService.saveStatusAuditTriageDetails(caseHearingRequestEntity.getHmctsServiceCode(),
-                                                               hearingEntity.getId().toString(),
-                               hearingEntity.getStatus(), hearingEntity.getUpdatedDateTime(),
-                               "delete-hearing-request", "TODO", "hmc",null,
-                               saveHearingResponseDetails.getVersionNumber().toString());
         String authorization = retrieveAuthToken().getAccessToken();
         return hmiClient.requestHearing(BEARER + authorization, data);
     }
