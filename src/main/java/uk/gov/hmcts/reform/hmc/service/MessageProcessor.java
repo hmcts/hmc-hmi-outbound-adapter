@@ -24,12 +24,9 @@ import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static uk.gov.hmcts.reform.hmc.constants.Constants.CREATE_HEARING_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TARGET;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI_TARGET;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_ERROR;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.NOT_DEFINED;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
@@ -43,7 +40,6 @@ public class MessageProcessor {
     private final DefaultFutureHearingRepository futureHearingRepository;
     private final MessageSenderConfiguration messageSenderConfiguration;
     private final ObjectMapper objectMapper;
-    private final HearingStatusAuditService hearingStatusAuditService;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
@@ -55,13 +51,11 @@ public class MessageProcessor {
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
                             ServiceBusMessageErrorHandler errorHandler,
                             MessageSenderConfiguration messageSenderConfiguration,
-                            ObjectMapper objectMapper,
-                            HearingStatusAuditService hearingStatusAuditService) {
+                            ObjectMapper objectMapper) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
         this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
-        this.hearingStatusAuditService = hearingStatusAuditService;
     }
 
     public void processMessage(ServiceBusReceivedMessageContext messageContext) {
@@ -219,14 +213,6 @@ public class MessageProcessor {
 
         messageSenderConfiguration.sendMessage(objectMapper
             .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
-
-        // TODO validate the mapped values
-        /*hearingStatusAuditService.saveStatusAuditTriageDetails(caseHearingRequestEntity.getHmctsServiceCode(),
-                                                               hearingEntity.getId().toString(),
-                                                               hearingEntity.getStatus(), hearingEntity.getUpdatedDateTime(),
-                                                               CREATE_HEARING_REQUEST, HMC_TARGET, HMI_TARGET,null,
-                                                               saveHearingResponseDetails.getVersionNumber().toString());*/
-
     }
 
     private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {

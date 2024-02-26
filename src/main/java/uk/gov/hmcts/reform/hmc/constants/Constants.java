@@ -21,7 +21,9 @@ public final class Constants {
     public static final String UPDATE_HEARING_REQUEST = "update-hearing-request";
     public static final String CREATE_HEARING_REQUEST = "create-hearing-request";
     public static final String DELETE_HEARING_REQUEST = "delete-hearing-request";
-    public static final String HMI_TARGET = "hmi";
-    public static final String FH_TARGET = "fh";
-    public static final String HMC_TARGET = "hmc";
+    public static final String HMI = "hmi";
+    public static final String HMC = "hmc";
+    public static final String HMC_TO_HMI_AUTH = "HMC to HMI auth";
+    public static final String HMC_TO_HMI_FAILURE_STATUS = "500";
+    public static final String HMC_TO_HMI_SUCCESS_STATUS = "200";
 }

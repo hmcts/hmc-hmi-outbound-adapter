@@ -2,8 +2,8 @@ package uk.gov.hmcts.reform.hmc.data;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -14,11 +14,10 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Table(name = "hearing_status_audit")
+@EqualsAndHashCode()
 @Entity
 @Data
-public class HearingStatusAuditEntity implements Serializable {
-
-    private static final long serialVersionUID = -6447456945606426040L;
+public class HearingStatusAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY,
@@ -60,4 +59,5 @@ public class HearingStatusAuditEntity implements Serializable {
 
     @Column(name = "response_date_time")
     private LocalDateTime responseDateTime;
+
 }

@@ -21,11 +21,13 @@ import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
+import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -70,6 +72,9 @@ class ServiceBusMessageErrorHandlerTest {
     @Mock
     private AmqpAnnotatedMessage amqpAnnotatedMessage;
 
+    @Mock
+    private HearingStatusAuditService hearingStatusAuditService;
+
     private ServiceBusMessageErrorHandler handler;
     private DeadLetterOptions deadLetterOptions;
     private static final String MESSAGE_ID = "1234567";
@@ -78,9 +83,10 @@ class ServiceBusMessageErrorHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new ServiceBusMessageErrorHandler(deadLetterService, applicationParams);
+        handler = new ServiceBusMessageErrorHandler(deadLetterService, applicationParams, hearingStatusAuditService);
         deadLetterOptions = new DeadLetterOptions();
         deadLetterOptions.setDeadLetterErrorDescription(ERROR_MESSAGE);
+        hearingStatusAuditService.getErrorDetails(any(),any());
     }
 
     @Test

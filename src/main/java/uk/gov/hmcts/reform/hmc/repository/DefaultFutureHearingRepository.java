@@ -9,7 +9,6 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationRequest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
 @Slf4j
 @Repository("defaultFutureHearingRepository")

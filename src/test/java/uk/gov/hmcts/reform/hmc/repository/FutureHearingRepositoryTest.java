@@ -49,8 +49,7 @@ class FutureHearingRepositoryTest {
         MockitoAnnotations.openMocks(this);
 
         response = new AuthenticationResponse();
-        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient,
-                                                        hearingStatusAuditService);
+        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient);
         requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");

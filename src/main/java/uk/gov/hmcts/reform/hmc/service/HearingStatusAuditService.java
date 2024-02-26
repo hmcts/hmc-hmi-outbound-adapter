@@ -1,13 +1,16 @@
 package uk.gov.hmcts.reform.hmc.service;
 
+import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.databind.JsonNode;
-import uk.gov.hmcts.reform.hmc.model.HearingStatusAudit;
+import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 
-import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface HearingStatusAuditService {
 
-    void saveStatusAuditTriageDetails(String serviceCode, String hearingId, String status,
-                                LocalDateTime statusUpdateDateTime, String hearingEvent, String source,
-                                String target, JsonNode errorDescription, String requestVersion);
+    void saveAuditTriageDetails(Optional<HearingEntity> hearingEntity, String hearingEvent,
+                                String httpStatus, String source, String target, JsonNode errorDescription);
+
+    void getErrorDetails(ServiceBusReceivedMessageContext messageContext, String errorMessage);
+
 }
