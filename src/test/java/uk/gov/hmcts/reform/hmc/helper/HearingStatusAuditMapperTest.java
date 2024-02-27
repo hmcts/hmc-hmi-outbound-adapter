@@ -26,6 +26,6 @@ class HearingStatusAuditMapperTest {
         assertEquals("create-hearing- request", entity.getHearingEvent());
         assertEquals(HMC, entity.getSource());
         assertEquals(HMI, entity.getTarget());
-        assertEquals("22000000000", entity.getHearingId());
+        assertEquals("2000000000", entity.getHearingId());
     }
 }
