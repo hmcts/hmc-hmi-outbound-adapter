@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
+import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 
 import java.util.HashMap;
@@ -42,6 +44,9 @@ class MessageProcessorIT extends BaseTest {
 
     @Autowired
     private ServiceBusMessageErrorHandler errorHandler;
+
+    @Mock
+    HearingRepository hearingRepository;
 
     @Test
     void shouldInitiateRequestHearing() throws JsonProcessingException {

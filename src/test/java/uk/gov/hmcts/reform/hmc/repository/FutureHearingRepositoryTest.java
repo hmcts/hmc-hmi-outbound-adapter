@@ -14,7 +14,6 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
@@ -40,9 +39,6 @@ class FutureHearingRepositoryTest {
 
     @Mock
     private HearingManagementInterfaceApiClient hmiClient;
-
-    @Mock
-    private HearingStatusAuditService hearingStatusAuditService;
 
     @BeforeEach
     public void setUp() {

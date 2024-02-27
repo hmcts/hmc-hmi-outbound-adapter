@@ -139,7 +139,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
             stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
             HearingManagementInterfaceResponse response = defaultFutureHearingRepository
                 .amendHearingRequest(data, CASE_LISTING_REQUEST_ID);
-            assertEquals(response.getResponseCode(), 202);
+            assertEquals(202, response.getResponseCode());
         }
 
         @Test
@@ -180,7 +180,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
             stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
             HearingManagementInterfaceResponse response = defaultFutureHearingRepository
                 .deleteHearingRequest(data, CASE_LISTING_REQUEST_ID);
-            assertEquals(response.getResponseCode(), 200);
+            assertEquals(200, response.getResponseCode());
         }
 
         @Test
