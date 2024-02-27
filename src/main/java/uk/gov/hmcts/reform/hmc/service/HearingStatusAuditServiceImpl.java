@@ -1,9 +1,9 @@
 package uk.gov.hmcts.reform.hmc.service;
 
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,6 @@ import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_FAILURE_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
-import static uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler.MESSAGE_PARSE_ERROR;
 
 @Service
 @Component
@@ -45,7 +44,7 @@ public class HearingStatusAuditServiceImpl implements HearingStatusAuditService 
     }
 
     @Override
-    public void saveAuditTriageDetails(Optional<HearingEntity> hearingEntity, String hearingEvent,
+    public void saveAuditTriageDetails(HearingEntity hearingEntity, String hearingEvent,
                                        String httpStatus, String source, String target,
                                        JsonNode errorDescription) {
         HearingStatusAudit hearingStatusAudit = mapHearingStatusAuditDetails(hearingEntity, hearingEvent,
@@ -54,37 +53,33 @@ public class HearingStatusAuditServiceImpl implements HearingStatusAuditService 
         saveHearingStatusAudit(hearingStatusAudit);
     }
 
+    @SneakyThrows
     @Override
     public void getErrorDetails(ServiceBusReceivedMessageContext messageContext, String errorMessage) {
         Map<String, Object> applicationProperties = messageContext.getMessage().getApplicationProperties();
         String hearingId = applicationProperties.get(HEARING_ID).toString();
-        JsonNode errorDetails = null;
-        try {
-            if (errorDetails != null) {
-                errorDetails = new ObjectMapper().readTree("{\"deadLetterReason\": \"" + errorMessage + "\"}");
-            }
-        } catch (JsonProcessingException ex) {
-            log.error(MESSAGE_PARSE_ERROR,  messageContext.getMessage().getMessageId(), ex);
-        }
+        JsonNode errorDetails = new ObjectMapper().readTree("{\"deadLetterReason\": \"" + errorMessage + "\"}");
         Optional<HearingEntity> hearingEntity = hearingRepository.findById(Long.valueOf(hearingId));
-        saveAuditTriageDetails(hearingEntity, HMC_TO_HMI_AUTH, HMC_TO_HMI_FAILURE_STATUS,
-                                                         HMC, HMI, errorDetails);
+        if (hearingEntity.isPresent()) {
+            saveAuditTriageDetails(hearingEntity.get(), HMC_TO_HMI_AUTH, HMC_TO_HMI_FAILURE_STATUS,
+                                   HMC, HMI, errorDetails);
+        }
     }
 
-    private HearingStatusAudit mapHearingStatusAuditDetails(Optional<HearingEntity> hearingEntity, String hearingEvent,
+    private HearingStatusAudit mapHearingStatusAuditDetails(HearingEntity hearingEntity, String hearingEvent,
                                                             String httpStatus, String source, String target,
                                                             JsonNode errorDescription) {
         HearingStatusAudit hearingStatusAudit = new HearingStatusAudit();
-        hearingStatusAudit.setHearingServiceId(hearingEntity.get().getLatestCaseHearingRequest().getHmctsServiceCode());
-        hearingStatusAudit.setHearingId(hearingEntity.get().getId().toString());
-        hearingStatusAudit.setStatus(hearingEntity.get().getStatus());
-        hearingStatusAudit.setStatusUpdateDateTime(hearingEntity.get().getCreatedDateTime());
+        hearingStatusAudit.setHearingServiceId(hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode());
+        hearingStatusAudit.setHearingId(hearingEntity.getId().toString());
+        hearingStatusAudit.setStatus(hearingEntity.getStatus());
+        hearingStatusAudit.setStatusUpdateDateTime(hearingEntity.getCreatedDateTime());
         hearingStatusAudit.setHearingEvent(hearingEvent);
         hearingStatusAudit.setHttpStatus(httpStatus);
         hearingStatusAudit.setSource(source);
         hearingStatusAudit.setTarget(target);
         hearingStatusAudit.setErrorDescription(errorDescription);
-        hearingStatusAudit.setRequestVersion(hearingEntity.get().getLatestCaseHearingRequest()
+        hearingStatusAudit.setRequestVersion(hearingEntity.getLatestCaseHearingRequest()
                                                  .getVersionNumber().toString());
         return  hearingStatusAudit;
     }

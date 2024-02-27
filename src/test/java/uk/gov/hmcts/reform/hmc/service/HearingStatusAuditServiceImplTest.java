@@ -76,7 +76,7 @@ class HearingStatusAuditServiceImplTest {
                 TestingUtil.hearingStatusAuditEntity());
             given(hearingStatusAuditRepository.save(TestingUtil.hearingStatusAuditEntity())).willReturn(
                 TestingUtil.hearingStatusAuditEntity());
-            hearingStatusAuditService. saveAuditTriageDetails(TestingUtil.hearingEntity(),
+            hearingStatusAuditService. saveAuditTriageDetails(TestingUtil.hearingEntity().get(),
                                                               HMC_TO_HMI_AUTH, HMC_TO_HMI_FAILURE_STATUS, HMC, HMI,
                                                               errorDetails);
             verify(hearingStatusAuditRepository, times(1)).save(any());
@@ -88,14 +88,14 @@ class HearingStatusAuditServiceImplTest {
                 TestingUtil.hearingStatusAuditEntity());
             given(hearingStatusAuditRepository.save(TestingUtil.hearingStatusAuditEntity())).willReturn(
                 TestingUtil.hearingStatusAuditEntity());
-            hearingStatusAuditService. saveAuditTriageDetails(TestingUtil.hearingEntity(),
+            hearingStatusAuditService. saveAuditTriageDetails(TestingUtil.hearingEntity().get(),
                                                               HMC_TO_HMI_AUTH, HMC_TO_HMI_SUCCESS_STATUS, HMC, HMI,
                                                               null);
             verify(hearingStatusAuditRepository, times(1)).save(any());
         }
 
         @Test
-        void getErrorDetails()  {
+        void getErrorDetails() throws JsonProcessingException {
             Map<String, Object> applicationProperties = new HashMap<>();
             applicationProperties.put("hearing_id", HEARING_ID);
             given(messageContext.getMessage()).willReturn(receivedMessage);
