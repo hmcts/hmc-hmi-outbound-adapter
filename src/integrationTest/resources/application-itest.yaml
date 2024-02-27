@@ -21,3 +21,11 @@ azure:
       outbound-queue-name: hmc-to-hmi
       inbound-queue-name: hmc-from-hmi
       max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}
+spring:
+  config:
+    import: "optional:configtree:/mnt/secrets/hmc/"
+  application:
+    name: HMC Operational Reports Runner
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:postgresql:11:///databasename?stringtype=unspecified
