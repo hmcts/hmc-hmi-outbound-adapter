@@ -27,7 +27,7 @@ import javax.persistence.Table;
 @SecondaryTable(name = "hearing",
     pkJoinColumns = {
         @PrimaryKeyJoinColumn(name = "hearing_id")})
-public class CaseHearingRequestEntity extends BaseEntity implements Cloneable, Serializable {
+public class CaseHearingRequestEntity extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 3931265105942318969L;
 
