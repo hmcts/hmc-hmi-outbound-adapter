@@ -37,7 +37,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     private static final String TOKEN = "example-token";
     private static final String GET_TOKEN_URL = "/FH_GET_TOKEN_URL";
     private static final String HMI_REQUEST_URL = "/hearings";
-    private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
+    private static final String CASE_LISTING_REQUEST_ID = "2000000000";
     private static final String HMI_REQUEST_URL_WITH_ID = "/hearings/" + CASE_LISTING_REQUEST_ID;
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
@@ -97,7 +97,8 @@ public class FutureHearingRepositoryIT extends BaseTest {
         void shouldSuccessfullyRequestAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyRequestHearing(TOKEN);
-            HearingManagementInterfaceResponse response = defaultFutureHearingRepository.createHearingRequest(data);
+            HearingManagementInterfaceResponse response = defaultFutureHearingRepository.createHearingRequest(data,
+                                                                         CASE_LISTING_REQUEST_ID);
             assertEquals(202, response.getResponseCode());
         }
 
@@ -105,7 +106,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(400, HMI_REQUEST_URL);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(BadFutureHearingRequestException.class)
                 .hasMessageContaining(INVALID_REQUEST);
         }
@@ -114,7 +115,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(401, HMI_REQUEST_URL);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(INVALID_SECRET);
         }
@@ -123,7 +124,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         void shouldThrow500AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(500, HMI_REQUEST_URL);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(SERVER_ERROR);
         }

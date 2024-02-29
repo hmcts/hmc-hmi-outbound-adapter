@@ -92,7 +92,7 @@ class MessageProcessorTest {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        verify(futureHearingRepository).createHearingRequest(any());
+        verify(futureHearingRepository).createHearingRequest(any(), any());
     }
 
     @Test

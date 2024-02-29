@@ -14,6 +14,8 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
+import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
@@ -26,7 +28,7 @@ class FutureHearingRepositoryTest {
         .modules(new Jdk8Module())
         .build();
 
-    private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
+    private static final String CASE_LISTING_REQUEST_ID = "2000000000";
 
     @InjectMocks
     private DefaultFutureHearingRepository repository;
@@ -40,17 +42,26 @@ class FutureHearingRepositoryTest {
     @Mock
     private HearingManagementInterfaceApiClient hmiClient;
 
+    @Mock
+    private HearingStatusAuditService hearingStatusAuditService;
+
+    @Mock
+    private HearingRepository hearingRepository;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
         response = new AuthenticationResponse();
-        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient);
+        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient,
+                                                        hearingStatusAuditService, hearingRepository);
         requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
         given(applicationParams.getScope()).willReturn("SCOPE");
         given(applicationParams.getClientSecret()).willReturn("CLIENT_SECRET");
+        given(hearingRepository.findById(Long.valueOf(CASE_LISTING_REQUEST_ID)))
+            .willReturn(java.util.Optional.of(new HearingEntity()));
     }
 
     @Test
@@ -69,7 +80,8 @@ class FutureHearingRepositoryTest {
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(hmiClient.requestHearing("Bearer test-token", anyData))
             .willReturn(expectedResponse);
-        HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData);
+        HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData,
+                                                                                            CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
     }
 

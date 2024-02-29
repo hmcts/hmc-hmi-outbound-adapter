@@ -11,6 +11,11 @@ fh:
     source-system: SOURCE_SYSTEM
     destination-system: DESTINATION_SYSTEM
 
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:postgresql:11:///databasename?stringtype=unspecified
+
 azure:
   jms:
     servicebus:

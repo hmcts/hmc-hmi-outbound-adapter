@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.errorhandling;
 
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -57,7 +58,7 @@ public class ServiceBusMessageErrorHandler {
                                 JsonProcessingException exception) {
         log.error(MESSAGE_PARSE_ERROR, messageContext.getMessage().getMessageId(), exception);
         messageContext.deadLetter(deadLetterService.handleParsingError(exception.getMessage()));
-        logHearingAuditDetails(messageContext, exception.getMessage());
+        logHearingAuditDetails(messageContext.getMessage(), exception.getMessage());
         log.warn(MESSAGE_DEAD_LETTERED, messageContext.getMessage().getMessageId());
     }
 
@@ -67,7 +68,7 @@ public class ServiceBusMessageErrorHandler {
         if (deliveryCount >= applicationParams.getMaxRetryAttempts()) {
             log.error(APPLICATION_ERROR, messageContext.getMessage().getMessageId(), exception);
             messageContext.deadLetter(deadLetterService.handleApplicationError(exception.getMessage()));
-            logHearingAuditDetails(messageContext, exception.getMessage());
+            logHearingAuditDetails(messageContext.getMessage(), exception.getMessage());
             log.warn(RETRIES_EXCEEDED, messageContext.getMessage().getMessageId());
         } else {
             messageContext.abandon();
@@ -87,17 +88,17 @@ public class ServiceBusMessageErrorHandler {
         log.error(APPLICATION_ERROR, messageContext.getMessage().getMessageId(), exception);
         if (exception.getMessage() != null) {
             messageContext.deadLetter(deadLetterService.handleApplicationError(exception.getMessage()));
-            logHearingAuditDetails(messageContext, exception.getMessage());
+            logHearingAuditDetails(messageContext.getMessage(), exception.getMessage());
         } else {
             messageContext.deadLetter(deadLetterService.handleApplicationError(NO_EXCEPTION_MESSAGE));
-            logHearingAuditDetails(messageContext, NO_EXCEPTION_MESSAGE);
+            logHearingAuditDetails(messageContext.getMessage(), NO_EXCEPTION_MESSAGE);
         }
         log.warn(MESSAGE_DEAD_LETTERED, messageContext.getMessage().getMessageId());
     }
 
     @SneakyThrows
-    private void logHearingAuditDetails(ServiceBusReceivedMessageContext messageContext, String exceptionMessage) {
-        Map<String, Object> applicationProperties = messageContext.getMessage().getApplicationProperties();
+    private void logHearingAuditDetails(ServiceBusReceivedMessage messageContextMessage, String exceptionMessage) {
+        Map<String, Object> applicationProperties = messageContextMessage.getApplicationProperties();
         String hearingId = applicationProperties.get(HEARING_ID).toString();
         JsonNode errorDetails = new ObjectMapper().readTree("{\"deadLetterReason\": \""
                                                                 + exceptionMessage + "\"}");
