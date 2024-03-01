@@ -18,6 +18,9 @@ java:
       secrets:
         - name: AppInsightsInstrumentationKey
 
+hmc:
+  enabled: true
+
 servicebus:
   enabled: true
   teamName: CCD
