@@ -395,6 +395,7 @@ dependencies {
 
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner'
   testImplementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
+  testImplementation group: 'org.testcontainers', name: 'postgresql', version: versions.testcontainers
 
   integrationTestImplementation sourceSets.main.runtimeClasspath
   integrationTestImplementation sourceSets.test.runtimeClasspath

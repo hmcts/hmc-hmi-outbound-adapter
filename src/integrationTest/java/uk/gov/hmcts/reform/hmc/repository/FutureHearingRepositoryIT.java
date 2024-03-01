@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
@@ -52,6 +53,12 @@ public class FutureHearingRepositoryIT extends BaseTest {
 
     @Autowired
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
+
+    @Autowired
+    HearingRepository hearingRepository;
+
+    private static final String INSERT_CASE_HEARING_DATA_SCRIPT = "classpath:sql/insert-case_hearing_request.sql";
+    private static final String DELETE_HEARING_DATA_SCRIPT = "classpath:sql/delete-hearing-tables.sql";
 
     @Nested
     @DisplayName("Retrieve Authorisation Token")
@@ -185,6 +192,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);

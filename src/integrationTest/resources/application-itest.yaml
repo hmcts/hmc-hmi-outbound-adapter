@@ -12,9 +12,16 @@ fh:
     destination-system: DESTINATION_SYSTEM
 
 spring:
+  config:
+    import: "optional:configtree:/mnt/secrets/hmc/"
+    application:
+      name: HMC Outbound Adapter
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
     url: jdbc:tc:postgresql:11:///databasename?stringtype=unspecified
+  jpa:
+    hibernate:
+      ddl-auto: create
 
 azure:
   jms:
