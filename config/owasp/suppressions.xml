@@ -1,2 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <suppress>
+    <notes>Temporary Suppression
+        CVE-2023-36052 refer bad suppression https://github.com/jeremylong/DependencyCheck/issues/6100
+    </notes>
+    <cve>CVE-2023-36052</cve>
+  </suppress>
 </suppressions>

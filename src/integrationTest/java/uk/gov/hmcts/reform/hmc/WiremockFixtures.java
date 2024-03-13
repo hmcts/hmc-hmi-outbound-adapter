@@ -2,7 +2,6 @@ package uk.gov.hmcts.reform.hmc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.common.FileSource;
 import com.github.tomakehurst.wiremock.extension.Parameters;
@@ -11,7 +10,6 @@ import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 
@@ -40,9 +38,7 @@ public class WiremockFixtures {
     private static final String SOURCE_SYSTEM = "SOURCE_SYSTEM";
     private static final String DESTINATION_SYSTEM = "DESTINATION_SYSTEM";
 
-    private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
-        .modules(new Jdk8Module())
-        .build();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static String TEST_BODY = "{\n"
         + "    \"errCode\": \"1000\",\n"
@@ -163,12 +159,9 @@ public class WiremockFixtures {
                     ));
     }
 
-    @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "squid:S112"})
-    // Required as wiremock's Json.getObjectMapper().registerModule(..); not working
-    // see https://github.com/tomakehurst/wiremock/issues/1127
     private static String getJsonString(Object object) {
         try {
-            return OBJECT_MAPPER.writeValueAsString(object);
+            return mapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

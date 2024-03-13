@@ -306,7 +306,6 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
   implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign'
   implementation group: 'org.springframework.cloud', name: 'spring-cloud-openfeign-core'
-  implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner'
   implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '13.2.1'
   implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: '1.7.22'
   implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-common', version: '1.7.22'
@@ -316,20 +315,24 @@ dependencies {
 
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
   implementation group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '7.4'
-  implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.11'
-  implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.11'
+  implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.12'
+  implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.12'
   implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.9'
   implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.9'
   implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
 
   implementation group: 'javax.inject', name: 'javax.inject', version: '1'
   implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.15.1'
-  implementation group: 'com.azure', name: 'azure-core', version: '1.45.1'
+  implementation group: 'com.azure', name: 'azure-core', version: '1.47.0'
 
   implementation group: 'net.minidev', name: 'json-smart', version: '2.4.9'
 
-  // Explicitly specify version of jakarta.el to be used to resolve CVE-2021-28170
-  implementation group: 'org.glassfish', name: 'jakarta.el', version: '4.0.2'
+  // CVE Fixes
+  implementation group: 'org.glassfish', name: 'jakarta.el', version: '4.0.2' // CVE-2021-28170
+  implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13' // CVE-2020-13956
+  implementation group: 'com.squareup.okio', name: 'okio', version: '3.4.0' // CVE-2023-3635
+  implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.6.1.202309021850-r' // CVE-2023-4759
+  implementation group: 'net.minidev', name: 'json-smart', version: '2.4.11' // CVE-2023-1370
 
   implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.5'
   implementation group: 'commons-io', name: 'commons-io', version: '2.8.0'
@@ -386,10 +389,12 @@ dependencies {
   testImplementation group: 'org.mockito', name: 'mockito-inline', version: '4.8.1'
   testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
   testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.9'
-  testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-contract-wiremock'
-
-  testImplementation group: 'org.wiremock', name: 'wiremock', version: '3.4.2', {
-    exclude group: 'org.slf4j', module: 'slf4j-api'
+  testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', { 
+    // CVE-2022-4244, CVE-2022-4245
+    exclude group: 'org.codehaus.plexus', module: 'plexus-interpolation'
+    exclude group: 'org.codehaus.plexus', module: 'plexus-component-annotations'
+    exclude group: 'org.codehaus.plexus', module: 'plexus-classworlds'
+    exclude group: 'org.codehaus.plexus', module: 'plexus-utils'
   }
 
   integrationTestImplementation sourceSets.main.runtimeClasspath

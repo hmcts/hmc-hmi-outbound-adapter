@@ -21,7 +21,6 @@ public class BaseTest implements WireMockConfigurationCustomizer {
     public void customize(WireMockConfiguration config) {
         config.extensions(new WiremockFixtures.ConnectionClosedTransformer());
         config.port(wiremockPort);
-        config.stubRequestLoggingDisabled(false);
     }
 
 }
