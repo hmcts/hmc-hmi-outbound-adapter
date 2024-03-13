@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
@@ -46,9 +45,6 @@ public class FutureHearingRepositoryIT extends BaseTest {
 
     @MockBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
-
-    @Autowired
-    private ApplicationParams applicationParams;
 
     @Autowired
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
