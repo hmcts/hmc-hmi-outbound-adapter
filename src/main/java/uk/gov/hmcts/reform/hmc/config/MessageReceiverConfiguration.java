@@ -1,11 +1,11 @@
 package uk.gov.hmcts.reform.hmc.config;
 
 import com.azure.messaging.servicebus.ServiceBusProcessorClient;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
 
 @AutoConfigureAfter(QueueClientConfig.class)
 
