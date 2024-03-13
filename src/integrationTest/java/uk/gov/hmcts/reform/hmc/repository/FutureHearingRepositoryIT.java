@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
@@ -101,6 +102,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class CreateHearingRequest {
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldSuccessfullyRequestAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyRequestHearing(TOKEN);
@@ -110,6 +112,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(400, HMI_REQUEST_URL);
@@ -119,6 +122,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(401, HMI_REQUEST_URL);
@@ -128,6 +132,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow500AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(500, HMI_REQUEST_URL);
@@ -142,6 +147,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class AmendHearingRequest {
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldSuccessfullyAmendAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
@@ -151,6 +157,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
@@ -160,6 +167,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingError(401, HMI_REQUEST_URL_WITH_ID);
@@ -169,6 +177,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow404ResourceNotFoundException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPutMethodThrowingError(404, HMI_REQUEST_URL_WITH_ID);
@@ -183,6 +192,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class DeleteHearingRequest {
 
         @Test
+        //@Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldSuccessfullyDeleteAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
@@ -192,7 +202,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        @Sql(scripts = {INSERT_CASE_HEARING_DATA_SCRIPT})
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT,INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(400, HMI_REQUEST_URL_WITH_ID);
@@ -202,6 +212,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(401, HMI_REQUEST_URL_WITH_ID);
@@ -211,6 +222,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
+        @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_CASE_HEARING_DATA_SCRIPT})
         void shouldThrow404ResourceNotFoundException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubDeleteMethodThrowingError(404, HMI_REQUEST_URL_WITH_ID);

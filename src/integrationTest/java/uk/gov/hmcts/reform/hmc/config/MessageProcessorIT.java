@@ -32,7 +32,7 @@ class MessageProcessorIT extends BaseTest {
         .build();
     private static final JsonNode data = OBJECT_MAPPER.convertValue("Test data", JsonNode.class);
     private static final String TOKEN = "example-token";
-    private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
+    private static final String CASE_LISTING_REQUEST_ID = "2000000000";
     private static final String MESSAGE_TYPE = "message_type";
     private static final String HEARING_ID = "hearing_id";
 
@@ -44,9 +44,6 @@ class MessageProcessorIT extends BaseTest {
 
     @Autowired
     private ServiceBusMessageErrorHandler errorHandler;
-
-    @Mock
-    HearingRepository hearingRepository;
 
     @Test
     void shouldInitiateRequestHearing() throws JsonProcessingException {
