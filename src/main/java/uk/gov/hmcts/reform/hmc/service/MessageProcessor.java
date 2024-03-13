@@ -210,7 +210,7 @@ public class MessageProcessor {
                 .listAssistErrorDescription(errorDetails.getErrorDescription())
                 .build();
         }
-
+        log.debug("preparing to send message to queue for hearingId {} ", hearingId);
         messageSenderConfiguration.sendMessage(objectMapper
             .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
     }
