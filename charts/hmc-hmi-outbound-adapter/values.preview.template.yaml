@@ -20,6 +20,11 @@ java:
 
 hmc:
   enabled: true
+  hmc:
+    servicebus:
+      enabled: true
+    hearingService:
+      enabled: true
 
 servicebus:
   enabled: true
