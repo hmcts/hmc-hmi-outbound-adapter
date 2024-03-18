@@ -3,7 +3,6 @@ package uk.gov.hmcts.reform.hmc.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpStatus;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
@@ -43,24 +42,28 @@ public class TestingUtil {
         return hearingStatusAudit;
     }
 
-    public static HearingStatusAuditEntity hearingStatusAuditEntity() {
+    public static Optional<HearingStatusAuditEntity> hearingStatusAuditEntity(String hearingEvent, String failureStatus,
+                                                                              String source, String target,
+                                                                              JsonNode errorDetails) {
         HearingStatusAuditEntity hearingStatusAuditEntity = new HearingStatusAuditEntity();
+        hearingStatusAuditEntity.setId(1L);
         hearingStatusAuditEntity.setHmctsServiceId("ABA1");
         hearingStatusAuditEntity.setHearingId("2000000000");
         hearingStatusAuditEntity.setStatus("HEARING_REQUESTED");
-        hearingStatusAuditEntity.setHearingEvent("create-hearing- request");
-        hearingStatusAuditEntity.setHttpStatus(String.valueOf(HttpStatus.SC_OK));
-        hearingStatusAuditEntity.setSource(HMC);
-        hearingStatusAuditEntity.setTarget(HMI);
+        hearingStatusAuditEntity.setHearingEvent(hearingEvent);
+        hearingStatusAuditEntity.setHttpStatus(failureStatus);
+        hearingStatusAuditEntity.setSource(source);
+        hearingStatusAuditEntity.setTarget(target);
         hearingStatusAuditEntity.setRequestVersion("1");
-        return hearingStatusAuditEntity;
+        hearingStatusAuditEntity.setErrorDescription(errorDetails);
+        return Optional.of(hearingStatusAuditEntity);
     }
 
     public static Optional<HearingEntity> hearingEntity() {
         HearingEntity hearingEntity = new HearingEntity();
-        hearingEntity.setId(1L);
+        hearingEntity.setId(2000000000L);
         hearingEntity.setStatus("HEARING_REQUESTED");
-        hearingEntity.setLinkedOrder(1L);
+        hearingEntity.setLinkedOrder(2000000000L);
         CaseHearingRequestEntity caseHearingRequestEntity = caseHearingRequestEntity();
         hearingEntity.setCaseHearingRequests(List.of(caseHearingRequestEntity));
         return Optional.of(hearingEntity);
@@ -84,4 +87,5 @@ public class TestingUtil {
         return entity;
 
     }
+
 }

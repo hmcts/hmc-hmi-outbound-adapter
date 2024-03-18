@@ -18,12 +18,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.FAILURE_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HEARING_ID;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_FAILURE_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.NOT_DEFINED;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
@@ -105,7 +105,7 @@ public class ServiceBusMessageErrorHandler {
         Optional<HearingEntity> hearingEntity = hearingRepository.findById(Long.valueOf(hearingId));
         if (hearingEntity.isPresent()) {
             hearingStatusAuditService.saveAuditTriageDetails(hearingEntity.get(), HMC_TO_HMI_AUTH,
-                                                             HMC_TO_HMI_FAILURE_STATUS, HMC, HMI, errorDetails);
+                                                             FAILURE_STATUS, HMC, HMI, errorDetails);
         }
     }
 
