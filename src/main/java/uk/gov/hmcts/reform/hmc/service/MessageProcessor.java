@@ -1,25 +1,26 @@
 package uk.gov.hmcts.reform.hmc.service;
 
 import com.azure.core.util.BinaryData;
-import com.azure.messaging.servicebus.ServiceBusErrorContext;
-import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
-import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderConfiguration;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
+import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
+import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -36,7 +37,6 @@ import static uk.gov.hmcts.reform.hmc.constants.Constants.WITH_ERROR;
 @Service
 public class MessageProcessor {
 
-    private final ServiceBusMessageErrorHandler errorHandler;
     private final DefaultFutureHearingRepository futureHearingRepository;
     private final MessageSenderConfiguration messageSenderConfiguration;
     private final ObjectMapper objectMapper;
@@ -48,25 +48,32 @@ public class MessageProcessor {
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
     private static final String LA_SYNC_HEARING_RESPONSE = "LA_SYNC_HEARING_RESPONSE";
 
-    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
-                            ServiceBusMessageErrorHandler errorHandler,
-                            MessageSenderConfiguration messageSenderConfiguration,
-                            ObjectMapper objectMapper) {
-        this.errorHandler = errorHandler;
+    public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository, MessageSenderConfiguration messageSenderConfiguration,
+                            ObjectMapper objectMapper, PendingRequestRepository pendingRequestRepository) {
         this.futureHearingRepository = futureHearingRepository;
         this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
+        this.pendingRequestRepository = pendingRequestRepository;
     }
 
-    public void processMessage(ServiceBusReceivedMessageContext messageContext) {
-        var message = messageContext.getMessage();
-        var processingResult = tryProcessMessage(message);
-        finaliseMessage(messageContext, processingResult);
-        messageContext.complete();
+    private final PendingRequestRepository pendingRequestRepository;
+
+    @Scheduled(fixedRate = 120000) // Execute every 2 minutes
+    @Transactional
+    public void processPendingRequests() {
+        PendingRequestEntity pendingRequest = pendingRequestRepository.findOldestPendingRequestForProcessing();
+        if (pendingRequest != null) {
+            pendingRequestRepository.markRequestAsProcessing(pendingRequest.getHearingId());
+            // Perform processing logic
+        } else {
+            log.debug("No pending requests found for processing.");
+        }
+        assert pendingRequest != null;
+        pendingRequestRepository.markRequestAsCompleted(pendingRequest.getHearingId());
     }
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
-            throws JsonProcessingException {
+        throws JsonProcessingException {
         log.debug("processMessage message, applicationProperties");
         if (applicationProperties.containsKey(MESSAGE_TYPE)) {
             MessageType messageType;
@@ -80,6 +87,7 @@ public class MessageProcessor {
 
             try {
                 caseListingID = applicationProperties.get(HEARING_ID).toString();
+                pendingRequestRepository.markRequestAsProcessing(Long.valueOf(caseListingID));
             } catch (Exception exception) {
                 throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
             }
@@ -106,7 +114,7 @@ public class MessageProcessor {
                 default:
                     throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
             }
-
+            pendingRequestRepository.markRequestAsCompleted(Long.valueOf(caseListingID));
         } else {
             throw new MalformedMessageException(MISSING_MESSAGE_TYPE);
         }
@@ -123,15 +131,15 @@ public class MessageProcessor {
         );
     }
 
-    private void finaliseMessage(ServiceBusReceivedMessageContext messageContext,
+    private void finaliseMessage(PendingRequestEntity request,
                                  MessageProcessingResult processingResult) {
-        var message = messageContext.getMessage();
+        var message = request.getHearingId();
         switch (processingResult.resultType) {
             case SUCCESS:
-                log.debug(MESSAGE_SUCCESS, messageContext.getMessage().getMessageId());
+                log.debug(MESSAGE_SUCCESS, request.getHearingId());
                 break;
             case APPLICATION_ERROR:
-                errorHandler.handleApplicationError(messageContext, processingResult.exception);
+                errorHandler.handleApplicationError(request, processingResult.exception);
                 break;
             case GENERIC_ERROR:
                 errorHandler.handleGenericError(messageContext, processingResult.exception);
@@ -141,8 +149,8 @@ public class MessageProcessor {
                 break;
             default:
                 log.info("Letting 'processed envelope' message with ID {} return to the queue. Delivery attempt {}.",
-                        message.getMessageId(),
-                        message.getDeliveryCount() + 1
+                         message.getMessageId(),
+                         message.getDeliveryCount() + 1
                 );
                 break;
         }
@@ -150,15 +158,16 @@ public class MessageProcessor {
 
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
+            pendingRequestRepository.markRequestAsProcessing(message.getMessageId());
             log.debug(
-                    "Started processing message with ID {} (delivery {})",
-                    message.getMessageId(),
-                    message.getDeliveryCount() + 1
+                "Started processing message with ID {} (delivery {})",
+                message.getMessageId(),
+                message.getDeliveryCount() + 1
             );
 
             processMessage(
-                    convertMessage(message.getBody()),
-                    message.getApplicationProperties()
+                convertMessage(message.getBody()),
+                message.getApplicationProperties()
             );
 
             log.debug("Processed message with ID {} processed successfully", message.getMessageId());
@@ -190,7 +199,6 @@ public class MessageProcessor {
         );
     }
 
-
     private void processSyncFutureHearingResponse(Supplier<HearingManagementInterfaceResponse> responseSupplier,
                                                   String hearingId)
         throws JsonProcessingException {
@@ -212,7 +220,7 @@ public class MessageProcessor {
         }
 
         messageSenderConfiguration.sendMessage(objectMapper
-            .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
+                                                   .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
     }
 
     private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
@@ -241,3 +249,4 @@ public class MessageProcessor {
     }
 
 }
+
