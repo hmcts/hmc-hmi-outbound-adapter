@@ -18,7 +18,6 @@ import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
-import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
@@ -139,13 +138,13 @@ public class MessageProcessor {
                 log.debug(MESSAGE_SUCCESS, request.getHearingId());
                 break;
             case APPLICATION_ERROR:
-                errorHandler.handleApplicationError(request, processingResult.exception);
+            //    errorHandler.handleApplicationError(request, processingResult.exception);
                 break;
             case GENERIC_ERROR:
-                errorHandler.handleGenericError(messageContext, processingResult.exception);
+             //   errorHandler.handleGenericError(messageContext, processingResult.exception);
                 break;
             case JSON_ERROR:
-                errorHandler.handleJsonError(messageContext, (JsonProcessingException) processingResult.exception);
+          //      errorHandler.handleJsonError(messageContext, (JsonProcessingException) processingResult.exception);
                 break;
             default:
                 log.info("Letting 'processed envelope' message with ID {} return to the queue. Delivery attempt {}.",

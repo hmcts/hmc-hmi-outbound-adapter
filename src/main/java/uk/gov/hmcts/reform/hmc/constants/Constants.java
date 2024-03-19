@@ -15,6 +15,7 @@ public final class Constants {
     public static final Integer HEARING_ID_VALID_LENGTH = 10;
     public static final String CANCELLATION_REQUESTED = "CANCELLATION_REQUESTED";
     public static final String MESSAGE_TYPE = "message_type";
+    public static final String  HMC_HMI_OUTBOUND_ADAPTER = "<Hmc hmi outbound adapter>";
     public static final String HEARING_ID = "hearing_id";
     public static final String CFT_HEARING_SERVICE = "<CFT Hearing Service>";
     public static final String WRITE = "<WRITE>";
