@@ -25,6 +25,10 @@ hmc:
       enabled: true
     hearingService:
       enabled: true
+    inboundAdapter:
+      enabled: false
+    outboundAdapter:
+      enabled: false
 
   hmc-cft-hearing-service:
     HMC_SERVICE_BUS_TOPIC: hmc-to-cft
@@ -39,12 +43,12 @@ hmc:
     CFT_HEARING_SERVICE_DB_PORT: 5432
     CCD_DATA_STORE_API_BASE_URL: "http://ccd-test-stubs-service-aat.service.core-compute-aat.internal"
 
-# servicebus:
-#   enabled: true
-#   teamName: CCD
-#   resourceGroup: hmc-aso-preview-rg
-#   sbNamespace: hmc-sb-preview
-#   setup:
-#     queues:
-#       - name: hmc-to-hmi
-#       - name: hmc-from-hmi
+servicebus:
+  enabled: true
+  teamName: CCD
+  resourceGroup: hmc-aso-preview-rg
+  sbNamespace: hmc-sb-preview
+  setup:
+    queues:
+      - name: hmc-to-hmi
+      - name: hmc-from-hmi
