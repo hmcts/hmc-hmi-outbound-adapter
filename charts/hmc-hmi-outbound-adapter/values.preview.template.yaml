@@ -11,6 +11,8 @@ java:
     CFT_HEARING_SERVICE_DB_PASSWORD: "{{ .Values.postgresql.auth.password}}"
     CFT_HEARING_SERVICE_DB_OPTIONS: "?stringtype=unspecified"
     CFT_HEARING_SERVICE_DB_PORT: 5432
+  postgresql:
+    enabled: true
   secrets:
     HMC_SERVICE_BUS_OUTBOUND_CONNECTION_STRING:
       secretRef: hmc-sb-preview
