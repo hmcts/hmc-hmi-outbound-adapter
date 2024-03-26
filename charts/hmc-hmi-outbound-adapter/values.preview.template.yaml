@@ -26,3 +26,13 @@ java:
       resourceGroup: hmc-shared
       secrets:
         - name: AppInsightsInstrumentationKey
+
+servicebus:
+  enabled: true
+  teamName: CCD
+  resourceGroup: hmc-aso-preview-rg
+  sbNamespace: hmc-sb-preview
+  setup:
+    queues:
+      - name: hmc-to-hmi
+      - name: hmc-from-hmi
