@@ -11,25 +11,38 @@ java:
     CFT_HEARING_SERVICE_DB_PASSWORD: "{{ .Values.postgresql.auth.password}}"
     CFT_HEARING_SERVICE_DB_OPTIONS: "?stringtype=unspecified"
     CFT_HEARING_SERVICE_DB_PORT: 5432
+
+  postgresql:
+    enabled: true
   secrets:
     HMC_SERVICE_BUS_OUTBOUND_CONNECTION_STRING:
-      secretRef: hmc-sb-preview
+      secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-to-hmi
       key: connectionString
     HMC_SERVICE_BUS_INBOUND_CONNECTION_STRING:
       secretRef: hmc-sb-preview
+      key: connectionString
+    HMC_SERVICE_BUS_CONNECTION_STRING:
+      secretRef: servicebus-secret-topic-{{ .Release.Name }}-servicebus-hmc-to-cft
+      key: connectionString
+    HMC_QUEUE_CONNECTION_STRING:
+      secretRef: servicebus-secret-queue-{{ .Release.Name }}-servicebus-hmc-from-hmi
       key: connectionString
   keyVaults:
     hmc:
       resourceGroup: hmc-shared
       secrets:
         - name: AppInsightsInstrumentationKey
+        - name: hmc-cft-hearing-service-s2s-secret
+          alias: IDAM_KEY_CFT_HEARING_SERVICE
 
-servicebus:
+hmc:
   enabled: true
-  teamName: CCD
-  resourceGroup: hmc-aso-preview-rg
-  sbNamespace: hmc-sb-preview
-  setup:
-    queues:
-      - name: hmc-to-hmi
-      - name: hmc-from-hmi
+  hmc:
+    servicebus:
+      enabled: true
+    hearingService:
+      enabled: true
+    inboundAdapter:
+      enabled: false
+    outboundAdapter:
+      enabled: false
