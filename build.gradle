@@ -380,6 +380,9 @@ dependencies {
   implementation group: 'io.projectreactor.netty', name: 'reactor-netty-core', version: '1.1.15'
   implementation group: 'io.projectreactor.netty', name: 'reactor-netty-http', version: '1.1.15'
 
+  implementation group: 'org.hibernate', name: 'hibernate-core', version: '5.5.7.Final'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.5.3'
+
   testImplementation libraries.junit5
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', {
     exclude group: 'junit', module: 'junit'
@@ -392,6 +395,7 @@ dependencies {
 
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner'
   testImplementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
+  testImplementation group: 'org.testcontainers', name: 'postgresql', version: versions.testcontainers
 
   integrationTestImplementation sourceSets.main.runtimeClasspath
   integrationTestImplementation sourceSets.test.runtimeClasspath
