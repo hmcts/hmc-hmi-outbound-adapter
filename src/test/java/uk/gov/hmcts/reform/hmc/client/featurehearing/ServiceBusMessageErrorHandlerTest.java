@@ -8,7 +8,6 @@ import com.azure.core.amqp.models.AmqpAnnotatedMessage;
 import com.azure.core.amqp.models.AmqpMessageHeader;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
-import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.azure.messaging.servicebus.models.DeadLetterOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
@@ -54,9 +52,6 @@ class ServiceBusMessageErrorHandlerTest {
 
     @Mock
     private ApplicationParams applicationParams;
-
-    @Mock
-    private ServiceBusReceiverClient receiverClient;
 
     @Mock
     private ServiceBusReceivedMessageContext messageContext = mock(ServiceBusReceivedMessageContext.class);
@@ -113,7 +108,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         given(messageContext.getMessage()).willReturn(receivedMessage);
         given(messageContext.getMessage().getMessageId()).willReturn(MESSAGE_ID);
-        PowerMockito.when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
+        when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
         when(jsonProcessingException.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleParsingError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
         doNothing().when(messageContext).deadLetter(deadLetterOptions);
@@ -148,7 +143,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         given(messageContext.getMessage()).willReturn(receivedMessage);
         when(messageContext.getMessage().getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
-        PowerMockito.when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
+        when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(1L);
         when(applicationParams.getMaxRetryAttempts()).thenReturn(2);
@@ -181,7 +176,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         given(messageContext.getMessage()).willReturn(receivedMessage);
         when(messageContext.getMessage().getRawAmqpMessage()).thenReturn(amqpAnnotatedMessage);
-        PowerMockito.when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
+        when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
         when(amqpAnnotatedMessage.getHeader()).thenReturn(amqpHeader);
         when(amqpHeader.getDeliveryCount()).thenReturn(2L);
         when(applicationParams.getMaxRetryAttempts()).thenReturn(2);
@@ -220,7 +215,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         given(messageContext.getMessage()).willReturn(receivedMessage);
         given(messageContext.getMessage().getMessageId()).willReturn(MESSAGE_ID);
-        PowerMockito.when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
+        when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
         when(exception.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleApplicationError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
         doNothing().when(messageContext).deadLetter(deadLetterOptions);
@@ -254,7 +249,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         given(messageContext.getMessage()).willReturn(receivedMessage);
         given(messageContext.getMessage().getMessageId()).willReturn(MESSAGE_ID);
-        PowerMockito.when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
+        when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
         when(exception.getMessage()).thenReturn(null);
         when(deadLetterService.handleApplicationError(NO_EXCEPTION_MESSAGE)).thenReturn(deadLetterOptions);
         doNothing().when(messageContext).deadLetter(deadLetterOptions);
