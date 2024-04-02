@@ -1,6 +1,8 @@
 package uk.gov.hmcts.reform.hmc.service;
 
 import com.azure.core.util.BinaryData;
+import com.azure.messaging.servicebus.ServiceBusErrorContext;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -147,17 +149,13 @@ public class MessageProcessor {
           //      errorHandler.handleJsonError(messageContext, (JsonProcessingException) processingResult.exception);
                 break;
             default:
-                log.info("Letting 'processed envelope' message with ID {} return to the queue. Delivery attempt {}.",
-                         message.getMessageId(),
-                         message.getDeliveryCount() + 1
-                );
                 break;
         }
     }
 
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
-            pendingRequestRepository.markRequestAsProcessing(message.getMessageId());
+            pendingRequestRepository.markRequestAsProcessing(Long.valueOf(message.getMessageId()));
             log.debug(
                 "Started processing message with ID {} (delivery {})",
                 message.getMessageId(),

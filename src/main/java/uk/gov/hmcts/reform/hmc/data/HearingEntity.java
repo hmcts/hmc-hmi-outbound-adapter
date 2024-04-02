@@ -90,16 +90,14 @@ public class HearingEntity extends BaseEntity implements Serializable {
     public CaseHearingRequestEntity getLatestCaseHearingRequest() {
         return getCaseHearingRequests().stream()
             .max(Comparator.comparingInt(CaseHearingRequestEntity::getVersionNumber))
-            .orElseThrow(() -> new ResourceNotFoundException("Cannot find latest case "
-                + "hearing request for hearing " + id));
+            .orElseThrow();
     }
 
     public CaseHearingRequestEntity getCaseHearingRequest(int version) {
         return getCaseHearingRequests().stream()
             .filter(caseHearingRequestEntity -> version == caseHearingRequestEntity.getVersionNumber())
             .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("Cannot find request version " + version
-                                                                 + " for hearing " + id));
+            .orElseThrow();
     }
 
     public Integer getLatestRequestVersion() {
