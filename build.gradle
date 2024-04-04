@@ -218,6 +218,7 @@ def versions = [
   lombok          : '1.18.30',
   mapstruct       : '1.4.2.Final',
   reformLogging   : '6.0.1',
+  serviceAuthVersion: '4.1.2',
   springBoot      : springBoot.class.package.implementationVersion,
   springCloud     : '2020.0.6',
   springfoxSwagger: '3.0.0',
