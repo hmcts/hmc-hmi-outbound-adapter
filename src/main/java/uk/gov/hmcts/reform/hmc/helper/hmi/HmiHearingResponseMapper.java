@@ -34,10 +34,10 @@ import static uk.gov.hmcts.reform.hmc.domain.model.enums.HearingStatus.AWAITING_
 import static uk.gov.hmcts.reform.hmc.domain.model.enums.HearingStatus.CANCELLATION_SUBMITTED;
 import static uk.gov.hmcts.reform.hmc.domain.model.enums.HearingStatus.EXCEPTION;
 import static uk.gov.hmcts.reform.hmc.domain.model.enums.HearingStatus.UPDATE_SUBMITTED;
-import static uk.gov.hmcts.reform.hmc.service.InboundQueueServiceImpl.UNSUPPORTED_HEARING_STATUS;
 
 @Component
 public class HmiHearingResponseMapper {
+    public static final String UNSUPPORTED_HEARING_STATUS = "Hearing has unsupported value for hearing status";
     public HearingEntity mapHmiHearingToEntity(HearingResponse hearing, HearingEntity hearingEntity) {
         HearingResponseEntity hearingResponseEntity = mapHearingResponseEntity(hearing, hearingEntity);
 
