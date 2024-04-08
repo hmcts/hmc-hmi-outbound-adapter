@@ -24,11 +24,11 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
-import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.function.Supplier;
+import javax.transaction.Transactional;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
@@ -78,7 +78,8 @@ public class MessageProcessor {
             LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime().toLocalDateTime();
             if (ChronoUnit.HOURS.between(submittedDateTime, currentDateTime) >= 24) {
                 pendingRequestRepository.markRequestAsException(pendingRequest.getHearingId());
-                log.error("Submitted time of request with ID {} is 24 hours later than before.", pendingRequest.getHearingId());
+                log.error("Submitted time of request with ID {} is 24 hours later than before.",
+                          pendingRequest.getHearingId());
                 pendingRequestRepository.identifyRequestsForEscalation();
                 return;
             }
