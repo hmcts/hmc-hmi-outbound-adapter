@@ -99,7 +99,6 @@ public class MessageProcessor {
         } else {
             log.debug("No pending requests found for processing.");
         }
-        assert pendingRequest != null;
 
     }
 
