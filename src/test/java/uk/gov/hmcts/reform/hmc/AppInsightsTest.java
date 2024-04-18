@@ -1,10 +1,7 @@
-package uk.gov.hmcts.reform;
+package uk.gov.hmcts.reform.hmc;
 
 import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.telemetry.TelemetryContext;
-
-import uk.gov.hmcts.reform.hmc.AppInsights;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
