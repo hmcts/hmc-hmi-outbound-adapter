@@ -28,9 +28,6 @@ configurations.configureEach {
       if (details.requested.group == 'com.fasterxml.jackson.core') {
         details.useVersion '2.16.1'
       }
-      if (details.requested.group == 'io.netty') {
-        details.useVersion '4.1.104.Final'
-      }
     }
   }
 
@@ -226,8 +223,7 @@ def versions = [
   reformLogging   : '6.1.4',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.15.2',
-  jetty           : '11.0.18',
-  netty           : '4.1.104.Final'
+  jetty           : '11.0.18'
 ]
 
 ext {
