@@ -12,6 +12,10 @@ public class AppInsights {
     private final TelemetryClient telemetry;
 
     @Autowired
+    public AppInsights() {
+        this.telemetry = new TelemetryClient();
+    }
+
     public AppInsights(TelemetryClient telemetry) {
         this.telemetry = telemetry;
     }
