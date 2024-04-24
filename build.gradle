@@ -39,6 +39,12 @@ configurations.configureEach {
   }
 }
 
+configurations.all {
+  exclude group:"io.netty", module: "netty-resolver-dns-classes-macos"
+  exclude group:"io.netty", module: "netty-transport-classes-epoll"
+  exclude group:"io.netty", module:"netty-transport-classes-kqueue"
+}
+
 jacoco {
   toolVersion = "0.8.8"
 }
@@ -229,7 +235,7 @@ def versions = [
   springfoxSwagger: '3.0.0',
   testcontainers  : '1.15.2',
   jetty           : '9.4.53.v20231009',
-  netty           : '4.1.104.Final'
+  netty           : '4.1.107.Final'
 ]
 
 ext['spring-framework.version'] = '5.3.31'
