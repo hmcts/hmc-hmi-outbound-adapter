@@ -57,12 +57,10 @@ public class MessageProcessor {
 
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
                             ServiceBusMessageErrorHandler errorHandler,
-                            MessageSenderConfiguration messageSenderConfiguration,
                             ObjectMapper objectMapper,
                             PendingRequestRepository pendingRequestRepository) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
-        this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
         this.pendingRequestRepository = pendingRequestRepository;
     }
@@ -246,8 +244,8 @@ public class MessageProcessor {
                 .build();
         }
         log.debug("preparing to send message to queue for hearingId {} ", hearingId);
-        messageSenderConfiguration.sendMessage(objectMapper
-            .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
+        // messageSenderConfiguration.sendMessage(objectMapper
+        //     .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
     }
 
     private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
