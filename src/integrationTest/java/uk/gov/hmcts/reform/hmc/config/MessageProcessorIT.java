@@ -35,8 +35,7 @@ class MessageProcessorIT extends BaseTest {
     private static final String MESSAGE_TYPE = "message_type";
     private static final String HEARING_ID = "hearing_id";
 
-    @MockBean
-    private MessageSenderConfiguration messageSenderConfiguration;
+
 
     @MockBean
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
@@ -56,7 +55,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyRequestHearing(TOKEN);
 
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
-                                                                 messageSenderConfiguration, OBJECT_MAPPER,
+                                                                  OBJECT_MAPPER,
                                                                  pendingRequestRepository);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).createHearingRequest(any());
@@ -71,7 +70,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyDeleteHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
-                                                                 messageSenderConfiguration, OBJECT_MAPPER,
+                                                                  OBJECT_MAPPER,
                                                                  pendingRequestRepository);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).deleteHearingRequest(any(), any());
@@ -86,7 +85,7 @@ class MessageProcessorIT extends BaseTest {
         stubSuccessfullyAmendHearing(TOKEN, CASE_LISTING_REQUEST_ID);
 
         MessageProcessor messageProcessor = new MessageProcessor(defaultFutureHearingRepository, errorHandler,
-                                                                 messageSenderConfiguration, OBJECT_MAPPER,
+                                                                 OBJECT_MAPPER,
                                                                  pendingRequestRepository);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).amendHearingRequest(any(), any());
