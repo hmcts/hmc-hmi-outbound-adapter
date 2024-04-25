@@ -13,7 +13,6 @@ import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
@@ -44,8 +43,6 @@ public class FutureHearingRepositoryIT extends BaseTest {
         .build();
     private static final JsonNode data = OBJECT_MAPPER.convertValue("Test data", JsonNode.class);
 
-    @MockBean
-    private MessageReceiverConfiguration messageReceiverConfiguration;
 
     @Autowired
     private ApplicationParams applicationParams;
