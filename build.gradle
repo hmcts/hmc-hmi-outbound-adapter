@@ -36,6 +36,12 @@ configurations.configureEach {
   }
 }
 
+configurations.all {
+  exclude group:"io.netty", module: "netty-resolver-dns-classes-macos"
+  exclude group:"io.netty", module: "netty-transport-classes-epoll"
+  exclude group:"io.netty", module:"netty-transport-classes-kqueue"
+}
+
 jacoco {
   toolVersion = "0.8.8"
 }
@@ -224,6 +230,7 @@ def versions = [
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.15.2',
   jetty           : '11.0.18'
+
 ]
 
 ext {
