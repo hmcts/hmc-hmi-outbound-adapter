@@ -13,7 +13,7 @@ import java.util.List;
 import javax.persistence.LockModeType;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
-@Repository
+@Repository("pendingRequestRepository")
 public interface PendingRequestRepository extends CrudRepository<PendingRequestEntity, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
