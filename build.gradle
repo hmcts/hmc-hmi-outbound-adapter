@@ -385,6 +385,7 @@ dependencies {
   testImplementation group: 'org.mockito', name: 'mockito-inline', version: '4.8.1'
   testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
   testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.9'
+  testImplementation group: 'org.testcontainers', name: 'postgresql', version: versions.testcontainers
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', {
     // CVE-2022-4244, CVE-2022-4245
     exclude group: 'org.codehaus.plexus', module: 'plexus-interpolation'
