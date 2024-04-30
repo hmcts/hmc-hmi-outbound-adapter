@@ -234,7 +234,6 @@ def versions = [
 ]
 
 ext {
-  set('spring-framework.version', '5.3.31')
   set('log4j2.version', '2.23.1')
   set('jackson.version', '2.16.1')
   set('snakeyaml.version', '2.2')
