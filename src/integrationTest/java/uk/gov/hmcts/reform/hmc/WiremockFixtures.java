@@ -2,9 +2,7 @@ package uk.gov.hmcts.reform.hmc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.FileSource;
 import com.github.tomakehurst.wiremock.extension.Parameters;
 import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
@@ -12,14 +10,16 @@ import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.jsonResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
-import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -38,9 +38,7 @@ public class WiremockFixtures {
     private static final String SOURCE_SYSTEM = "SOURCE_SYSTEM";
     private static final String DESTINATION_SYSTEM = "DESTINATION_SYSTEM";
 
-    private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
-        .modules(new Jdk8Module())
-        .build();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static String TEST_BODY = "{\n"
         + "    \"errCode\": \"1000\",\n"
@@ -72,7 +70,7 @@ public class WiremockFixtures {
     public static void stubSuccessfullyReturnToken(String token) {
         AuthenticationResponse authenticationResponse = new AuthenticationResponse();
         authenticationResponse.setAccessToken(token);
-        stubFor(WireMock.post(urlEqualTo(GET_TOKEN_URL))
+        stubFor(post(urlEqualTo(GET_TOKEN_URL))
                     .withHeader("Content-Type", equalTo(APPLICATION_FORM_URLENCODED_VALUE))
                     .withRequestBody(matching("grant_type=" + GRANT_TYPE + "&client_id=" + CLIENT_ID + "&scope="
                                                   + SCOPE + "&client_secret=" + CLIENT_SECRET))
@@ -84,15 +82,15 @@ public class WiremockFixtures {
     }
 
     public static void stubPostMethodThrowingAuthenticationError(int status, String url) {
-        stubFor(WireMock.post(urlEqualTo(url))
-                    .willReturn(okJson(TEST_BODY).withStatus(status)));
+        stubFor(post(urlEqualTo(url))
+                    .willReturn(jsonResponse(TEST_BODY,status)));
     }
 
     public static void stubSuccessfullyRequestHearing(String token) {
         HearingManagementInterfaceResponse response =  new HearingManagementInterfaceResponse();
         response.setResponseCode(202);
         response.setDescription("The request was received successfully.");
-        stubFor(WireMock.post(urlEqualTo(HMI_REQUEST_URL))
+        stubFor(post(urlEqualTo(HMI_REQUEST_URL))
                     .withHeader("Content-Type", equalTo(APPLICATION_JSON_VALUE))
                     .withHeader("Accept", equalTo(APPLICATION_JSON_VALUE))
                     .withHeader("Source-System", equalTo(SOURCE_SYSTEM))
@@ -110,15 +108,15 @@ public class WiremockFixtures {
     }
 
     public static void stubPutMethodThrowingError(int status, String url) {
-        stubFor(WireMock.put(urlEqualTo(url))
-                    .willReturn(okJson(TEST_BODY).withStatus(status)));
+        stubFor(put(urlEqualTo(url))
+                    .willReturn(jsonResponse(TEST_BODY, status)));
     }
 
     public static void stubSuccessfullyAmendHearing(String token, String caseListingRequestId) {
         HearingManagementInterfaceResponse response = new HearingManagementInterfaceResponse();
         response.setResponseCode(202);
         response.setDescription("The request was received successfully.");
-        stubFor(WireMock.put(urlEqualTo(HMI_REQUEST_URL + "/" + caseListingRequestId))
+        stubFor(put(urlEqualTo(HMI_REQUEST_URL + "/" + caseListingRequestId))
                     .withHeader("Content-Type", equalTo(APPLICATION_JSON_VALUE))
                     .withHeader("Accept", equalTo(APPLICATION_JSON_VALUE))
                     .withHeader("Source-System", equalTo(SOURCE_SYSTEM))
@@ -136,15 +134,15 @@ public class WiremockFixtures {
     }
 
     public static void stubDeleteMethodThrowingError(int status, String url) {
-        stubFor(WireMock.delete(urlEqualTo(url))
-                    .willReturn(okJson(TEST_BODY).withStatus(status)));
+        stubFor(delete(urlEqualTo(url))
+                    .willReturn(jsonResponse(TEST_BODY, status)));
     }
 
     public static void stubSuccessfullyDeleteHearing(String token, String caseListingRequestId) {
         HearingManagementInterfaceResponse response = new HearingManagementInterfaceResponse();
         response.setResponseCode(200);
         response.setDescription("The request was received successfully.");
-        stubFor(WireMock.delete(urlEqualTo(HMI_REQUEST_URL + "/" + caseListingRequestId))
+        stubFor(delete(urlEqualTo(HMI_REQUEST_URL + "/" + caseListingRequestId))
                     .withHeader("Content-Type", equalTo(APPLICATION_JSON_VALUE))
                     .withHeader("Accept", equalTo(APPLICATION_JSON_VALUE))
                     .withHeader("Source-System", equalTo(SOURCE_SYSTEM))
@@ -161,12 +159,9 @@ public class WiremockFixtures {
                     ));
     }
 
-    @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "squid:S112"})
-    // Required as wiremock's Json.getObjectMapper().registerModule(..); not working
-    // see https://github.com/tomakehurst/wiremock/issues/1127
     private static String getJsonString(Object object) {
         try {
-            return OBJECT_MAPPER.writeValueAsString(object);
+            return mapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

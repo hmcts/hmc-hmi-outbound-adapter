@@ -27,20 +27,12 @@
     "body" : {
       "status" : "UP",
       "components" : {
-        "db" : {
-          "status" : "UP",
-          "details" : {
-            "database" : "[[ANYTHING_PRESENT]]",
-            "validationQuery" : "[[ANYTHING_PRESENT]]"
-          }
-        },
         "diskSpace" : {
           "status" : "UP",
           "details" : {
             "total" : "[[ANYTHING_PRESENT]]",
             "free" : "[[ANYTHING_PRESENT]]",
             "threshold" : "[[ANYTHING_PRESENT]]",
-            "path" : "[[ANYTHING_PRESENT]]",
             "exists" : true
           }
         },

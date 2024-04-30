@@ -26,6 +26,8 @@ java:
       resourceGroup: hmc-shared
       secrets:
         - name: AppInsightsInstrumentationKey
+        - name: app-insights-connection-string
+          alias: app-insights-connection-string
 
 servicebus:
   enabled: true
