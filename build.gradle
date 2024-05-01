@@ -372,8 +372,7 @@ dependencies {
   implementation group: 'io.projectreactor.netty', name: 'reactor-netty-core', version: '1.1.15'
   implementation group: 'io.projectreactor.netty', name: 'reactor-netty-http', version: '1.1.15'
 
-  implementation group: 'org.hibernate', name: 'hibernate-core', version: '5.5.7.Final'
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.5.3'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.5.5'
 
   testImplementation libraries.junit5
   testImplementation 'org.apiguardian:apiguardian-api:1.0.0' // Temporary fix see https://github.com/junit-team/junit5/issues/1065
