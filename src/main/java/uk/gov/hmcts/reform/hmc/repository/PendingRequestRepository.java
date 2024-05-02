@@ -3,7 +3,6 @@ package uk.gov.hmcts.reform.hmc.repository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +13,7 @@ import javax.persistence.LockModeType;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Repository("pendingRequestRepository")
-public interface PendingRequestRepository extends CrudRepository<PendingRequestEntity, Long> {
+public interface PendingRequestRepository {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query(value = "SELECT * FROM pending_requests WHERE status = 'PENDING' "
