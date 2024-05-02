@@ -12,7 +12,7 @@ import java.util.List;
 import javax.persistence.LockModeType;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
-@Repository("pendingRequestRepository")
+@Repository
 public interface PendingRequestRepository {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
