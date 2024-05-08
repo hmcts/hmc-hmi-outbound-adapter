@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,7 +12,6 @@ import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.sql.Timestamp;
 import java.util.List;
-import jakarta.persistence.LockModeType;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Repository
@@ -55,6 +55,10 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     void deleteCompletedRecords();
 
     @Modifying
+    @Query("DELETE FROM PendingRequestEntity WHERE status = 'COMPLETED' AND submittedDateTime < :thresholdDateTime")
+    void deleteCompletedRecords(Timestamp thresholdDateTime);
+
+    @Modifying
     @Query("UPDATE PendingRequestEntity SET status = :status, retryCount = :retryCount WHERE id = :id")
     void updateStatusAndRetryCount(Long id, String status, int retryCount);
 
@@ -62,7 +66,5 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity SET status = 'PENDING', retryCount = :retryCount WHERE id = :id")
     void markRequestAsPending(Long id, int retryCount);
 
-    @Modifying
-    @Query("DELETE FROM PendingRequestEntity WHERE status = 'COMPLETED' AND submittedDateTime < :thresholdDateTime")
-    void deleteCompletedRecords(Timestamp thresholdDateTime);
+
 }
