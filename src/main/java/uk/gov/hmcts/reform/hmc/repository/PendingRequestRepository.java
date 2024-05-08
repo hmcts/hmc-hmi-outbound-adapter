@@ -13,7 +13,6 @@ import java.sql.Timestamp;
 import java.util.List;
 import javax.persistence.LockModeType;
 
-
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Repository
 public interface PendingRequestRepository extends CrudRepository<PendingRequestEntity, Long> {
@@ -63,17 +62,12 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Modifying
     @Query("UPDATE PendingRequestEntity SET status = :status, retryCount = :retryCount WHERE id = :id")
     void updateStatusAndRetryCount(Long id, String status, int retryCount);
-
-
+    
     @Modifying
     @Query("UPDATE PendingRequestEntity SET status = 'PENDING', retryCount = :retryCount WHERE id = :id")
     void markRequestAsPending(Long id, int retryCount);
-
-
-
 
     @Modifying
     @Query("DELETE FROM PendingRequestEntity WHERE status = 'COMPLETED' AND submittedDateTime < :thresholdDateTime")
     void deleteCompletedRecords(Timestamp thresholdDateTime);
 }
-
