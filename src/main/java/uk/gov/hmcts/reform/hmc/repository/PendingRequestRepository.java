@@ -14,7 +14,7 @@ import java.sql.Timestamp;
 import java.util.List;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
-@Repository
+@Repository("pendingRequestRepository")
 public interface PendingRequestRepository extends CrudRepository<PendingRequestEntity, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -2,25 +2,30 @@ package uk.gov.hmcts.reform.hmc.service;
 
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusErrorContext;
-import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
-import uk.gov.hmcts.reform.hmc.config.MessageSenderConfiguration;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
+import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
+import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -38,8 +43,8 @@ public class MessageProcessor {
 
     private final ServiceBusMessageErrorHandler errorHandler;
     private final DefaultFutureHearingRepository futureHearingRepository;
-    private final MessageSenderConfiguration messageSenderConfiguration;
     private final ObjectMapper objectMapper;
+    private final PendingRequestRepository pendingRequestRepository;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
@@ -50,23 +55,51 @@ public class MessageProcessor {
 
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
                             ServiceBusMessageErrorHandler errorHandler,
-                            MessageSenderConfiguration messageSenderConfiguration,
-                            ObjectMapper objectMapper) {
+                            ObjectMapper objectMapper,
+                            PendingRequestRepository pendingRequestRepository) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
-        this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
+        this.pendingRequestRepository = pendingRequestRepository;
     }
 
-    public void processMessage(ServiceBusReceivedMessageContext messageContext) {
-        var message = messageContext.getMessage();
-        var processingResult = tryProcessMessage(message);
-        finaliseMessage(messageContext, processingResult);
-        messageContext.complete();
+    @Scheduled(fixedRate = 120000) // Execute every 2 minutes
+    @Transactional
+    public void processPendingRequests() {
+        PendingRequestEntity pendingRequest = pendingRequestRepository.findOldestPendingRequestForProcessing();
+        pendingRequestRepository.deleteCompletedRecords();
+        if (pendingRequest != null) {
+            LocalDateTime currentDateTime = LocalDateTime.now();
+            LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime().toLocalDateTime();
+            LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime().toLocalDateTime();
+            if (ChronoUnit.HOURS.between(submittedDateTime, currentDateTime) >= 24) {
+                pendingRequestRepository.markRequestAsException(pendingRequest.getHearingId());
+                log.error("Submitted time of request with ID {} is 24 hours later than before.",
+                          pendingRequest.getHearingId());
+                pendingRequestRepository.identifyRequestsForEscalation();
+                return;
+            }
+            if (ChronoUnit.MINUTES.between(lastTriedDateTime, currentDateTime) < 15) {
+                return;
+            }
+
+            pendingRequestRepository.markRequestAsProcessing(pendingRequest.getHearingId());
+            ServiceBusMessage receivedMessage = new ServiceBusMessage(pendingRequest.getMessage());
+            try {
+                tryProcessMessage(receivedMessage);
+            } catch (Exception ex) {
+                pendingRequestRepository.markRequestAsPendingAndBumpRetryCount(pendingRequest.getHearingId());
+                return;
+            }
+            pendingRequestRepository.markRequestAsCompleted(pendingRequest.getHearingId());
+        } else {
+            log.debug("No pending requests found for processing.");
+        }
+
     }
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
-            throws JsonProcessingException {
+        throws JsonProcessingException {
         log.debug("processMessage message, applicationProperties");
         if (applicationProperties.containsKey(MESSAGE_TYPE)) {
             MessageType messageType;
@@ -141,24 +174,22 @@ public class MessageProcessor {
                 break;
             default:
                 log.info("Letting 'processed envelope' message with ID {} return to the queue. Delivery attempt {}.",
-                        message.getMessageId(),
-                        message.getDeliveryCount() + 1
+                         message.getMessageId(),
+                         message.getDeliveryCount() + 1
                 );
                 break;
         }
     }
 
-    private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
+    private MessageProcessingResult tryProcessMessage(ServiceBusMessage message) {
         try {
             log.debug(
-                    "Started processing message with ID {} (delivery {})",
-                    message.getMessageId(),
-                    message.getDeliveryCount() + 1
+                "Started processing message"
             );
 
             processMessage(
-                    convertMessage(message.getBody()),
-                    message.getApplicationProperties()
+                convertMessage(message.getBody()),
+                message.getApplicationProperties()
             );
 
             log.debug("Processed message with ID {} processed successfully", message.getMessageId());
@@ -179,7 +210,7 @@ public class MessageProcessor {
         }
     }
 
-    private void logErrors(ServiceBusReceivedMessage message, Exception exception) {
+    private void logErrors(ServiceBusMessage message, Exception exception) {
         log.error("Unexpected Error", exception);
         log.error(
             ERROR_PROCESSING_MESSAGE,
@@ -211,8 +242,8 @@ public class MessageProcessor {
                 .build();
         }
         log.debug("preparing to send message to queue for hearingId {} ", hearingId);
-        messageSenderConfiguration.sendMessage(objectMapper
-            .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
+        // messageSenderConfiguration.sendMessage(objectMapper
+        //     .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
     }
 
     private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
