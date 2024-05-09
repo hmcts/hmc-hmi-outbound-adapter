@@ -1,45 +1,18 @@
 package uk.gov.hmcts.reform.hmc.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
-import uk.gov.hmcts.reform.hmc.model.HearingStatusAudit;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
-
 public class TestingUtil {
 
     private TestingUtil() {
-    }
-
-    public static HearingStatusAudit hearingStatusAudit() {
-        JsonNode jsonNode = null;
-        try {
-            jsonNode = new ObjectMapper().readTree("{\"query\": {\"match\": \"blah blah\"}}");
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        HearingStatusAudit hearingStatusAudit = new HearingStatusAudit();
-        hearingStatusAudit.setHearingServiceId("ABA1");
-        hearingStatusAudit.setHearingId("2000000000");
-        hearingStatusAudit.setStatus("HEARING_REQUESTED");
-        hearingStatusAudit.setStatusUpdateDateTime(LocalDateTime.now());
-        hearingStatusAudit.setHearingEvent("create-hearing- request");
-        hearingStatusAudit.setHttpStatus("200");
-        hearingStatusAudit.setSource(HMC);
-        hearingStatusAudit.setTarget(HMI);
-        hearingStatusAudit.setErrorDescription(jsonNode);
-        hearingStatusAudit.setRequestVersion("1");
-        return hearingStatusAudit;
     }
 
     public static Optional<HearingStatusAuditEntity> hearingStatusAuditEntity(String hearingEvent, String failureStatus,

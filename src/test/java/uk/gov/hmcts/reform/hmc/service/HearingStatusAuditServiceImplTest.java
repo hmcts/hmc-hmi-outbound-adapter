@@ -11,7 +11,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
-import uk.gov.hmcts.reform.hmc.helper.HearingStatusAuditMapper;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.HearingStatusAuditRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
@@ -37,17 +36,13 @@ class HearingStatusAuditServiceImplTest {
     HearingStatusAuditRepository hearingStatusAuditRepository;
 
     @Mock
-    HearingStatusAuditMapper hearingStatusAuditMapper;
-
-    @Mock
     HearingRepository hearingRepository;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         hearingStatusAuditService =
-            new HearingStatusAuditServiceImpl(hearingStatusAuditRepository,
-                                              hearingStatusAuditMapper);
+            new HearingStatusAuditServiceImpl(hearingStatusAuditRepository);
     }
 
     @Nested
@@ -60,7 +55,6 @@ class HearingStatusAuditServiceImplTest {
             HearingStatusAuditEntity auditEntity = TestingUtil.hearingStatusAuditEntity(HMC_TO_HMI_AUTH,
                                                                                         FAILURE_STATUS, HMC, HMI,
                                                                                         errorDetails).get();
-            given(hearingStatusAuditMapper.modelToEntity(TestingUtil.hearingStatusAudit())).willReturn(auditEntity);
             given(hearingStatusAuditRepository.save(auditEntity)).willReturn(auditEntity);
             hearingStatusAuditService. saveAuditTriageDetails(TestingUtil.hearingEntity().get(),
                                                               HMC_TO_HMI_AUTH, FAILURE_STATUS, HMC, HMI,
@@ -78,7 +72,6 @@ class HearingStatusAuditServiceImplTest {
             HearingStatusAuditEntity auditEntity = TestingUtil.hearingStatusAuditEntity(HMC_TO_HMI_AUTH,
                                                                                         SUCCESS_STATUS, HMC, HMI,
                                                                                         null).get();
-            given(hearingStatusAuditMapper.modelToEntity(TestingUtil.hearingStatusAudit())).willReturn(auditEntity);
             given(hearingStatusAuditRepository.save(auditEntity)).willReturn(auditEntity);
             given(hearingStatusAuditRepository.findById(1L)).willReturn(
                 TestingUtil.hearingStatusAuditEntity(HMC_TO_HMI_AUTH, FAILURE_STATUS, HMC, HMI,null));
