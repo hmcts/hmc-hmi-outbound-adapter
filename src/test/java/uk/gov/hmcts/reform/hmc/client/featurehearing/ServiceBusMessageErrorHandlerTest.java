@@ -264,6 +264,7 @@ class ServiceBusMessageErrorHandlerTest {
         when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
         when(exception.getMessage()).thenReturn(null);
         when(deadLetterService.handleApplicationError(NO_EXCEPTION_MESSAGE)).thenReturn(deadLetterOptions);
+        doNothing().when(messageContext).deadLetter(deadLetterOptions);
         handler.handleGenericError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
