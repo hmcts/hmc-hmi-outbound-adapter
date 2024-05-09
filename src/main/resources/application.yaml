@@ -67,16 +67,16 @@ azure:
 
 fh:
   ad:
-    host: "https://login.microsoftonline.com/531ff96d-0ae9-462a-8d2d-bec7c0b42082/"
-    get-token-url: "oauth2/v2.0/token"
-    client-id: "a12e8358-fbd8-4a98-84aa-a106161dfbd7"
-    client-secret: "tHp8Q~_uhkyZfjzpKRtebyC68SGFC.ACfGQdObPh"
-    scope: "api://d49d7fa2-6904-4223-a907-3b8992af4190/.default"
-    grant-type: "client_credentials"
+    host: ${FH_BASE_URL:base/url}
+    get-token-url: ${FH_GET_TOKEN_URL:get/token/url}
+    client-id: ${CLIENT_ID:client-id}
+    client-secret: ${CLIENT_SECRET:client-secret}
+    scope: ${SCOPE:scope}
+    grant-type: ${GRANT_TYPE:grant-type}
   hmi:
-    host: "https://sds-api-mgmt.staging.platform.hmcts.net/hmi"
-    source-system: "CFT"
-    destination-system: "MOCK"
+    host: ${HMI_BASE_URL:base/url}
+    source-system: ${HMI_SOURCE_SYSTEM:source-system}
+    destination-system: ${HMI_DESTINATION_SYSTEM:destination-system}
 
 feign:
   okhttp:
