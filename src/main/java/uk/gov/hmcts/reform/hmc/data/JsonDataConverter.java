@@ -18,19 +18,13 @@ public class JsonDataConverter implements AttributeConverter<JsonNode, String> {
 
     @Override
     public String convertToDatabaseColumn(final JsonNode objectValue) {
-        if (objectValue == null) {
-            return null;
-        }
-        return objectValue.toString();
+        return (null == objectValue ? null : objectValue.toString());
     }
 
     @Override
     public JsonNode convertToEntityAttribute(final String dataValue) {
         try {
-            if (dataValue == null) {
-                return null;
-            }
-            return mapper.readTree(dataValue);
+            return (null == dataValue ? null : mapper.readTree(dataValue));
         } catch (IOException e) {
             throw new RuntimeException("Unable to deserialize to json field", e);
         }
