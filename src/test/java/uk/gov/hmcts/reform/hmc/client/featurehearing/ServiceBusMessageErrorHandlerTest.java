@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
+import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
@@ -27,12 +28,15 @@ import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.hmc.errorhandling.DeadLetterService.APPLICATION_PROCESSING_ERROR;
@@ -112,7 +116,7 @@ class ServiceBusMessageErrorHandlerTest {
         when(jsonProcessingException.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleParsingError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
         doNothing().when(messageContext).deadLetter(deadLetterOptions);
-
+        getHearingEntity();
         handler.handleJsonError(messageContext, jsonProcessingException);
 
         List<ILoggingEvent> logsList = listAppender.list;
@@ -127,6 +131,8 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleParsingError(ERROR_MESSAGE);
+        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
+                                                                           any(), any(), any());
     }
 
     @Test
@@ -160,6 +166,8 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(0))
             .handleApplicationError(ERROR_MESSAGE);
+        verify(hearingStatusAuditService, times(0)).saveAuditTriageDetails(any(), any(), any(),
+                                                                           any(), any(), any());
     }
 
     @Test
@@ -185,7 +193,7 @@ class ServiceBusMessageErrorHandlerTest {
         when(exception.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleApplicationError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
         doNothing().when(messageContext).deadLetter(deadLetterOptions);
-
+        getHearingEntity();
         handler.handleApplicationError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
@@ -199,6 +207,8 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleApplicationError(ERROR_MESSAGE);
+        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
+                                                                           any(), any(), any());
     }
 
     @Test
@@ -219,7 +229,7 @@ class ServiceBusMessageErrorHandlerTest {
         when(exception.getMessage()).thenReturn(ERROR_MESSAGE);
         when(deadLetterService.handleApplicationError(ERROR_MESSAGE)).thenReturn(deadLetterOptions);
         doNothing().when(messageContext).deadLetter(deadLetterOptions);
-
+        getHearingEntity();
         handler.handleGenericError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
@@ -233,6 +243,8 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleApplicationError(ERROR_MESSAGE);
+        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
+                                                                           any(), any(), any());
     }
 
     @Test
@@ -253,7 +265,7 @@ class ServiceBusMessageErrorHandlerTest {
         when(exception.getMessage()).thenReturn(null);
         when(deadLetterService.handleApplicationError(NO_EXCEPTION_MESSAGE)).thenReturn(deadLetterOptions);
         doNothing().when(messageContext).deadLetter(deadLetterOptions);
-
+        getHearingEntity();
         handler.handleGenericError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
@@ -267,6 +279,15 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleApplicationError(NO_EXCEPTION_MESSAGE);
+        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
+                                                                           any(), any(), any());
+    }
+
+    private void getHearingEntity() {
+        HearingEntity hearing = new HearingEntity();
+        hearing.setStatus("RESPONDED");
+        hearing.setId(1234567890L);
+        when(hearingRepository.findById(Long.valueOf("1234567890"))).thenReturn(Optional.of(hearing));
     }
 
 }

@@ -103,10 +103,8 @@ public class ServiceBusMessageErrorHandler {
         JsonNode errorDetails = new ObjectMapper().readTree("{\"deadLetterReason\": \""
                                                                 + exceptionMessage + "\"}");
         Optional<HearingEntity> hearingEntity = hearingRepository.findById(Long.valueOf(hearingId));
-        if (hearingEntity.isPresent()) {
-            hearingStatusAuditService.saveAuditTriageDetails(hearingEntity.get(), HMC_TO_HMI_AUTH,
+        hearingStatusAuditService.saveAuditTriageDetails(hearingEntity.get(), HMC_TO_HMI_AUTH,
                                                              FAILURE_STATUS, HMC, HMI, errorDetails);
-        }
     }
 
 }
