@@ -16,6 +16,7 @@ import uk.gov.hmcts.reform.hmc.repository.HearingStatusAuditRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -56,7 +57,7 @@ class HearingStatusAuditServiceImplTest {
                                                                                         FAILURE_STATUS, HMC, HMI,
                                                                                         errorDetails).get();
             given(hearingStatusAuditRepository.save(auditEntity)).willReturn(auditEntity);
-            hearingStatusAuditService. saveAuditTriageDetails(TestingUtil.hearingEntity().get(),
+            hearingStatusAuditService.saveAuditTriageDetails(TestingUtil.hearingEntity().get(),
                                                               HMC_TO_HMI_AUTH, FAILURE_STATUS, HMC, HMI,
                                                               errorDetails);
             assertEquals("2000000000", auditEntity.getHearingId());
@@ -64,6 +65,9 @@ class HearingStatusAuditServiceImplTest {
             assertEquals(HMC, auditEntity.getSource());
             assertEquals(errorDetails, auditEntity.getErrorDescription());
             assertEquals(HMC_TO_HMI_AUTH, auditEntity.getHearingEvent());
+            assertEquals("Test", auditEntity.getHmctsServiceId());
+            assertEquals("1", auditEntity.getRequestVersion());
+            assertNotNull(auditEntity.getErrorDescription());
             verify(hearingStatusAuditRepository, times(1)).save(any());
         }
 
@@ -76,7 +80,7 @@ class HearingStatusAuditServiceImplTest {
             given(hearingStatusAuditRepository.findById(1L)).willReturn(
                 TestingUtil.hearingStatusAuditEntity(HMC_TO_HMI_AUTH, FAILURE_STATUS, HMC, HMI,null));
 
-            hearingStatusAuditService. saveAuditTriageDetails(TestingUtil.hearingEntity().get(),
+            hearingStatusAuditService.saveAuditTriageDetails(TestingUtil.hearingEntity().get(),
                                                               HMC_TO_HMI_AUTH, SUCCESS_STATUS, HMC, HMI,
                                                               null);
             assertEquals("2000000000", auditEntity.getHearingId());
@@ -84,6 +88,9 @@ class HearingStatusAuditServiceImplTest {
             assertEquals(HMC, auditEntity.getSource());
             assertNull(auditEntity.getErrorDescription());
             assertEquals(HMC_TO_HMI_AUTH, auditEntity.getHearingEvent());
+            assertEquals("Test", auditEntity.getHmctsServiceId());
+            assertEquals("1", auditEntity.getRequestVersion());
+            assertNull(auditEntity.getErrorDescription());
             verify(hearingStatusAuditRepository, times(1)).save(any());
         }
     }

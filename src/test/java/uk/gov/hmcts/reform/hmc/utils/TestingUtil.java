@@ -20,7 +20,7 @@ public class TestingUtil {
                                                                               JsonNode errorDetails) {
         HearingStatusAuditEntity hearingStatusAuditEntity = new HearingStatusAuditEntity();
         hearingStatusAuditEntity.setId(1L);
-        hearingStatusAuditEntity.setHmctsServiceId("ABA1");
+        hearingStatusAuditEntity.setHmctsServiceId("Test");
         hearingStatusAuditEntity.setHearingId("2000000000");
         hearingStatusAuditEntity.setStatus("HEARING_REQUESTED");
         hearingStatusAuditEntity.setHearingEvent(hearingEvent);
@@ -48,7 +48,7 @@ public class TestingUtil {
         entity.setHearingType("Some hearing type");
         entity.setRequiredDurationInMinutes(10);
         entity.setHearingPriorityType("Priority type");
-        entity.setHmctsServiceCode("ABA1");
+        entity.setHmctsServiceCode("Test");
         entity.setCaseReference("1111222233334444");
         entity.setCaseUrlContextPath("https://www.google.com");
         entity.setHmctsInternalCaseName("Internal case name");

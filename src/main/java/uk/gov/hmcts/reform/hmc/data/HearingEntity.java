@@ -13,8 +13,6 @@ import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.io.Serializable;
@@ -53,7 +51,6 @@ public class HearingEntity extends BaseEntity implements Serializable {
     private LocalDateTime updatedDateTime;
 
     @OneToMany(mappedBy = "hearing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.FALSE)
     private List<CaseHearingRequestEntity> caseHearingRequests = new ArrayList<>();
 
     @Column(name = "linked_order")
