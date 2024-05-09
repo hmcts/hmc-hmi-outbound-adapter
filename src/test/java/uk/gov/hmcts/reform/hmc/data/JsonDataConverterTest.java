@@ -3,15 +3,17 @@ package uk.gov.hmcts.reform.hmc.data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-public class JsonDataConverterTest {
+class JsonDataConverterTest {
 
     private static ObjectMapper mapper = new ObjectMapper();
 
@@ -19,15 +21,17 @@ public class JsonDataConverterTest {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
+    @InjectMocks
     private JsonDataConverter jsonbConverter;
 
-    @Before
+    @BeforeEach
     public void setup() {
+        MockitoAnnotations.openMocks(this);
         jsonbConverter = new JsonDataConverter();
     }
 
     @Test
-    public void convertToDatabaseColumn() throws Exception {
+    void convertToDatabaseColumn() throws Exception {
         assertNull(jsonbConverter.convertToDatabaseColumn(null));
 
         final String jsonString = "{\"key\":\"value\"}";
@@ -35,7 +39,7 @@ public class JsonDataConverterTest {
     }
 
     @Test
-    public void convertToEntityAttribute() {
+    void convertToEntityAttribute() {
         // Testing null
         assertNull(jsonbConverter.convertToEntityAttribute(null));
 
