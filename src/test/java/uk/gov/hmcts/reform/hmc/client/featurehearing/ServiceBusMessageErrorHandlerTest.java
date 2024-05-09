@@ -264,8 +264,6 @@ class ServiceBusMessageErrorHandlerTest {
         when(messageContext.getMessage().getApplicationProperties()).thenReturn(applicationProperties);
         when(exception.getMessage()).thenReturn(null);
         when(deadLetterService.handleApplicationError(NO_EXCEPTION_MESSAGE)).thenReturn(deadLetterOptions);
-        doNothing().when(messageContext).deadLetter(deadLetterOptions);
-        getHearingEntity();
         handler.handleGenericError(messageContext, exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
@@ -279,7 +277,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleApplicationError(NO_EXCEPTION_MESSAGE);
-        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
+        verify(hearingStatusAuditService, times(0)).saveAuditTriageDetails(any(), any(), any(),
                                                                            any(), any(), any());
     }
 

@@ -12,6 +12,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class JsonDataConverterTest {
+
     private static ObjectMapper mapper = new ObjectMapper();
 
     static {
