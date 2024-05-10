@@ -13,10 +13,6 @@ import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
-import org.springframework.data.repository.cdi.Eager;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.io.Serializable;
