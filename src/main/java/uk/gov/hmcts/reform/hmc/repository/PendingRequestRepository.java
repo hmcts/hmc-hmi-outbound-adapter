@@ -30,7 +30,7 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Modifying
     @Query("UPDATE PendingRequestEntity SET status = 'PENDING', retryCount = :retryCount + 1, "
         + "last_tried_date_time = CURRENT_TIMESTAMP WHERE id = :id")
-    void markRequestAsPendingAndBumpRetryCount(Long id);
+    void markRequestAsPendingAndBumpRetryCount(Long id,int retryCount);
 
     @Modifying
     @Query("UPDATE PendingRequestEntity SET status = 'COMPLETED' WHERE id = :id")
@@ -48,6 +48,11 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity SET incidentFlag = true WHERE submittedDateTime < CURRENT_TIMESTAMP "
         + "- INTERVAL '1' DAY AND incidentFlag = false")
     void identifyRequestsForEscalation();
+
+    @Modifying
+    @Query("DELETE FROM PendingRequestEntity WHERE status = 'COMPLETED' "
+        + "AND submittedDateTime < CURRENT_TIMESTAMP - INTERVAL '30' DAY")
+    void deleteCompletedRecords();
 
     @Modifying
     @Query("DELETE FROM PendingRequestEntity WHERE status = 'COMPLETED' AND submittedDateTime < :thresholdDateTime")
