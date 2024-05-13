@@ -1,7 +1,5 @@
 package uk.gov.hmcts.reform.hmc.repository;
 
-import jakarta.persistence.LockModeType;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -10,61 +8,54 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @Repository("pendingRequestRepository")
 public interface PendingRequestRepository extends CrudRepository<PendingRequestEntity, Long> {
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query(value = "SELECT * FROM pending_requests WHERE status = 'PENDING' "
         + "AND (last_tried_date_time IS NULL OR last_tried_date_time < NOW() - INTERVAL '15' MINUTE) "
-        + "ORDER BY submitted_date_time ASC LIMIT 1")
+        + "ORDER BY submitted_date_time ASC LIMIT 1", nativeQuery = true)
     PendingRequestEntity findOldestPendingRequestForProcessing();
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity SET status = 'PROCESSING' WHERE id = :id")
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PROCESSING' WHERE pr.id = :id")
     void markRequestAsProcessing(Long id);
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity SET status = 'PENDING', retryCount = :retryCount + 1, "
-        + "last_tried_date_time = CURRENT_TIMESTAMP WHERE id = :id")
-    void markRequestAsPendingAndBumpRetryCount(Long id);
-
-    @Modifying
-    @Query("UPDATE PendingRequestEntity SET status = 'COMPLETED' WHERE id = :id")
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'COMPLETED' WHERE pr.id = :id")
     void markRequestAsCompleted(Long id);
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity SET status = 'EXCEPTION' WHERE id = :id")
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'EXCEPTION' WHERE pr.id = :id")
     void markRequestAsException(Long id);
 
-    @Query("SELECT pr FROM PendingRequestEntity pr WHERE pr.submittedDateTime < :CURRENT_TIMESTAMP "
-        + "- INTERVAL '1' DAY AND pr.incidentFlag = false")
+    @Query(value = "SELECT * FROM pending_requests WHERE submitted_date_time < NOW() - INTERVAL"
+        + "'1 DAY' AND incident_flag = false", nativeQuery = true)
     List<PendingRequestEntity> findRequestsForEscalation();
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity SET incidentFlag = true WHERE submittedDateTime < CURRENT_TIMESTAMP "
-        + "- INTERVAL '1' DAY AND incidentFlag = false")
+    @Query(value = "UPDATE pending_requests SET incident_flag = true WHERE submitted_date_time < NOW()"
+        + " - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
     void identifyRequestsForEscalation();
 
     @Modifying
-    @Query("DELETE FROM PendingRequestEntity WHERE status = 'COMPLETED' "
-        + "AND submittedDateTime < CURRENT_TIMESTAMP - INTERVAL '30' DAY")
+    @Query(value = "DELETE FROM pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
+        + " - INTERVAL '30 DAYS'", nativeQuery = true)
     void deleteCompletedRecords();
 
-    @Modifying
-    @Query("DELETE FROM PendingRequestEntity WHERE status = 'COMPLETED' AND submittedDateTime < :thresholdDateTime")
-    void deleteCompletedRecords(Timestamp thresholdDateTime);
+    // @Modifying
+    // @Query("DELETE FROM PendingRequestEntity pr WHERE pr.status = 'COMPLETED' 
+    // AND pr.submittedDateTime < :thresholdDateTime")
+    // void deleteCompletedRecords(Timestamp thresholdDateTime);
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity SET status = :status, retryCount = :retryCount WHERE id = :id")
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = :status, pr.retryCount = :retryCount WHERE pr.id = :id")
     void updateStatusAndRetryCount(Long id, String status, int retryCount);
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity SET status = 'PENDING', retryCount = :retryCount WHERE id = :id")
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount WHERE pr.id = :id")
     void markRequestAsPending(Long id, int retryCount);
-
 
 }
