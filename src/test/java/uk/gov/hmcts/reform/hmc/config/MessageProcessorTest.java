@@ -69,8 +69,7 @@ class MessageProcessorTest {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
-                objectMapper,
-                pendingRequestRepository);
+                objectMapper);
         anyData = objectMapper.convertValue("test data", JsonNode.class);
         String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");

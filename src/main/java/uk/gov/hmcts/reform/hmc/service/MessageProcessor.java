@@ -44,7 +44,7 @@ public class MessageProcessor {
     private final ServiceBusMessageErrorHandler errorHandler;
     private final DefaultFutureHearingRepository futureHearingRepository;
     private final ObjectMapper objectMapper;
-    private final PendingRequestRepository pendingRequestRepository;
+    // private final PendingRequestRepository pendingRequestRepository;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
@@ -55,12 +55,11 @@ public class MessageProcessor {
 
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
                             ServiceBusMessageErrorHandler errorHandler,
-                            ObjectMapper objectMapper,
-                            PendingRequestRepository pendingRequestRepository) {
+                            ObjectMapper objectMapper) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
         this.objectMapper = objectMapper;
-        this.pendingRequestRepository = pendingRequestRepository;
+        // this.pendingRequestRepository = pendingRequestRepository;
     }
 
     @Scheduled(fixedRate = 120000) // Execute every 2 minutes
