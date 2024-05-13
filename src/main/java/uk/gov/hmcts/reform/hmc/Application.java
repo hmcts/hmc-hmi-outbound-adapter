@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 
 import java.time.Clock;
 
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
+@SpringBootApplication
 @EnableFeignClients
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, it is not a utility class
 public class Application {
