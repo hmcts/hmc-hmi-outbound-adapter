@@ -66,36 +66,36 @@ public class MessageProcessor {
     @Scheduled(fixedRate = 120000) // Execute every 2 minutes
     @Transactional
     public void processPendingRequests() {
-        PendingRequestEntity pendingRequest = pendingRequestRepository.findOldestPendingRequestForProcessing();
-        pendingRequestRepository.deleteCompletedRecords();
-        if (pendingRequest != null) {
-            LocalDateTime currentDateTime = LocalDateTime.now();
-            LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime().toLocalDateTime();
-            LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime().toLocalDateTime();
-            if (ChronoUnit.HOURS.between(submittedDateTime, currentDateTime) >= 24) {
-                pendingRequestRepository.markRequestAsException(pendingRequest.getHearingId());
-                log.error("Submitted time of request with ID {} is 24 hours later than before.",
-                          pendingRequest.getHearingId());
-                pendingRequestRepository.identifyRequestsForEscalation();
-                return;
-            }
-            if (ChronoUnit.MINUTES.between(lastTriedDateTime, currentDateTime) < 15) {
-                return;
-            }
+        // PendingRequestEntity pendingRequest = pendingRequestRepository.findOldestPendingRequestForProcessing();
+        // pendingRequestRepository.deleteCompletedRecords();
+        // if (pendingRequest != null) {
+        //     LocalDateTime currentDateTime = LocalDateTime.now();
+        //     LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime().toLocalDateTime();
+        //     LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime().toLocalDateTime();
+        //     if (ChronoUnit.HOURS.between(submittedDateTime, currentDateTime) >= 24) {
+        //         pendingRequestRepository.markRequestAsException(pendingRequest.getHearingId());
+        //         log.error("Submitted time of request with ID {} is 24 hours later than before.",
+        //                   pendingRequest.getHearingId());
+        //         pendingRequestRepository.identifyRequestsForEscalation();
+        //         return;
+        //     }
+        //     if (ChronoUnit.MINUTES.between(lastTriedDateTime, currentDateTime) < 15) {
+        //         return;
+        //     }
 
-            pendingRequestRepository.markRequestAsProcessing(pendingRequest.getHearingId());
-            ServiceBusMessage receivedMessage = new ServiceBusMessage(pendingRequest.getMessage());
-            try {
-                tryProcessMessage(receivedMessage);
-            } catch (Exception ex) {
-                pendingRequestRepository.markRequestAsPendingAndBumpRetryCount(pendingRequest.getHearingId());
-                return;
-            }
-            pendingRequestRepository.markRequestAsCompleted(pendingRequest.getHearingId());
-        } else {
-            log.debug("No pending requests found for processing.");
-        }
-
+        //     pendingRequestRepository.markRequestAsProcessing(pendingRequest.getHearingId());
+        //     ServiceBusMessage receivedMessage = new ServiceBusMessage(pendingRequest.getMessage());
+        //     try {
+        //         tryProcessMessage(receivedMessage);
+        //     } catch (Exception ex) {
+        //         pendingRequestRepository.markRequestAsPendingAndBumpRetryCount(pendingRequest.getHearingId());
+        //         return;
+        //     }
+        //     pendingRequestRepository.markRequestAsCompleted(pendingRequest.getHearingId());
+        // } else {
+        //     log.debug("No pending requests found for processing.");
+        // }
+        log.debug("processPendingRequests");
     }
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
