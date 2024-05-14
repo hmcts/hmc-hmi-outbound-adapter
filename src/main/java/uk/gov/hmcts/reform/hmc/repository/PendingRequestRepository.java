@@ -37,9 +37,9 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'EXCEPTION' WHERE pr.id = :id")
     void markRequestAsException(Long id);
 
-    @Query("SELECT pr FROM PendingRequestEntity pr WHERE pr.submittedDateTime < NOW() "
-        + "- INTERVAL '1' DAY AND pr.incidentFlag = false")
-    List<PendingRequestEntity> findRequestsForEscalation();
+    // @Query("SELECT pr FROM PendingRequestEntity pr WHERE pr.submittedDateTime < NOW() "
+    //     + "- INTERVAL '1' DAY AND pr.incidentFlag = false")
+    // List<PendingRequestEntity> findRequestsForEscalation();
 
     // @Modifying
     // @Query("UPDATE PendingRequestEntity pr SET pr.incidentFlag = true WHERE pr.submittedDateTime < NOW() "
