@@ -23,11 +23,6 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PROCESSING' WHERE pr.id = :id")
     void markRequestAsProcessing(Long id);
 
-    // @Modifying
-    // @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount + 1, "
-    //     + "pr.last_tried_date_time = NOW() WHERE pr.id = :id")
-    // void markRequestAsPendingAndBumpRetryCount(Long id, int retryCount);
-
     @Modifying
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'COMPLETED' WHERE pr.id = :id")
     void markRequestAsCompleted(Long id);
@@ -36,15 +31,18 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'EXCEPTION' WHERE pr.id = :id")
     void markRequestAsException(Long id);
 
-    @Query(value = "SELECT * FROM pending_requests WHERE submitted_date_time < NOW() - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
+    @Query(value = "SELECT * FROM pending_requests WHERE submitted_date_time < NOW() - INTERVAL"
+        + "'1 DAY' AND incident_flag = false", nativeQuery = true)
     List<PendingRequestEntity> findRequestsForEscalation();
 
     @Modifying
-    @Query(value = "UPDATE pending_requests SET incident_flag = true WHERE submitted_date_time < NOW() - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
+    @Query(value = "UPDATE pending_requests SET incident_flag = true WHERE submitted_date_time < NOW()"
+        + " - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
     void identifyRequestsForEscalation();
 
     @Modifying
-    @Query(value = "DELETE FROM pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW() - INTERVAL '30 DAYS'", nativeQuery = true)
+    @Query(value = "DELETE FROM pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
+    + " - INTERVAL '30 DAYS'", nativeQuery = true)
     void deleteCompletedRecords();
 
     // @Modifying
