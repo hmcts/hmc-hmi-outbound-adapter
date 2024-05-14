@@ -45,10 +45,8 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     // @Query("UPDATE PendingRequestEntity pr SET pr.incidentFlag = true WHERE pr.submittedDateTime < NOW() "
     //     + "- INTERVAL '1' DAY AND pr.incidentFlag = false")
     // void identifyRequestsForEscalation();
-
     @Modifying
-    @Query("DELETE FROM PendingRequestEntity pr WHERE pr.status = 'COMPLETED' "
-        + "AND pr.submittedDateTime < NOW() - INTERVAL '30' DAY")
+    @Query(value = "DELETE FROM pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW() - INTERVAL '30 DAYS'", nativeQuery = true)
     void deleteCompletedRecords();
 
     // @Modifying
