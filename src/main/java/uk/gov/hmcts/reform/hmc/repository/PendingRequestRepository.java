@@ -24,10 +24,10 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PROCESSING' WHERE pr.id = :id")
     void markRequestAsProcessing(Long id);
 
-    @Modifying
-    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount + 1, "
-        + "pr.last_tried_date_time = NOW() WHERE pr.id = :id")
-    void markRequestAsPendingAndBumpRetryCount(Long id, int retryCount);
+    // @Modifying
+    // @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount + 1, "
+    //     + "pr.last_tried_date_time = NOW() WHERE pr.id = :id")
+    // void markRequestAsPendingAndBumpRetryCount(Long id, int retryCount);
 
     @Modifying
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'COMPLETED' WHERE pr.id = :id")
