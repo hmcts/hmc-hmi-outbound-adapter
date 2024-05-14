@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -37,14 +36,13 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'EXCEPTION' WHERE pr.id = :id")
     void markRequestAsException(Long id);
 
-    // @Query("SELECT pr FROM PendingRequestEntity pr WHERE pr.submittedDateTime < NOW() "
-    //     + "- INTERVAL '1' DAY AND pr.incidentFlag = false")
-    // List<PendingRequestEntity> findRequestsForEscalation();
+    @Query(value = "SELECT * FROM pending_requests WHERE submitted_date_time < NOW() - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
+    List<PendingRequestEntity> findRequestsForEscalation();
 
-    // @Modifying
-    // @Query("UPDATE PendingRequestEntity pr SET pr.incidentFlag = true WHERE pr.submittedDateTime < NOW() "
-    //     + "- INTERVAL '1' DAY AND pr.incidentFlag = false")
-    // void identifyRequestsForEscalation();
+    @Modifying
+    @Query(value = "UPDATE pending_requests SET incident_flag = true WHERE submitted_date_time < NOW() - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
+    void identifyRequestsForEscalation();
+
     @Modifying
     @Query(value = "DELETE FROM pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW() - INTERVAL '30 DAYS'", nativeQuery = true)
     void deleteCompletedRecords();
