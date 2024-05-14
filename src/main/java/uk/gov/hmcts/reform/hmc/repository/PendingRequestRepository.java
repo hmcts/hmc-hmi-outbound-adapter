@@ -42,11 +42,12 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
 
     @Modifying
     @Query(value = "DELETE FROM pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
-    + " - INTERVAL '30 DAYS'", nativeQuery = true)
+        + " - INTERVAL '30 DAYS'", nativeQuery = true)
     void deleteCompletedRecords();
 
     // @Modifying
-    // @Query("DELETE FROM PendingRequestEntity pr WHERE pr.status = 'COMPLETED' AND pr.submittedDateTime < :thresholdDateTime")
+    // @Query("DELETE FROM PendingRequestEntity pr WHERE pr.status = 'COMPLETED' 
+    // AND pr.submittedDateTime < :thresholdDateTime")
     // void deleteCompletedRecords(Timestamp thresholdDateTime);
 
     @Modifying
