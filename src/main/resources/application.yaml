@@ -88,4 +88,14 @@ LOGGING:
       gov:
         hmcts:
           reform:
-            hmc: INFO
+            hmc: DEBUG
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE

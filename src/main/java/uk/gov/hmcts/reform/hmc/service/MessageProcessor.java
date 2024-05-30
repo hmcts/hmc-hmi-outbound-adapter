@@ -63,9 +63,10 @@ public class MessageProcessor {
         this.pendingRequestRepository = pendingRequestRepository;
     }
 
-    @Scheduled(fixedRate = 120000) // Execute every 2 minutes
+    @Scheduled(fixedRate = 10) // Execute every 2 minutes
     @Transactional
     public void processPendingRequests() {
+        log.debug("processPendingRequests");
         PendingRequestEntity pendingRequest = pendingRequestRepository.findOldestPendingRequestForProcessing();
         pendingRequestRepository.deleteCompletedRecords();
         if (pendingRequest != null) {
@@ -96,7 +97,7 @@ public class MessageProcessor {
         } else {
             log.debug("No pending requests found for processing.");
         }
-        log.debug("processPendingRequests");
+        log.debug("processPendingRequests-logged");
     }
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
