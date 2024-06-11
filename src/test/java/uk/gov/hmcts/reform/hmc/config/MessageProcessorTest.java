@@ -15,6 +15,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
+import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
 
 import java.util.HashMap;
@@ -40,7 +41,7 @@ class MessageProcessorTest {
     private DefaultFutureHearingRepository futureHearingRepository;
 
     @Mock
-    private MessageSenderConfiguration messageSenderConfiguration;
+    private PendingRequestRepository pendingRequestRepository;
 
     @Mock
     private ObjectMapper objectMapper;
@@ -65,8 +66,8 @@ class MessageProcessorTest {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
-                messageSenderConfiguration,
-                objectMapper);
+                objectMapper,
+                pendingRequestRepository);
         anyData = objectMapper.convertValue("test data", JsonNode.class);
         String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
