@@ -27,6 +27,13 @@
     "body" : {
       "status" : "UP",
       "components" : {
+        "db" : {
+          "status" : "UP",
+          "details" : {
+            "database" : "[[ANYTHING_PRESENT]]",
+            "validationQuery" : "[[ANYTHING_PRESENT]]"
+          }
+        },
         "diskSpace" : {
           "status" : "UP",
           "details" : {
