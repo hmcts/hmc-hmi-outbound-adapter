@@ -1,6 +1,6 @@
 {
   "role": {
-    "name": "hmc-cft-hearing-service"
+    "name": "hmc-hmi-outbound-service"
   },
     "preview": {
     "captureControllerSpans": true,
