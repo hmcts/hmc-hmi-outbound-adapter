@@ -10,6 +10,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
+import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -20,6 +21,9 @@ class GetWelcomeTest {
 
     @Autowired
     private transient MockMvc mockMvc;
+
+    @MockBean
+    private MessageReceiverConfiguration messageReceiverConfiguration;
 
     @MockBean
     private ApplicationParams applicationParams;

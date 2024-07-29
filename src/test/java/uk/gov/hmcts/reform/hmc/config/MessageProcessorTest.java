@@ -44,6 +44,9 @@ class MessageProcessorTest {
     private PendingRequestRepository pendingRequestRepository;
 
     @Mock
+    private MessageSenderConfiguration messageSenderConfiguration;
+
+    @Mock
     private ObjectMapper objectMapper;
 
     @Mock

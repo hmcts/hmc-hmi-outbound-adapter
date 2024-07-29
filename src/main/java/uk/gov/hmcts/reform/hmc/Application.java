@@ -5,6 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
+
 
 import java.time.Clock;
 
@@ -22,4 +24,10 @@ public class Application {
         return Clock.systemUTC();
     }
 
+    @Bean
+    static LazyInitializationExcludeFilter lazyInitExcludeFilter() {
+        return LazyInitializationExcludeFilter.forBeanTypes(
+                MessageReceiverConfiguration.class
+        );
+    }
 }
