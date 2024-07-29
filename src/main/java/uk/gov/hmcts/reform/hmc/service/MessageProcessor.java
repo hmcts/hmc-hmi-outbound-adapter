@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
+import uk.gov.hmcts.reform.hmc.config.MessageSenderConfiguration;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
@@ -43,6 +44,7 @@ public class MessageProcessor {
 
     private final ServiceBusMessageErrorHandler errorHandler;
     private final DefaultFutureHearingRepository futureHearingRepository;
+    private final MessageSenderConfiguration messageSenderConfiguration;
     private final ObjectMapper objectMapper;
     private final PendingRequestRepository pendingRequestRepository;
     private static final String HEARING_ID = "hearing_id";
@@ -55,10 +57,12 @@ public class MessageProcessor {
 
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
                             ServiceBusMessageErrorHandler errorHandler,
+                            MessageSenderConfiguration messageSenderConfiguration,
                             ObjectMapper objectMapper,
                             PendingRequestRepository pendingRequestRepository) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
+        this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
         this.pendingRequestRepository = pendingRequestRepository;
     }

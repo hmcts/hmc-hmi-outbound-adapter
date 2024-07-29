@@ -69,6 +69,7 @@ class MessageProcessorTest {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
+                messageSenderConfiguration,
                 objectMapper,
                 pendingRequestRepository);
         anyData = objectMapper.convertValue("test data", JsonNode.class);
