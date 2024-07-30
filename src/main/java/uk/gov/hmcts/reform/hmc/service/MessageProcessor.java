@@ -3,6 +3,7 @@ package uk.gov.hmcts.reform.hmc.service;
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusErrorContext;
 import com.azure.messaging.servicebus.ServiceBusMessage;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -67,6 +68,8 @@ public class MessageProcessor {
         this.pendingRequestRepository = pendingRequestRepository;
     }
 
+
+
     @Scheduled(fixedRate = 10) // Execute every 2 minutes
     @Transactional
     public void processPendingRequests() {
@@ -104,8 +107,15 @@ public class MessageProcessor {
         log.debug("processPendingRequests-logged");
     }
 
+    public void processMessage(ServiceBusReceivedMessageContext messageContext) {
+        var message = messageContext.getMessage();
+        var processingResult = tryProcessMessage(message);
+        finaliseMessage(messageContext, processingResult);
+        messageContext.complete();
+    }
+
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
-        throws JsonProcessingException {
+            throws JsonProcessingException {
         log.debug("processMessage message, applicationProperties");
         if (applicationProperties.containsKey(MESSAGE_TYPE)) {
             MessageType messageType;
@@ -180,14 +190,14 @@ public class MessageProcessor {
                 break;
             default:
                 log.info("Letting 'processed envelope' message with ID {} return to the queue. Delivery attempt {}.",
-                         message.getMessageId(),
-                         message.getDeliveryCount() + 1
+                        message.getMessageId(),
+                        message.getDeliveryCount() + 1
                 );
                 break;
         }
     }
 
-    private MessageProcessingResult tryProcessMessage(ServiceBusMessage message) {
+    private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
             log.debug(
                 "Started processing message"
@@ -215,8 +225,35 @@ public class MessageProcessor {
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         }
     }
+    
+    private MessageProcessingResult tryProcessMessage(ServiceBusMessage message) {
+        try {
+            log.debug(
+                    "Started processing message");
 
-    private void logErrors(ServiceBusMessage message, Exception exception) {
+            processMessage(
+                    convertMessage(message.getBody()),
+                    message.getApplicationProperties());
+
+            log.debug("Processed message with ID {} processed successfully", message.getMessageId());
+            return new MessageProcessingResult(MessageProcessingResultType.SUCCESS);
+
+        } catch (MalformedMessageException ex) {
+            logErrors(message, ex);
+            return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
+        } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
+            logErrors(message, ex);
+            return new MessageProcessingResult(MessageProcessingResultType.APPLICATION_ERROR, ex);
+        } catch (JsonProcessingException ex) {
+            logErrors(message, ex);
+            return new MessageProcessingResult(MessageProcessingResultType.JSON_ERROR, ex);
+        } catch (Exception ex) {
+            logErrors(message, ex);
+            return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
+        }
+    }
+
+    private void logErrors(ServiceBusReceivedMessage message, Exception exception) {
         log.error("Unexpected Error", exception);
         log.error(
             ERROR_PROCESSING_MESSAGE,
@@ -225,6 +262,16 @@ public class MessageProcessor {
             READ,
             message.getApplicationProperties().getOrDefault(HEARING_ID, NOT_DEFINED)
         );
+    }
+    
+    private void logErrors(ServiceBusMessage message, Exception exception) {
+        log.error("Unexpected Error", exception);
+        log.error(
+                ERROR_PROCESSING_MESSAGE,
+                HMC_HMI_OUTBOUND_ADAPTER,
+                HMC_TO_HMI,
+                READ,
+                message.getApplicationProperties().getOrDefault(HEARING_ID, NOT_DEFINED));
     }
 
 
