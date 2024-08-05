@@ -280,7 +280,8 @@ public class MessageProcessor {
             READ,
             message.getApplicationProperties().getOrDefault(HEARING_ID, NOT_DEFINED)
         );
-        addToPendingRequests(message, new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, exception));
+        addToPendingRequests(message, new MessageProcessingResult(
+            MessageProcessingResultType.GENERIC_ERROR, exception));
     }
 
     private void logErrors(ServiceBusMessage message, Exception exception) {
@@ -314,7 +315,7 @@ public class MessageProcessor {
                 .build();
         }
         log.debug("preparing to send message to queue for hearingId {} ", hearingId);
-         messageSenderConfiguration.sendMessage(objectMapper
+        messageSenderConfiguration.sendMessage(objectMapper
              .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
     }
 
