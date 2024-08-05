@@ -26,6 +26,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -197,9 +198,24 @@ public class MessageProcessor {
         }
     }
 
+    private void addToPendingRequests(ServiceBusReceivedMessage message, MessageProcessingResult processingResult) {
+        try {
+            PendingRequestEntity pendingRequest = new PendingRequestEntity();
+            pendingRequest.setMessage(message.getBody().toString());
+            pendingRequest.setHearingId((Long) message.getApplicationProperties().get(HEARING_ID));
+            pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now()));
+            pendingRequest.setRetryCount(0);
+            pendingRequestRepository.save(pendingRequest);
+        } catch (Exception e) {
+            log.error("Failed to add message to pending requests", e);
+        }
+    }
+
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
             log.debug(
+                message.getMessageId(),
+                message.getDeliveryCount() + 1,
                 "Started processing message"
             );
 
@@ -213,6 +229,7 @@ public class MessageProcessor {
 
         } catch (MalformedMessageException ex) {
             logErrors(message, ex);
+
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
             logErrors(message, ex);
@@ -225,10 +242,11 @@ public class MessageProcessor {
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         }
     }
-    
+
     private MessageProcessingResult tryProcessMessage(ServiceBusMessage message) {
         try {
             log.debug(
+                "Started processing message with ID {} (delivery {})",
                     "Started processing message");
 
             processMessage(
@@ -262,8 +280,9 @@ public class MessageProcessor {
             READ,
             message.getApplicationProperties().getOrDefault(HEARING_ID, NOT_DEFINED)
         );
+        addToPendingRequests(message, new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, exception));
     }
-    
+
     private void logErrors(ServiceBusMessage message, Exception exception) {
         log.error("Unexpected Error", exception);
         log.error(
@@ -295,8 +314,8 @@ public class MessageProcessor {
                 .build();
         }
         log.debug("preparing to send message to queue for hearingId {} ", hearingId);
-        // messageSenderConfiguration.sendMessage(objectMapper
-        //     .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
+         messageSenderConfiguration.sendMessage(objectMapper
+             .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
     }
 
     private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
