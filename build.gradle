@@ -332,7 +332,7 @@ dependencies {
 
   implementation group: 'javax.inject', name: 'javax.inject', version: '1'
   implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.15.1'
-  implementation group: 'com.azure', name: 'azure-core', version: '1.47.0'
+  implementation group: 'com.azure', name: 'azure-core', version: '1.51.0'
 
   implementation group: 'net.minidev', name: 'json-smart', version: '2.4.9'
 
