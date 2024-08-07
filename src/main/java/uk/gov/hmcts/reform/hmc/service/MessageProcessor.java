@@ -214,9 +214,9 @@ public class MessageProcessor {
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
             log.debug(
+                "Started processing message with ID {} (delivery {})",
                 message.getMessageId(),
-                message.getDeliveryCount() + 1,
-                "Started processing message"
+                message.getDeliveryCount() + 1
             );
 
             processMessage(
@@ -246,8 +246,8 @@ public class MessageProcessor {
     private MessageProcessingResult tryProcessMessage(ServiceBusMessage message) {
         try {
             log.debug(
-                "Started processing message with ID {} (delivery {})",
-                    "Started processing message");
+                "Started processing message with ID {}",
+                    "message.getMessageId()");
 
             processMessage(
                     convertMessage(message.getBody()),
