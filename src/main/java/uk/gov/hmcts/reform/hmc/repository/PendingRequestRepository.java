@@ -14,7 +14,7 @@ import java.util.List;
 @Repository("pendingRequestRepository")
 public interface PendingRequestRepository extends CrudRepository<PendingRequestEntity, Long> {
 
-    @Query(value = "SELECT * FROM pending_requests WHERE status = 'PENDING' "
+    @Query(value = "SELECT * FROM public.pending_requests WHERE status = 'PENDING' "
         + "AND (last_tried_date_time IS NULL OR last_tried_date_time < NOW() - INTERVAL '15' MINUTE) "
         + "ORDER BY submitted_date_time ASC LIMIT 1", nativeQuery = true)
     PendingRequestEntity findOldestPendingRequestForProcessing();
@@ -31,22 +31,22 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'EXCEPTION' WHERE pr.id = :id")
     void markRequestAsException(Long id);
 
-    @Query(value = "SELECT * FROM pending_requests WHERE submitted_date_time < NOW() - INTERVAL"
+    @Query(value = "SELECT * FROM public.pending_requests WHERE submitted_date_time < NOW() - INTERVAL"
         + "'1 DAY' AND incident_flag = false", nativeQuery = true)
     List<PendingRequestEntity> findRequestsForEscalation();
 
     @Modifying
-    @Query(value = "UPDATE pending_requests SET incident_flag = true WHERE submitted_date_time < NOW()"
+    @Query(value = "UPDATE public.pending_requests SET incident_flag = true WHERE submitted_date_time < NOW()"
         + " - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
     void identifyRequestsForEscalation();
 
     @Modifying
-    @Query(value = "DELETE FROM pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
+    @Query(value = "DELETE FROM public.pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
         + " - INTERVAL '30 DAYS'", nativeQuery = true)
     void deleteCompletedRecords();
 
     // @Modifying
-    // @Query("DELETE FROM PendingRequestEntity pr WHERE pr.status = 'COMPLETED' 
+    // @Query("DELETE FROM PendingRequestEntity pr WHERE pr.status = 'COMPLETED'
     // AND pr.submittedDateTime < :thresholdDateTime")
     // void deleteCompletedRecords(Timestamp thresholdDateTime);
 

@@ -69,9 +69,7 @@ public class MessageProcessor {
         this.pendingRequestRepository = pendingRequestRepository;
     }
 
-
-
-    @Scheduled(fixedRate = 10) // Execute every 2 minutes
+    @Scheduled(fixedRate = 30000) // Execute every 2 minutes
     @Transactional
     public void processPendingRequests() {
         log.debug("processPendingRequests");
