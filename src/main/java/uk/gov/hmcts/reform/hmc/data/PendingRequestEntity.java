@@ -16,7 +16,7 @@ import java.sql.Timestamp;
 
 
 
-@Table(name = "public.pending_requests")
+@Table(name = "pending_requests")
 @Entity
 @Data
 @NoArgsConstructor
