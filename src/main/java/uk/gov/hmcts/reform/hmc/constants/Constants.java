@@ -22,4 +22,6 @@ public final class Constants {
     public static final String HMC_TO_HMI_AUTH = "HMC to HMI auth";
     public static final String FAILURE_STATUS = "500";
     public static final String SUCCESS_STATUS = "200";
+    public static final String AMQP_CACHE = "com.azure.core.amqp.cache";
+    public static final String AMQP_CACHE_VALUE = "true";
 }
