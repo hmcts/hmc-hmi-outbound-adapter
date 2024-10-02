@@ -200,7 +200,13 @@ public class MessageProcessor {
         try {
             PendingRequestEntity pendingRequest = new PendingRequestEntity();
             pendingRequest.setMessage(message.getBody().toString());
-            pendingRequest.setHearingId((Long) message.getApplicationProperties().get(HEARING_ID));
+            System.out.println(message.getApplicationProperties().get(HEARING_ID));
+            if (pendingRequest.getHearingId() == null) {
+                pendingRequest.setHearingId(0L);  // Setting the ID to 0 if null
+            }
+            pendingRequest.setStatus("PENDING");
+            pendingRequest.setIncidentFlag(false);
+            pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now()));
             pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now()));
             pendingRequest.setRetryCount(0);
             log.debug("pendingRequest: {}", pendingRequest.toString());
