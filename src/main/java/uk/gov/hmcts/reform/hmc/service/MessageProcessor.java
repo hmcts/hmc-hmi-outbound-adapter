@@ -203,6 +203,7 @@ public class MessageProcessor {
             pendingRequest.setHearingId((Long) message.getApplicationProperties().get(HEARING_ID));
             pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now()));
             pendingRequest.setRetryCount(0);
+            log.debug("pendingRequest: {}", pendingRequest.toString());
             pendingRequestRepository.save(pendingRequest);
         } catch (Exception e) {
             log.error("Failed to add message to pending requests", e);

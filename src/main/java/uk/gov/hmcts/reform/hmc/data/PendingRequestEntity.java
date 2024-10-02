@@ -49,4 +49,17 @@ public class PendingRequestEntity implements Serializable {
 
     @Column(name = "message")
     private String message;
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("hearingId:<").append(hearingId).append(">,")
+            .append("versionNumber:<").append(versionNumber).append(">,")
+            .append("submittedDateTime:<").append(submittedDateTime).append(">,")
+            .append("retryCount:<").append(retryCount).append(">,")
+            .append("lastTriedDateTime:<").append(lastTriedDateTime).append(">,")
+            .append("status:<").append(status).append(">,")
+            .append("incidentFlag:<").append(incidentFlag).append(">,")
+            .append("message:<").append(message).append(">");
+        return sb.toString();
+    }
 }

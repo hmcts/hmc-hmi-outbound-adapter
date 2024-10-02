@@ -72,7 +72,7 @@ class MessageProcessorIT extends BaseTest {
 
         MessageProcessor messageProcessor = new MessageProcessor(
                 defaultFutureHearingRepository, errorHandler, messageSenderConfiguration,
-                                                                          OBJECT_MAPPER, pendingRequestRepository);
+                OBJECT_MAPPER, pendingRequestRepository);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).deleteHearingRequest(any(), any());
     }
@@ -87,7 +87,7 @@ class MessageProcessorIT extends BaseTest {
 
         MessageProcessor messageProcessor = new MessageProcessor(
                  defaultFutureHearingRepository, errorHandler, messageSenderConfiguration,
-                                                                  OBJECT_MAPPER, pendingRequestRepository);
+                 OBJECT_MAPPER, pendingRequestRepository);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).amendHearingRequest(any(), any());
     }
