@@ -196,24 +196,35 @@ public class MessageProcessor {
         }
     }
 
-    private void addToPendingRequests(ServiceBusReceivedMessage message, MessageProcessingResult processingResult) {
+    private void addToPendingRequests(ServiceBusReceivedMessage message) {
         try {
-            PendingRequestEntity pendingRequest = new PendingRequestEntity();
-            pendingRequest.setMessage(message.getBody().toString());
-            System.out.println(message.getApplicationProperties().get(HEARING_ID));
-            if (pendingRequest.getHearingId() == null) {
-                pendingRequest.setHearingId(0L);  // Setting the ID to 0 if null
-            }
-            pendingRequest.setStatus("PENDING");
-            pendingRequest.setIncidentFlag(false);
-            pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now()));
-            pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now()));
-            pendingRequest.setRetryCount(0);
+            PendingRequestEntity pendingRequest = createPendingRequestEntity(message);
             log.debug("pendingRequest: {}", pendingRequest.toString());
             pendingRequestRepository.save(pendingRequest);
         } catch (Exception e) {
             log.error("Failed to add message to pending requests", e);
         }
+    }
+
+    private PendingRequestEntity createPendingRequestEntity(ServiceBusReceivedMessage message) {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setMessage(message.getBody().toString());
+
+        Object hearingIdValue = message.getApplicationProperties().get(HEARING_ID);
+        if (hearingIdValue != null) {
+            pendingRequest.setHearingId(Long.valueOf(hearingIdValue.toString()));
+        } else {
+            throw new IllegalArgumentException("HEARING_ID not found in message application properties");
+        }
+
+        pendingRequest.setStatus("PENDING");
+        pendingRequest.setIncidentFlag(false);
+        Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
+        pendingRequest.setLastTriedDateTime(currentTimestamp);
+        pendingRequest.setSubmittedDateTime(currentTimestamp);
+        pendingRequest.setRetryCount(0);
+
+        return pendingRequest;
     }
 
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
@@ -276,29 +287,27 @@ public class MessageProcessor {
         }
     }
 
-    private void logErrors(ServiceBusReceivedMessage message, Exception exception) {
+    private void logErrors(Object message, Exception exception) {
         log.error("Unexpected Error", exception);
+        Map<String, Object> applicationProperties;
+
+        if (message instanceof ServiceBusReceivedMessage serviceBusReceivedMessage) {
+            applicationProperties = serviceBusReceivedMessage.getApplicationProperties();
+            addToPendingRequests(serviceBusReceivedMessage);
+        } else if (message instanceof ServiceBusMessage serviceBusMessage) {
+            applicationProperties = serviceBusMessage.getApplicationProperties();
+        } else {
+            throw new IllegalArgumentException("Unsupported message type");
+        }
+
         log.error(
             ERROR_PROCESSING_MESSAGE,
             HMC_HMI_OUTBOUND_ADAPTER,
             HMC_TO_HMI,
             READ,
-            message.getApplicationProperties().getOrDefault(HEARING_ID, NOT_DEFINED)
+            applicationProperties.getOrDefault(HEARING_ID, NOT_DEFINED)
         );
-        addToPendingRequests(message, new MessageProcessingResult(
-            MessageProcessingResultType.GENERIC_ERROR, exception));
     }
-
-    private void logErrors(ServiceBusMessage message, Exception exception) {
-        log.error("Unexpected Error", exception);
-        log.error(
-                ERROR_PROCESSING_MESSAGE,
-                HMC_HMI_OUTBOUND_ADAPTER,
-                HMC_TO_HMI,
-                READ,
-                message.getApplicationProperties().getOrDefault(HEARING_ID, NOT_DEFINED));
-    }
-
 
     private void processSyncFutureHearingResponse(Supplier<HearingManagementInterfaceResponse> responseSupplier,
                                                   String hearingId)
