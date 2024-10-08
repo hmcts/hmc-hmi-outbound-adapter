@@ -24,11 +24,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
-import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -48,7 +44,7 @@ public class MessageProcessor {
     private final DefaultFutureHearingRepository futureHearingRepository;
     private final MessageSenderConfiguration messageSenderConfiguration;
     private final ObjectMapper objectMapper;
-    private final PendingRequestRepository pendingRequestRepository;
+    private final PendingRequestService pendingRequestService;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
@@ -61,49 +57,57 @@ public class MessageProcessor {
                             ServiceBusMessageErrorHandler errorHandler,
                             MessageSenderConfiguration messageSenderConfiguration,
                             ObjectMapper objectMapper,
-                            PendingRequestRepository pendingRequestRepository) {
+                            PendingRequestService pendingRequestService) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
         this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
-        this.pendingRequestRepository = pendingRequestRepository;
+        this.pendingRequestService = pendingRequestService;
     }
 
-    @Scheduled(fixedRate = 30000) // Execute every 2 minutes
+    // @Scheduled(fixedRate = 120000) // Execute every 2 minutes
+    @Scheduled(fixedRate = 30000) // Execute every 30 seconds while testing
     @Transactional
     public void processPendingRequests() {
-        log.debug("processPendingRequests");
-        PendingRequestEntity pendingRequest = pendingRequestRepository.findOldestPendingRequestForProcessing();
-        pendingRequestRepository.deleteCompletedRecords();
-        if (pendingRequest != null) {
-            LocalDateTime currentDateTime = LocalDateTime.now();
-            LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime().toLocalDateTime();
-            LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime().toLocalDateTime();
-            if (ChronoUnit.HOURS.between(submittedDateTime, currentDateTime) >= 24) {
-                pendingRequestRepository.markRequestAsException(pendingRequest.getHearingId());
-                log.error("Submitted time of request with ID {} is 24 hours later than before.",
-                          pendingRequest.getHearingId());
-                pendingRequestRepository.identifyRequestsForEscalation();
-                return;
-            }
-            if (ChronoUnit.MINUTES.between(lastTriedDateTime, currentDateTime) < 15) {
-                return;
-            }
-
-            pendingRequestRepository.markRequestAsProcessing(pendingRequest.getHearingId());
-            ServiceBusMessage receivedMessage = new ServiceBusMessage(pendingRequest.getMessage());
-            try {
-                tryProcessMessage(receivedMessage);
-            } catch (Exception ex) {
-                pendingRequestRepository.markRequestAsPending(pendingRequest.getHearingId(),
-                                                              pendingRequest.getRetryCount() + 1);
-                return;
-            }
-            pendingRequestRepository.markRequestAsCompleted(pendingRequest.getHearingId());
-        } else {
+        log.debug("processPendingRequests - starting");
+        pendingRequestService.deleteCompletedRecords();
+        PendingRequestEntity pendingRequest = pendingRequestService.findOldestPendingRequestForProcessing();
+        if (null == pendingRequest) {
             log.debug("No pending requests found for processing.");
+        } else {
+            processOldestPendingRequest(pendingRequest);
         }
-        log.debug("processPendingRequests-logged");
+        log.debug("processPendingRequests - completed");
+    }
+
+    @Transactional
+    public void processOldestPendingRequest(PendingRequestEntity pendingRequest) {
+        log.debug("processOldestPendingRequest(pendingRequest) starting : {}", pendingRequest);
+
+        pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
+
+        // check if submittedDateTimePeriodElapsed
+        if (pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)) {
+            return;
+        }
+        // continue if lastTriedDateTimePeriodNotElapsed
+        if (pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest)) {
+            return;
+        }
+
+        pendingRequestService.markRequestAsProcessing(pendingRequest.getId());
+
+        ServiceBusMessage receivedMessage = new ServiceBusMessage(pendingRequest.getMessage());
+        try {
+            tryProcessMessage(receivedMessage);
+        } catch (Exception ex) {
+            pendingRequestService.markRequestAsPending(pendingRequest.getId(),
+                                                       pendingRequest.getRetryCount() + 1);
+            return;
+        }
+        pendingRequestService.markRequestAsCompleted(pendingRequest.getId());
+
+        log.debug("processOldestPendingRequest(pendingRequest) completed");
     }
 
     public void processMessage(ServiceBusReceivedMessageContext messageContext) {
@@ -196,37 +200,6 @@ public class MessageProcessor {
         }
     }
 
-    private void addToPendingRequests(ServiceBusReceivedMessage message) {
-        try {
-            PendingRequestEntity pendingRequest = createPendingRequestEntity(message);
-            log.debug("pendingRequest: {}", pendingRequest.toString());
-            pendingRequestRepository.save(pendingRequest);
-        } catch (Exception e) {
-            log.error("Failed to add message to pending requests", e);
-        }
-    }
-
-    private PendingRequestEntity createPendingRequestEntity(ServiceBusReceivedMessage message) {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setMessage(message.getBody().toString());
-
-        Object hearingIdValue = message.getApplicationProperties().get(HEARING_ID);
-        if (hearingIdValue != null) {
-            pendingRequest.setHearingId(Long.valueOf(hearingIdValue.toString()));
-        } else {
-            throw new IllegalArgumentException("HEARING_ID not found in message application properties");
-        }
-
-        pendingRequest.setStatus("PENDING");
-        pendingRequest.setIncidentFlag(false);
-        Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
-        pendingRequest.setLastTriedDateTime(currentTimestamp);
-        pendingRequest.setSubmittedDateTime(currentTimestamp);
-        pendingRequest.setRetryCount(0);
-
-        return pendingRequest;
-    }
-
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
             log.debug(
@@ -234,6 +207,7 @@ public class MessageProcessor {
                 message.getMessageId(),
                 message.getDeliveryCount() + 1
             );
+            pendingRequestService.addToPendingRequests(message);
 
             processMessage(
                 convertMessage(message.getBody()),
@@ -264,6 +238,7 @@ public class MessageProcessor {
             log.debug(
                 "Started processing message with ID {}",
                     "message.getMessageId()");
+            pendingRequestService.addToPendingRequests(message);
 
             processMessage(
                     convertMessage(message.getBody()),
@@ -293,7 +268,6 @@ public class MessageProcessor {
 
         if (message instanceof ServiceBusReceivedMessage serviceBusReceivedMessage) {
             applicationProperties = serviceBusReceivedMessage.getApplicationProperties();
-            addToPendingRequests(serviceBusReceivedMessage);
         } else if (message instanceof ServiceBusMessage serviceBusMessage) {
             applicationProperties = serviceBusMessage.getApplicationProperties();
         } else {

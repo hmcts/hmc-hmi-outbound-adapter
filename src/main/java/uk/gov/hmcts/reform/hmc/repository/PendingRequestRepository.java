@@ -1,8 +1,11 @@
 package uk.gov.hmcts.reform.hmc.repository;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,5 +60,9 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Modifying
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount WHERE pr.id = :id")
     void markRequestAsPending(Long id, int retryCount);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM PendingRequestEntity p WHERE p.hearingId = :hearingId")
+    List<PendingRequestEntity> findAndLockByHearingId(@Param("hearingId") Long hearingId);
 
 }

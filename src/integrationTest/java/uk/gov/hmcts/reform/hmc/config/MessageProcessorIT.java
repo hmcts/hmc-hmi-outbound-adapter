@@ -11,8 +11,8 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
-import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
+import uk.gov.hmcts.reform.hmc.service.PendingRequestService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +42,7 @@ class MessageProcessorIT extends BaseTest {
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
 
     @MockBean
-    private PendingRequestRepository pendingRequestRepository;
+    private PendingRequestService pendingRequestService;
 
     @Autowired
     private ServiceBusMessageErrorHandler errorHandler;
@@ -57,7 +57,7 @@ class MessageProcessorIT extends BaseTest {
 
         MessageProcessor messageProcessor = new MessageProcessor(
                  defaultFutureHearingRepository, errorHandler, messageSenderConfiguration,
-                                                                         OBJECT_MAPPER, pendingRequestRepository);
+                                                                         OBJECT_MAPPER, pendingRequestService);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).createHearingRequest(any());
     }
@@ -72,7 +72,7 @@ class MessageProcessorIT extends BaseTest {
 
         MessageProcessor messageProcessor = new MessageProcessor(
                 defaultFutureHearingRepository, errorHandler, messageSenderConfiguration,
-                OBJECT_MAPPER, pendingRequestRepository);
+                OBJECT_MAPPER, pendingRequestService);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).deleteHearingRequest(any(), any());
     }
@@ -87,7 +87,7 @@ class MessageProcessorIT extends BaseTest {
 
         MessageProcessor messageProcessor = new MessageProcessor(
                  defaultFutureHearingRepository, errorHandler, messageSenderConfiguration,
-                 OBJECT_MAPPER, pendingRequestRepository);
+                 OBJECT_MAPPER, pendingRequestService);
         messageProcessor.processMessage(data, applicationProperties);
         verify(defaultFutureHearingRepository).amendHearingRequest(any(), any());
     }
