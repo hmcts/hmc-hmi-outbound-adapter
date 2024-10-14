@@ -16,6 +16,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
+import uk.gov.hmcts.reform.hmc.service.PendingRequestService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,9 @@ class MessageProcessorTest {
 
     @Mock
     private DefaultFutureHearingRepository futureHearingRepository;
+
+    @Mock
+    private PendingRequestService pendingRequestService;
 
     @Mock
     private MessageSenderConfiguration messageSenderConfiguration;
@@ -66,7 +70,8 @@ class MessageProcessorTest {
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
                 messageSenderConfiguration,
-                objectMapper);
+                objectMapper,
+                pendingRequestService);
         anyData = objectMapper.convertValue("test data", JsonNode.class);
         String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
