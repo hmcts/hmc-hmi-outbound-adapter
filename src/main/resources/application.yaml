@@ -99,3 +99,11 @@ logging:
           descriptor:
             sql:
               BasicBinder: TRACE
+
+pending:
+  request:
+    deletion-wait-interval: ${PR_DELETION_WAIT_INTERVAL:30,DAYS}
+    escalation-wait-interval: ${PR_ESCALATION_WAIT_INTERVAL:1,DAY}
+    exception-limit-in-hours: ${PR_EXCEPTION_LIMIT_IN_HOURS:24}
+    pending-wait-interval: ${PR_PENDING_WAIT_INTERVAL:2,MINUTES}
+    retry-limit-in-minutes: ${PR_RETRY_LIMIT_IN_MINUTES:15}

@@ -63,7 +63,6 @@ class MessageProcessorTest {
 
     private JsonNode anyData;
 
-
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);

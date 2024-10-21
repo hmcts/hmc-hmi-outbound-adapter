@@ -17,41 +17,45 @@ import java.util.List;
 @Repository("pendingRequestRepository")
 public interface PendingRequestRepository extends CrudRepository<PendingRequestEntity, Long> {
 
+    @Query(value = "SELECT * FROM public.pending_requests ORDER BY submitted_date_time DESC LIMIT 1",
+        nativeQuery = true)
+    PendingRequestEntity findLatestRecord();
+
     @Query(value = "SELECT * FROM public.pending_requests WHERE status = 'PENDING' "
-        + "AND (last_tried_date_time IS NULL OR last_tried_date_time < NOW() - INTERVAL '15' MINUTE) "
+        + "AND (last_tried_date_time IS NULL "
+        + "OR last_tried_date_time < NOW() - CAST(:pendingWaitValue || ' ' || :pendingWaitInterval AS INTERVAL)) "
         + "ORDER BY submitted_date_time ASC LIMIT 1", nativeQuery = true)
-    PendingRequestEntity findOldestPendingRequestForProcessing();
+    PendingRequestEntity findOldestPendingRequestForProcessing(
+        @Param("pendingWaitValue") Long pendingWaitValue,
+        @Param("pendingWaitInterval") String pendingWaitInterval);
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PROCESSING' WHERE pr.id = :id")
-    void markRequestAsProcessing(Long id);
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = :status WHERE pr.id = :id")
+    void markRequestWithGivenStatus(Long id, String status);
 
-    @Modifying
-    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'COMPLETED' WHERE pr.id = :id")
-    void markRequestAsCompleted(Long id);
-
-    @Modifying
-    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'EXCEPTION' WHERE pr.id = :id")
-    void markRequestAsException(Long id);
-
-    @Query(value = "SELECT * FROM public.pending_requests WHERE submitted_date_time < NOW() - INTERVAL"
-        + "'1 DAY' AND incident_flag = false", nativeQuery = true)
-    List<PendingRequestEntity> findRequestsForEscalation();
+    @Query(value = "SELECT * FROM public.pending_requests WHERE submitted_date_time < NOW() - "
+        + "CAST(:escalationWaitValue || ' ' || :escalationWaitInterval AS INTERVAL) "
+        + "AND incident_flag = false",
+        nativeQuery = true)
+    List<PendingRequestEntity> findRequestsForEscalation(
+        @Param("escalationWaitValue") Long escalationWaitValue,
+        @Param("escalationWaitInterval") String escalationWaitInterval);
 
     @Modifying
     @Query(value = "UPDATE public.pending_requests SET incident_flag = true WHERE submitted_date_time < NOW()"
-        + " - INTERVAL '1 DAY' AND incident_flag = false", nativeQuery = true)
-    void identifyRequestsForEscalation();
+        + " - CAST(:escalationWaitValue || ' ' || :escalationWaitInterval AS INTERVAL) "
+        + "AND incident_flag = false",
+        nativeQuery = true)
+    int identifyRequestsForEscalation(
+        @Param("escalationWaitValue") Long escalationWaitValue,
+        @Param("escalationWaitInterval") String escalationWaitInterval);
 
     @Modifying
     @Query(value = "DELETE FROM public.pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
-        + " - INTERVAL '30 DAYS'", nativeQuery = true)
-    void deleteCompletedRecords();
-
-    // @Modifying
-    // @Query("DELETE FROM PendingRequestEntity pr WHERE pr.status = 'COMPLETED'
-    // AND pr.submittedDateTime < :thresholdDateTime")
-    // void deleteCompletedRecords(Timestamp thresholdDateTime);
+        + " - CAST(:deletionWaitValue || ' ' || :deletionWaitInterval AS INTERVAL)", nativeQuery = true)
+    int deleteCompletedRecords(
+        @Param("deletionWaitValue") Long deletionWaitValue,
+        @Param("deletionWaitInterval") String deletionWaitInterval);
 
     @Modifying
     @Query("UPDATE PendingRequestEntity pr SET pr.status = :status, pr.retryCount = :retryCount WHERE pr.id = :id")

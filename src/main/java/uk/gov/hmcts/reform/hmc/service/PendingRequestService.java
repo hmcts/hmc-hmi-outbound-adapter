@@ -12,22 +12,16 @@ public interface PendingRequestService {
 
     boolean lastTriedDateTimePeriodNotElapsed(PendingRequestEntity pendingRequest);
 
-    void addToPendingRequests(Object message);
-
     List<PendingRequestEntity> findAndLockByHearingId(Long hearingId);
 
     PendingRequestEntity findOldestPendingRequestForProcessing();
 
-    void markRequestAsProcessing(Long hearingId);
+    void markRequestWithGivenStatus(Long id, String status);
 
     void markRequestAsPending(Long hearingId, Integer retryCount);
 
-    void markRequestAsCompleted(Long hearingId);
+    void identifyPendingRequestsForEscalation();
 
-    void markRequestAsException(Long hearingId);
-
-    void identifyRequestsForEscalation();
-
-    void deleteCompletedRecords();
+    void deleteCompletedPendingRequests();
 
 }

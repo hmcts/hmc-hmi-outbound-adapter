@@ -10,12 +10,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderConfiguration;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
+import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
@@ -46,7 +48,7 @@ public class MessageProcessor {
     private final ObjectMapper objectMapper;
     private final PendingRequestService pendingRequestService;
     private static final String HEARING_ID = "hearing_id";
-    private static final String MESSAGE_TYPE = "message_type";
+    public static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
     public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
     public static final String MESSAGE_SUCCESS = "Message with id '{}' handled successfully";
@@ -65,12 +67,14 @@ public class MessageProcessor {
         this.pendingRequestService = pendingRequestService;
     }
 
-    // @Scheduled(fixedRate = 120000) // Execute every 2 minutes
-    @Scheduled(fixedRate = 30000) // Execute every 30 seconds while testing
+    @Value("${pending.request.pending-wait-in-milliseconds:120000}")
+    private Long pendingWaitInMilliseconds;
+
+    @Scheduled(fixedRateString = "${pendingWaitInMilliseconds:120000}") // Execute every 2 minutes
     @Transactional
     public void processPendingRequests() {
-        log.debug("processPendingRequests - starting");
-        pendingRequestService.deleteCompletedRecords();
+        log.debug("processPendingRequests (every {})- starting", pendingWaitInMilliseconds);
+        pendingRequestService.deleteCompletedPendingRequests();
         PendingRequestEntity pendingRequest = pendingRequestService.findOldestPendingRequestForProcessing();
         if (null == pendingRequest) {
             log.debug("No pending requests found for processing.");
@@ -95,17 +99,17 @@ public class MessageProcessor {
             return;
         }
 
-        pendingRequestService.markRequestAsProcessing(pendingRequest.getId());
+        pendingRequestService.markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.PROCESSING.name());
 
-        ServiceBusMessage receivedMessage = new ServiceBusMessage(pendingRequest.getMessage());
         try {
-            tryProcessMessage(receivedMessage);
+            processPendingMessage(convertMessage(pendingRequest.getMessage()),
+                                  pendingRequest.getApplicationProperties());
         } catch (Exception ex) {
             pendingRequestService.markRequestAsPending(pendingRequest.getId(),
                                                        pendingRequest.getRetryCount() + 1);
             return;
         }
-        pendingRequestService.markRequestAsCompleted(pendingRequest.getId());
+        pendingRequestService.markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.COMPLETED.name());
 
         log.debug("processOldestPendingRequest(pendingRequest) completed");
     }
@@ -119,7 +123,62 @@ public class MessageProcessor {
 
     public void processMessage(JsonNode message, Map<String, Object> applicationProperties)
             throws JsonProcessingException {
-        log.debug("processMessage message, applicationProperties");
+        if (log.isDebugEnabled()) {
+            log.debug("processMessage message, applicationProperties");
+            log.debug("message <{}>", message);
+            log.debug("applicationProperties <{}>", applicationProperties);
+        }
+        if (applicationProperties.containsKey(MESSAGE_TYPE)) {
+            MessageType messageType;
+            try {
+                messageType =
+                    MessageType.valueOf(applicationProperties.get(MESSAGE_TYPE).toString());
+            } catch (Exception exception) {
+                throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
+            }
+
+            String caseListingID;
+            try {
+                caseListingID = applicationProperties.get(HEARING_ID).toString();
+            } catch (Exception exception) {
+                throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
+            }
+
+            switch (messageType) {
+                case REQUEST_HEARING:
+                    log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
+                              caseListingID, message);
+                    processSyncFutureHearingResponse(() -> futureHearingRepository
+                        .createHearingRequest(message), caseListingID);
+                    break;
+                case AMEND_HEARING:
+                    log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
+                              caseListingID, message);
+                    processSyncFutureHearingResponse(() -> futureHearingRepository
+                        .amendHearingRequest(message, caseListingID), caseListingID);
+                    break;
+                case DELETE_HEARING:
+                    log.debug("Message of type DELETE_HEARING received for caseListingID: {} ,{}",
+                              caseListingID, message);
+                    processSyncFutureHearingResponse(() -> futureHearingRepository
+                        .deleteHearingRequest(message, caseListingID), caseListingID);
+                    break;
+                default:
+                    throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
+            }
+
+        } else {
+            throw new MalformedMessageException(MISSING_MESSAGE_TYPE);
+        }
+    }
+
+    private void processPendingMessage(JsonNode message, Map<String, Object> applicationProperties)
+        throws JsonProcessingException {
+        log.debug("processPendingMessage");
+        if (log.isDebugEnabled()) {
+            log.debug("message <{}>", message);
+            log.debug("applicationProperties <{}>", applicationProperties);
+        }
         if (applicationProperties.containsKey(MESSAGE_TYPE)) {
             MessageType messageType;
             try {
@@ -203,11 +262,10 @@ public class MessageProcessor {
     private MessageProcessingResult tryProcessMessage(ServiceBusReceivedMessage message) {
         try {
             log.debug(
-                "Started processing message with ID {} (delivery {})",
+                "Started processing ServiceBusReceivedMessage with ID {} (delivery {})",
                 message.getMessageId(),
                 message.getDeliveryCount() + 1
             );
-            pendingRequestService.addToPendingRequests(message);
 
             processMessage(
                 convertMessage(message.getBody()),
@@ -220,35 +278,6 @@ public class MessageProcessor {
         } catch (MalformedMessageException ex) {
             logErrors(message, ex);
 
-            return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
-        } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
-            logErrors(message, ex);
-            return new MessageProcessingResult(MessageProcessingResultType.APPLICATION_ERROR, ex);
-        } catch (JsonProcessingException ex) {
-            logErrors(message, ex);
-            return new MessageProcessingResult(MessageProcessingResultType.JSON_ERROR, ex);
-        } catch (Exception ex) {
-            logErrors(message, ex);
-            return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
-        }
-    }
-
-    private MessageProcessingResult tryProcessMessage(ServiceBusMessage message) {
-        try {
-            log.debug(
-                "Started processing message with ID {}",
-                    "message.getMessageId()");
-            pendingRequestService.addToPendingRequests(message);
-
-            processMessage(
-                    convertMessage(message.getBody()),
-                    message.getApplicationProperties());
-
-            log.debug("Processed message with ID {} processed successfully", message.getMessageId());
-            return new MessageProcessingResult(MessageProcessingResultType.SUCCESS);
-
-        } catch (MalformedMessageException ex) {
-            logErrors(message, ex);
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
             logErrors(message, ex);
@@ -304,11 +333,15 @@ public class MessageProcessor {
         }
         log.debug("preparing to send message to queue for hearingId {} ", hearingId);
         messageSenderConfiguration.sendMessage(objectMapper
-             .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
+            .writeValueAsString(syncMessage), LA_SYNC_HEARING_RESPONSE, hearingId);
     }
 
     private JsonNode convertMessage(BinaryData message) throws JsonProcessingException {
         return objectMapper.readTree(message.toString());
+    }
+
+    public JsonNode convertMessage(String message) throws JsonProcessingException {
+        return objectMapper.readTree(message);
     }
 
     static class MessageProcessingResult {

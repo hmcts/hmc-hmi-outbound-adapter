@@ -11,6 +11,11 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HEARING_ID;
+import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MESSAGE_TYPE;
 
 @Table(name = "pending_requests")
 @Entity
@@ -32,6 +37,9 @@ public class PendingRequestEntity implements Serializable {
     @Column(name = "version_number", nullable = false)
     private Integer versionNumber;
 
+    @Column(name = "message_type")
+    private String messageType;
+
     @Column(name = "submitted_date_time", nullable = false)
     private Timestamp submittedDateTime;
 
@@ -50,11 +58,19 @@ public class PendingRequestEntity implements Serializable {
     @Column(name = "message")
     private String message;
 
+    public Map<String, Object> getApplicationProperties() {
+        Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put(HEARING_ID, hearingId);
+        applicationProperties.put(MESSAGE_TYPE, messageType);
+        return applicationProperties;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("id:<").append(id).append(">,")
             .append("hearingId:<").append(hearingId).append(">,")
             .append("versionNumber:<").append(versionNumber).append(">,")
+            .append("messageType:<").append(messageType).append(">,")
             .append("submittedDateTime:<").append(submittedDateTime).append(">,")
             .append("retryCount:<").append(retryCount).append(">,")
             .append("lastTriedDateTime:<").append(lastTriedDateTime).append(">,")
