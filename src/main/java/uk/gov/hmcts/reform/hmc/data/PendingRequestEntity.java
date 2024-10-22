@@ -1,25 +1,27 @@
 package uk.gov.hmcts.reform.hmc.data;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HEARING_ID;
 import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MESSAGE_TYPE;
 
 @Table(name = "pending_requests")
 @Entity
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
 public class PendingRequestEntity implements Serializable {
 
@@ -58,6 +60,9 @@ public class PendingRequestEntity implements Serializable {
     @Column(name = "message")
     private String message;
 
+    @Column(name = "deployment_id")
+    private String deploymentId;
+
     public Map<String, Object> getApplicationProperties() {
         Map<String, Object> applicationProperties = new HashMap<>();
         applicationProperties.put(HEARING_ID, hearingId);
@@ -76,7 +81,8 @@ public class PendingRequestEntity implements Serializable {
             .append("lastTriedDateTime:<").append(lastTriedDateTime).append(">,")
             .append("status:<").append(status).append(">,")
             .append("incidentFlag:<").append(incidentFlag).append(">,")
-            .append("message:<").append(message).append(">");
+            .append("message:<").append(message).append(">,")
+            .append("deploymentId:<").append(deploymentId).append(">");
         return sb.toString();
     }
 }

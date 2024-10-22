@@ -65,11 +65,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return (minutesElapsed < retryLimitInMinutes);
     }
 
-    public PendingRequestEntity findById(Long id) {
-        log.debug("findById({})", id);
-        return pendingRequestRepository.findById(id).orElse(null);
-    }
-
     public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
         log.debug("findAndLockByHearingId({})", hearingId);
         return pendingRequestRepository.findAndLockByHearingId(hearingId);
@@ -96,11 +91,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     public void markRequestWithGivenStatus(Long id, String status) {
         log.debug("markRequestWithGivenStatus({}, {})", id, status);
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
-
-        if (log.isDebugEnabled()) {
-            PendingRequestEntity pendingRequest = findById(id);
-            log.debug("pendingRequest = <{}>", pendingRequest);
-        }
     }
 
     public void identifyPendingRequestsForEscalation() {

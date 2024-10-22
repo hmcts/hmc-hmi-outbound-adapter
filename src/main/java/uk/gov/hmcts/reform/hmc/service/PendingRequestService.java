@@ -6,8 +6,6 @@ import java.util.List;
 
 public interface PendingRequestService {
 
-    PendingRequestEntity findById(Long id);
-
     boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest);
 
     boolean lastTriedDateTimePeriodNotElapsed(PendingRequestEntity pendingRequest);
