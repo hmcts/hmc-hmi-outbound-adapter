@@ -27,7 +27,8 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void findOldestPendingRequestForProcessing_shouldReturnPendingRequest() {
-        PendingRequestEntity pendingRequest = createPendingRequestEntity();
+        PendingRequestEntity pendingRequest = createPendingRequestEntity(PendingStatusType.PENDING.name(),
+                                                                         LocalDateTime.now().minusHours(1));
         pendingRequestRepository.save(pendingRequest);
 
         PendingRequestEntity result = pendingRequestRepository
@@ -110,10 +111,6 @@ class PendingRequestRepositoryIT extends BaseTest {
             );
             pendingRequestRepository.save(pendingRequest);
         }
-    }
-
-    private PendingRequestEntity createPendingRequestEntity() {
-        return createPendingRequestEntity(PendingStatusType.PENDING.name(), LocalDateTime.now());
     }
 
     private PendingRequestEntity createPendingRequestEntity(String status, LocalDateTime localDateTime) {
