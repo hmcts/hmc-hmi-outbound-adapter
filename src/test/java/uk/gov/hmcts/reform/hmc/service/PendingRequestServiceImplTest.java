@@ -65,9 +65,9 @@ class PendingRequestServiceImplTest {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
         pendingRequest.setSubmittedDateTime(null);
 
-        assertThrows(NullPointerException.class, () -> {
-            pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest);
-        });
+        assertThrows(NullPointerException.class,
+                     () -> pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
+        );
     }
 
     @Test
