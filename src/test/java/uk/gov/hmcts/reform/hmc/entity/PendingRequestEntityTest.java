@@ -69,8 +69,8 @@ class PendingRequestEntityTest {
 
         Map<String, Object> properties = pendingRequest.getApplicationProperties();
 
-        assertEquals(12345L, properties.get("hearingId"));
-        assertEquals("REQUEST_HEARING", properties.get("messageType"));
+        assertEquals(12345L, properties.get("hearing_id"));
+        assertEquals("REQUEST_HEARING", properties.get("message_type"));
     }
 
     @Test
@@ -105,7 +105,7 @@ class PendingRequestEntityTest {
         pendingRequest.setId(1L);
         pendingRequest.setHearingId(12345L);
 
-        int expectedHashCode = Objects.hash(1L, 12345L, null, null, null, null, null, null, null, null);
+        int expectedHashCode = Objects.hash(1L, 12345L, null, null, null, null, null, null, null, null, null);
         assertEquals(expectedHashCode, pendingRequest.hashCode());
     }
 
