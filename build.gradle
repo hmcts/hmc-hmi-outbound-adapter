@@ -229,7 +229,7 @@ def versions = [
   reformLogging   : '6.1.4',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.15.2',
-  jetty           : '11.0.18'
+  jetty           : '11.0.19'
 
 ]
 
@@ -344,10 +344,8 @@ dependencies {
   implementation group: 'net.minidev', name: 'json-smart', version: '2.4.11' // CVE-2023-1370
 
   implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.5'
-  implementation group: 'commons-io', name: 'commons-io', version: '2.8.0'
+  implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
 
-  implementation group: 'org.hibernate', name: 'hibernate-core', version: '5.6.14.Final'
-  implementation group: 'javax.persistence', name: 'javax.persistence-api', version: '2.2'
 
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
