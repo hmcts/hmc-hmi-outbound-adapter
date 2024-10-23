@@ -102,6 +102,44 @@ class PendingRequestServiceImplTest {
     }
 
     @Test
+    void shouldReturnTrueWhenLastTriedDateTimePeriodNotElapsed() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(1L);
+        pendingRequest.setHearingId(2000000001L);
+        pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now().minusMinutes(10)));
+        pendingRequestService.retryLimitInMinutes = 20L;
+
+        boolean result = pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest);
+
+        assertTrue(result);
+    }
+
+    @Test
+    void shouldReturnFalseWhenLastTriedDateTimePeriodElapsed() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(1L);
+        pendingRequest.setHearingId(2000000001L);
+        pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now().minusMinutes(30)));
+        pendingRequestService.retryLimitInMinutes = 20L;
+
+        boolean result = pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void shouldHandleNullLastTriedDateTime() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(1L);
+        pendingRequest.setHearingId(2000000001L);
+        pendingRequest.setLastTriedDateTime(null);
+
+        assertThrows(NullPointerException.class,
+                     () -> pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest)
+        );
+    }
+
+    @Test
     void shouldMarkRequestAsProcessing() {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.PROCESSING.name());
