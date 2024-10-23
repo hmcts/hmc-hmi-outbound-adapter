@@ -114,11 +114,13 @@ class PendingRequestRepositoryIT extends BaseTest {
     }
 
     private PendingRequestEntity createPendingRequestEntity(String status, LocalDateTime localDateTime) {
-        return createPendingRequestEntity(1L, status, REQUEST_HEARING.name(), "Test message", localDateTime);
+        return createPendingRequestEntity(1L, status, REQUEST_HEARING.name(), "Test message",
+                                          localDateTime, "101");
     }
 
     private PendingRequestEntity createPendingRequestEntity(Long hearingId, String status, String messageType,
-                                                            String message, LocalDateTime localDateTime) {
+                                                            String message, LocalDateTime localDateTime,
+                                                            String deploymentId) {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
         pendingRequest.setId(0L);
         pendingRequest.setHearingId(hearingId);
@@ -131,6 +133,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         pendingRequest.setLastTriedDateTime(currentTimestamp);
         pendingRequest.setSubmittedDateTime(currentTimestamp);
         pendingRequest.setRetryCount(0);
+        pendingRequest.setDeploymentId(deploymentId);
         return pendingRequest;
     }
 
