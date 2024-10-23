@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HEARING_ID;
 import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MESSAGE_TYPE;
@@ -68,6 +69,46 @@ public class PendingRequestEntity implements Serializable {
         applicationProperties.put(HEARING_ID, hearingId);
         applicationProperties.put(MESSAGE_TYPE, messageType);
         return applicationProperties;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof PendingRequestEntity that)) {
+            return false;
+        }
+        return Objects.equals(id, that.id) && Objects.equals(hearingId, that.hearingId) && Objects.equals(
+            versionNumber,
+            that.versionNumber
+        ) && Objects.equals(messageType, that.messageType) && Objects.equals(
+            submittedDateTime,
+            that.submittedDateTime
+        ) && Objects.equals(retryCount, that.retryCount) && Objects.equals(
+            lastTriedDateTime,
+            that.lastTriedDateTime
+        ) && Objects.equals(status, that.status) && Objects.equals(incidentFlag, that.incidentFlag) && Objects.equals(
+            message,
+            that.message
+        ) && Objects.equals(deploymentId, that.deploymentId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+            id,
+            hearingId,
+            versionNumber,
+            messageType,
+            submittedDateTime,
+            retryCount,
+            lastTriedDateTime,
+            status,
+            incidentFlag,
+            message,
+            deploymentId
+        );
     }
 
     public String toString() {

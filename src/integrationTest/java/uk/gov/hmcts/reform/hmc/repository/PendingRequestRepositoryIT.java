@@ -49,7 +49,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         List<PendingRequestEntity> result = pendingRequestRepository
             .findRequestsForEscalation(1L, "DAY");
         assertEquals(1, result.size());
-        assertEquals(expectedPendingRequest, result.get(0));
+        assertTrue(expectedPendingRequest.equals(result.get(0)));
     }
 
     @Test
