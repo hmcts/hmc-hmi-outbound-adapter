@@ -14,10 +14,8 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -44,7 +42,7 @@ class PendingRequestServiceImplTest {
 
         boolean result = pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest);
 
-        assertTrue(result);
+        assertThat(result).isTrue();
     }
 
     @Test
@@ -57,7 +55,7 @@ class PendingRequestServiceImplTest {
 
         boolean result = pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest);
 
-        assertFalse(result);
+        assertThat(result).isFalse();
     }
 
     @Test
@@ -80,7 +78,7 @@ class PendingRequestServiceImplTest {
 
         List<PendingRequestEntity> result = pendingRequestService.findAndLockByHearingId(hearingId);
 
-        assertEquals(pendingRequest, result.get(0));
+        assertThat(pendingRequest).isEqualTo(result.get(0));
         verify(pendingRequestRepository, times(1)).findAndLockByHearingId(hearingId);
     }
 
@@ -96,7 +94,7 @@ class PendingRequestServiceImplTest {
 
         PendingRequestEntity result = pendingRequestService.findOldestPendingRequestForProcessing();
 
-        assertEquals(pendingRequest, result);
+        assertThat(pendingRequest).isEqualTo(result);
         verify(pendingRequestRepository, times(1))
             .findOldestPendingRequestForProcessing(anyLong(), anyString());
     }
@@ -111,7 +109,7 @@ class PendingRequestServiceImplTest {
 
         boolean result = pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest);
 
-        assertTrue(result);
+        assertThat(result).isTrue();
     }
 
     @Test
@@ -124,7 +122,7 @@ class PendingRequestServiceImplTest {
 
         boolean result = pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest);
 
-        assertFalse(result);
+        assertThat(result).isFalse();
     }
 
     @Test
@@ -189,14 +187,15 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldGetIntervalUnits() {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
-        assertEquals(30L, pendingRequestService.getIntervalUnits(pendingRequestService.deletionWaitInterval));
+        assertThat(pendingRequestService.getIntervalUnits(pendingRequestService.deletionWaitInterval)).isEqualTo(
+            30L);
     }
 
     @Test
     void shouldGetIntervalMeasure() {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
-        assertEquals("DAYS", pendingRequestService.getIntervalMeasure(
-            pendingRequestService.deletionWaitInterval));
+        assertThat(pendingRequestService.getIntervalMeasure(
+            pendingRequestService.deletionWaitInterval)).isEqualTo("DAYS");
     }
 
 }

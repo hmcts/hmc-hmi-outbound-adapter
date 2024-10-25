@@ -8,8 +8,7 @@ import java.sql.Timestamp;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class PendingRequestEntityTest {
 
@@ -40,17 +39,17 @@ class PendingRequestEntityTest {
         pendingRequest.setMessageType(messageType);
         pendingRequest.setDeploymentId(deploymentId);
 
-        assertEquals(id, pendingRequest.getId());
-        assertEquals(hearingId, pendingRequest.getHearingId());
-        assertEquals(versionNumber, pendingRequest.getVersionNumber());
-        assertEquals(submittedDateTime, pendingRequest.getSubmittedDateTime());
-        assertEquals(retryCount, pendingRequest.getRetryCount());
-        assertEquals(lastTriedDateTime, pendingRequest.getLastTriedDateTime());
-        assertEquals(status, pendingRequest.getStatus());
-        assertEquals(incidentFlag, pendingRequest.getIncidentFlag());
-        assertEquals(message, pendingRequest.getMessage());
-        assertEquals(messageType, pendingRequest.getMessageType());
-        assertEquals(deploymentId, pendingRequest.getDeploymentId());
+        assertThat(id).isEqualTo(pendingRequest.getId());
+        assertThat(hearingId).isEqualTo(pendingRequest.getHearingId());
+        assertThat(versionNumber).isEqualTo(pendingRequest.getVersionNumber());
+        assertThat(submittedDateTime).isEqualTo(pendingRequest.getSubmittedDateTime());
+        assertThat(retryCount).isEqualTo(pendingRequest.getRetryCount());
+        assertThat(lastTriedDateTime).isEqualTo(pendingRequest.getLastTriedDateTime());
+        assertThat(status).isEqualTo(pendingRequest.getStatus());
+        assertThat(incidentFlag).isEqualTo(pendingRequest.getIncidentFlag());
+        assertThat(message).isEqualTo(pendingRequest.getMessage());
+        assertThat(messageType).isEqualTo(pendingRequest.getMessageType());
+        assertThat(deploymentId).isEqualTo(pendingRequest.getDeploymentId());
 
         final String expectedString =
             "id:<" + id + ">,hearingId:<" + hearingId + ">,versionNumber:<" + versionNumber
@@ -58,7 +57,7 @@ class PendingRequestEntityTest {
                 + submittedDateTime + ">,retryCount:<" + retryCount + ">,"
             + "lastTriedDateTime:<" + lastTriedDateTime + ">,status:<" + status + ">,incidentFlag:<" + incidentFlag
                 + ">,message:<" + message + ">,deploymentId:<" + deploymentId + ">";
-        assertEquals(expectedString, pendingRequest.toString());
+        assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }
 
     @Test
@@ -69,8 +68,9 @@ class PendingRequestEntityTest {
 
         Map<String, Object> properties = pendingRequest.getApplicationProperties();
 
-        assertEquals(12345L, properties.get("hearing_id"));
-        assertEquals("REQUEST_HEARING", properties.get("message_type"));
+        assertThat(properties)
+            .containsEntry("hearing_id", 12345L)
+            .containsEntry("message_type", "REQUEST_HEARING");
     }
 
     @Test
@@ -83,7 +83,7 @@ class PendingRequestEntityTest {
         pendingRequest2.setId(1L);
         pendingRequest2.setHearingId(12345L);
 
-        assertEquals(pendingRequest1, pendingRequest2);
+        assertThat(pendingRequest1).isEqualTo(pendingRequest2);
     }
 
     @Test
@@ -96,7 +96,7 @@ class PendingRequestEntityTest {
         pendingRequest2.setId(2L);
         pendingRequest2.setHearingId(12345L);
 
-        assertNotEquals(pendingRequest1, pendingRequest2);
+        assertThat(pendingRequest1).isNotEqualTo(pendingRequest2);
     }
 
     @Test
@@ -106,7 +106,7 @@ class PendingRequestEntityTest {
         pendingRequest.setHearingId(12345L);
 
         int expectedHashCode = Objects.hash(1L, 12345L, null, null, null, null, null, null, null, null, null);
-        assertEquals(expectedHashCode, pendingRequest.hashCode());
+        assertThat(expectedHashCode).isEqualTo(pendingRequest.hashCode());
     }
 
     @Test
@@ -127,6 +127,6 @@ class PendingRequestEntityTest {
         String expectedString = "id:<1>,hearingId:<12345>,versionNumber:<1>,messageType:<REQUEST_HEARING>,"
             + "submittedDateTime:<2023-10-01 10:00:00.0>,retryCount:<3>,lastTriedDateTime:<2023-10-02 09:00:00.0>,"
             + "status:<PENDING>,incidentFlag:<true>,message:<Test Message>,deploymentId:<depIdXX>";
-        assertEquals(expectedString, pendingRequest.toString());
+        assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }
 }
