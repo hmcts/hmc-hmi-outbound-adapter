@@ -21,10 +21,22 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         nativeQuery = true)
     PendingRequestEntity findLatestRecord();
 
-    @Query(value = "SELECT * FROM public.pending_requests WHERE status = 'PENDING' "
+    @Query(value = "SELECT * FROM public.pending_requests pr1 "
+        + "WHERE status = 'PENDING' "
         + "AND (last_tried_date_time IS NULL "
         + "OR last_tried_date_time < NOW() - CAST(:pendingWaitValue || ' ' || :pendingWaitInterval AS INTERVAL)) "
-        + "ORDER BY submitted_date_time ASC LIMIT 1", nativeQuery = true)
+        + "AND (pr1.message_type = 'REQUEST_HEARING' "
+        + "   OR (pr1.message_type != 'REQUEST_HEARING' "
+        + "       AND NOT EXISTS ( "
+        + "           SELECT 1 "
+        + "           FROM public.pending_requests pr2 "
+        + "           WHERE pr2.status = 'EXCEPTION' "
+        + "             AND pr2.hearing_id = pr1.hearing_id "
+        + "             AND pr2.submitted_date_time < pr1.submitted_date_time "
+        + "       )) "
+        + "   ) "
+        + "ORDER BY pr1.submitted_date_time ASC "
+        + "LIMIT 1;", nativeQuery = true)
     PendingRequestEntity findOldestPendingRequestForProcessing(
         @Param("pendingWaitValue") Long pendingWaitValue,
         @Param("pendingWaitInterval") String pendingWaitInterval);

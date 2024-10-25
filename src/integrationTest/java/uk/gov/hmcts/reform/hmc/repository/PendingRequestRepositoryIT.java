@@ -11,10 +11,9 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.reform.hmc.config.MessageType.AMEND_HEARING;
+import static uk.gov.hmcts.reform.hmc.config.MessageType.DELETE_HEARING;
 import static uk.gov.hmcts.reform.hmc.config.MessageType.REQUEST_HEARING;
 
 class PendingRequestRepositoryIT extends BaseTest {
@@ -22,7 +21,20 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Autowired
     private PendingRequestRepository pendingRequestRepository;
 
-    private static final String DELETE_PENDING_REQUEST_DATA_SCRIPT = "classpath:sql/delete-pending_request_tables.sql";
+    private static final String DELETE_PENDING_REQUEST_DATA_SCRIPT
+        = "classpath:sql/delete-pending_request_tables.sql";
+    private static final String INSERT_PENDING_REQUESTS_NEW_WITHOUT_EXCEPTION
+        = "classpath:sql/insert-pending_requests_new_without_exception.sql";
+    private static final String INSERT_PENDING_REQUESTS_NEW_WITH_EXCEPTION
+        = "classpath:sql/insert-pending_requests_new_with_exception.sql";
+    private static final String INSERT_PENDING_REQUESTS_AMEND_WITHOUT_EXCEPTION
+        = "classpath:sql/insert-pending_requests_amend_without_exception.sql";
+    private static final String INSERT_PENDING_REQUESTS_AMEND_WITH_EXCEPTION
+        = "classpath:sql/insert-pending_requests_amend_with_exception.sql";
+    private static final String INSERT_PENDING_REQUESTS_DELETE_WITHOUT_EXCEPTION
+        = "classpath:sql/insert-pending_requests_delete_without_exception.sql";
+    private static final String INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION
+        = "classpath:sql/insert-pending_requests_delete_with_exception.sql";
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
@@ -33,7 +45,7 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         PendingRequestEntity result = pendingRequestRepository
             .findOldestPendingRequestForProcessing(2L, " MINUTES");
-        assertNotNull(result);
+        assertThat(result).isNotNull();
     }
 
     @Test
@@ -42,14 +54,14 @@ class PendingRequestRepositoryIT extends BaseTest {
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now().minusDays(3), 1);
 
         PendingRequestEntity expectedPendingRequest = pendingRequestRepository.findLatestRecord();
-        assertFalse(expectedPendingRequest.getIncidentFlag());
+        assertThat(expectedPendingRequest.getIncidentFlag()).isFalse();
 
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
 
         List<PendingRequestEntity> result = pendingRequestRepository
             .findRequestsForEscalation(1L, "DAY");
-        assertEquals(1, result.size());
-        assertTrue(expectedPendingRequest.equals(result.get(0)));
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0)).isEqualTo(expectedPendingRequest);
     }
 
     @Test
@@ -59,16 +71,16 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         Iterable<PendingRequestEntity> list = pendingRequestRepository.findAll();
         PendingRequestEntity expectedPendingRequest = list.iterator().next();
-        assertFalse(expectedPendingRequest.getIncidentFlag());
+        assertThat(expectedPendingRequest.getIncidentFlag()).isFalse();
 
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
 
         int identifiedRows = pendingRequestRepository
             .identifyRequestsForEscalation(1L, "DAY");
-        assertEquals(1, identifiedRows);
+        assertThat(identifiedRows).isEqualTo(1);
 
         PendingRequestEntity pendingRequest = pendingRequestRepository.findById(expectedPendingRequest.getId()).get();
-        assertEquals(Boolean.TRUE, pendingRequest.getIncidentFlag());
+        assertThat(pendingRequest.getIncidentFlag()).isTrue();
     }
 
     @Test
@@ -80,7 +92,7 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         int deletedRows = pendingRequestRepository
             .deleteCompletedRecords(30L, "DAYS");
-        assertTrue(deletedRows > 0);
+        assertThat(deletedRows).isPositive();
     }
 
     @Test
@@ -92,7 +104,7 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         int deletedRows = pendingRequestRepository
             .deleteCompletedRecords(30L, "DAYS");
-        assertEquals(0, deletedRows);
+        assertThat(deletedRows).isZero();
     }
 
     @Test
@@ -100,7 +112,61 @@ class PendingRequestRepositoryIT extends BaseTest {
     void deleteCompletedRecords_shouldHandleNoRecordsToDelete() {
         int deletedRows = pendingRequestRepository
             .deleteCompletedRecords(30L, "DAYS");
-        assertEquals(0, deletedRows);
+        assertThat(deletedRows).isZero();
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITHOUT_EXCEPTION})
+    void findLatestRecord_whenRequestHearingWithoutException_shouldReturnRequest() {
+        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        assertThat(result).isNotNull();
+        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(result.getHearingId()).isEqualTo(2000000000);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITH_EXCEPTION})
+    void findLatestRecord_whenRequestHearingWithException_shouldReturnNextHearing() {
+        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        assertThat(result).isNotNull();
+        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(result.getHearingId()).isEqualTo(2000000001);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITHOUT_EXCEPTION})
+    void findLatestRecord_whenAmendHearingWithoutPreviousException_shouldReturnAmendHearing() {
+        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        assertThat(result).isNotNull();
+        assertThat(result.getMessageType()).isEqualTo(AMEND_HEARING.name());
+        assertThat(result.getHearingId()).isEqualTo(2000000000);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITH_EXCEPTION})
+    void findLatestRecord_whenAmendHearingWithPreviousException_shouldReturnNextHearing() {
+        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        assertThat(result).isNotNull();
+        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(result.getHearingId()).isEqualTo(2000000001);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITHOUT_EXCEPTION})
+    void findLatestRecord_whenDeleteHearingWithoutPreviousException_shouldReturnDeleteHearing() {
+        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        assertThat(result).isNotNull();
+        assertThat(result.getMessageType()).isEqualTo(DELETE_HEARING.name());
+        assertThat(result.getHearingId()).isEqualTo(2000000000);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION})
+    void findLatestRecord_whenDeleteHearingWithPreviousException_shouldReturnNextHearing() {
+        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        assertThat(result).isNotNull();
+        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(result.getHearingId()).isEqualTo(2000000001);
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {

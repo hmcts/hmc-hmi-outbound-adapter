@@ -66,8 +66,16 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
-        log.debug("findAndLockByHearingId({})", hearingId);
-        return pendingRequestRepository.findAndLockByHearingId(hearingId);
+        List<PendingRequestEntity> lockedRequests =
+            pendingRequestRepository.findAndLockByHearingId(hearingId);
+        if (log.isDebugEnabled()) {
+            log.debug(
+                "{} locked records = findAndLockByHearingId({})",
+                null == lockedRequests ? 0 : lockedRequests.size(),
+                hearingId
+            );
+        }
+        return lockedRequests;
     }
 
     public PendingRequestEntity findOldestPendingRequestForProcessing() {
@@ -107,12 +115,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     protected Long getIntervalUnits(String envVarInterval) {
         return Long.valueOf(envVarInterval.split(",")[0]);
-
     }
 
     protected String getIntervalMeasure(String envVarInterval) {
         return envVarInterval.split(",")[1];
-
     }
 
 }
