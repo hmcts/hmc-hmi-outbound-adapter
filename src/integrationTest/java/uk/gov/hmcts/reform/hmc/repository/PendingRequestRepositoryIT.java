@@ -118,7 +118,8 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITHOUT_EXCEPTION})
     void findLatestRecord_whenRequestHearingWithoutException_shouldReturnRequest() {
-        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        PendingRequestEntity result = pendingRequestRepository
+        .findOldestPendingRequestForProcessing(2L, "MINUTES");
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
         assertThat(result.getHearingId()).isEqualTo(2000000001);
