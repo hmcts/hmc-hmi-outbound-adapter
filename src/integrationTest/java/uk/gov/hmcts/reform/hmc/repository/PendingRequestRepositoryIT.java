@@ -127,7 +127,8 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITH_EXCEPTION})
     void findLatestRecord_whenRequestHearingWithException_shouldReturnNextHearing() {
-        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        PendingRequestEntity result = pendingRequestRepository
+            .findOldestPendingRequestForProcessing(2L, "MINUTES");
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
         assertThat(result.getHearingId()).isEqualTo(2000000002);
@@ -136,7 +137,8 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITHOUT_EXCEPTION})
     void findLatestRecord_whenAmendHearingWithoutPreviousException_shouldReturnAmendHearing() {
-        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        PendingRequestEntity result = pendingRequestRepository
+            .findOldestPendingRequestForProcessing(2L, "MINUTES");
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(AMEND_HEARING.name());
         assertThat(result.getHearingId()).isEqualTo(2000000001);
@@ -145,7 +147,8 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITH_EXCEPTION})
     void findLatestRecord_whenAmendHearingWithPreviousException_shouldReturnNextHearing() {
-        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        PendingRequestEntity result = pendingRequestRepository
+            .findOldestPendingRequestForProcessing(2L, "MINUTES");
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
         assertThat(result.getHearingId()).isEqualTo(2000000002);
@@ -154,7 +157,8 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITHOUT_EXCEPTION})
     void findLatestRecord_whenDeleteHearingWithoutPreviousException_shouldReturnDeleteHearing() {
-        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        PendingRequestEntity result = pendingRequestRepository
+            .findOldestPendingRequestForProcessing(2L, "MINUTES");
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(DELETE_HEARING.name());
         assertThat(result.getHearingId()).isEqualTo(2000000001);
@@ -163,7 +167,8 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION})
     void findLatestRecord_whenDeleteHearingWithPreviousException_shouldReturnNextHearing() {
-        PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
+        PendingRequestEntity result = pendingRequestRepository
+            .findOldestPendingRequestForProcessing(2L, "MINUTES");
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
         assertThat(result.getHearingId()).isEqualTo(2000000002);
