@@ -121,7 +121,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000000);
+        assertThat(result.getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
@@ -130,7 +130,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000001);
+        assertThat(result.getHearingId()).isEqualTo(2000000002);
     }
 
     @Test
@@ -139,7 +139,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(AMEND_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000000);
+        assertThat(result.getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
@@ -148,7 +148,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000001);
+        assertThat(result.getHearingId()).isEqualTo(2000000002);
     }
 
     @Test
@@ -157,7 +157,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(DELETE_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000000);
+        assertThat(result.getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
@@ -166,7 +166,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity result = pendingRequestRepository.findLatestRecord();
         assertThat(result).isNotNull();
         assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000001);
+        assertThat(result.getHearingId()).isEqualTo(2000000002);
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {
