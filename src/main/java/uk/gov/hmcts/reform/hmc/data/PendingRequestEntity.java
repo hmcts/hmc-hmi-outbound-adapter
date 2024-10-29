@@ -100,17 +100,17 @@ public class PendingRequestEntity implements Serializable {
     }
 
     public String toString() {
-        String sb = "id:<" + id + ">," +
-            "hearingId:<" + hearingId + ">," +
-            "versionNumber:<" + versionNumber + ">," +
-            "messageType:<" + messageType + ">," +
-            "submittedDateTime:<" + submittedDateTime + ">," +
-            "retryCount:<" + retryCount + ">," +
-            "lastTriedDateTime:<" + lastTriedDateTime + ">," +
-            "status:<" + status + ">," +
-            "incidentFlag:<" + incidentFlag + ">," +
-            "message:<" + message + ">," +
-            "deploymentId:<" + deploymentId + ">";
+        String sb = "id:<" + id + ">,"
+            + "hearingId:<" + hearingId + ">,"
+            + "versionNumber:<" + versionNumber + ">,"
+            + "messageType:<" + messageType + ">,"
+            + "submittedDateTime:<" + submittedDateTime + ">,"
+            + "retryCount:<" + retryCount + ">,"
+            + "lastTriedDateTime:<" + lastTriedDateTime + ">,"
+            + "status:<" + status + ">,"
+            + "incidentFlag:<" + incidentFlag + ">,"
+            + "message:<" + message + ">,"
+            + "deploymentId:<" + deploymentId + ">";
         return sb;
     }
 }
