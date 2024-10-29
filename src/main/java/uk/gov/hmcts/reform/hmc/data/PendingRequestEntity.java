@@ -12,12 +12,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HEARING_ID;
-import static uk.gov.hmcts.reform.hmc.service.MessageProcessor.MESSAGE_TYPE;
 
 @Table(name = "pending_requests")
 @Entity
@@ -64,13 +59,6 @@ public class PendingRequestEntity implements Serializable {
     @Column(name = "deployment_id")
     private String deploymentId;
 
-    public Map<String, Object> getApplicationProperties() {
-        Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put(HEARING_ID, hearingId);
-        applicationProperties.put(MESSAGE_TYPE, messageType);
-        return applicationProperties;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -112,18 +100,17 @@ public class PendingRequestEntity implements Serializable {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("id:<").append(id).append(">,")
-            .append("hearingId:<").append(hearingId).append(">,")
-            .append("versionNumber:<").append(versionNumber).append(">,")
-            .append("messageType:<").append(messageType).append(">,")
-            .append("submittedDateTime:<").append(submittedDateTime).append(">,")
-            .append("retryCount:<").append(retryCount).append(">,")
-            .append("lastTriedDateTime:<").append(lastTriedDateTime).append(">,")
-            .append("status:<").append(status).append(">,")
-            .append("incidentFlag:<").append(incidentFlag).append(">,")
-            .append("message:<").append(message).append(">,")
-            .append("deploymentId:<").append(deploymentId).append(">");
-        return sb.toString();
+        String sb = "id:<" + id + ">," +
+            "hearingId:<" + hearingId + ">," +
+            "versionNumber:<" + versionNumber + ">," +
+            "messageType:<" + messageType + ">," +
+            "submittedDateTime:<" + submittedDateTime + ">," +
+            "retryCount:<" + retryCount + ">," +
+            "lastTriedDateTime:<" + lastTriedDateTime + ">," +
+            "status:<" + status + ">," +
+            "incidentFlag:<" + incidentFlag + ">," +
+            "message:<" + message + ">," +
+            "deploymentId:<" + deploymentId + ">";
+        return sb;
     }
 }

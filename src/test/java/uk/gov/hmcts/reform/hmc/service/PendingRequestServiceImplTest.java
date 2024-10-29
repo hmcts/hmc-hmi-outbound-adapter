@@ -89,14 +89,14 @@ class PendingRequestServiceImplTest {
         pendingRequest.setHearingId(2000000001L);
         pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now().minusHours(5)));
         pendingRequestService.pendingWaitInterval = "2,MINUTES";
-        when(pendingRequestRepository.findOldestPendingRequestForProcessing(anyLong(), anyString()))
-                 .thenReturn(pendingRequest);
+        when(pendingRequestRepository.findQueuedPendingRequestsForProcessing(anyLong(), anyString()))
+                 .thenReturn(List.of(pendingRequest));
 
-        PendingRequestEntity result = pendingRequestService.findOldestPendingRequestForProcessing();
+        List<PendingRequestEntity> results = pendingRequestService.findQueuedPendingRequestsForProcessing();
 
-        assertThat(pendingRequest).isEqualTo(result);
+        assertThat(results.get(0)).isEqualTo(pendingRequest);
         verify(pendingRequestRepository, times(1))
-            .findOldestPendingRequestForProcessing(anyLong(), anyString());
+            .findQueuedPendingRequestsForProcessing(anyLong(), anyString());
     }
 
     @Test

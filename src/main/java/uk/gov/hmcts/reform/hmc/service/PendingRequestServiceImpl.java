@@ -49,7 +49,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.EXCEPTION.name());
             log.error("Submitted time of request with ID {} is {} hours later than before.",
                       pendingRequest.getHearingId(), exceptionLimitInHours);
-            identifyPendingRequestsForEscalation();
             return true;
         }
         return false;
@@ -78,17 +77,18 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return lockedRequests;
     }
 
-    public PendingRequestEntity findOldestPendingRequestForProcessing() {
-        PendingRequestEntity pendingRequest =
-            pendingRequestRepository.findOldestPendingRequestForProcessing(
+    public List<PendingRequestEntity> findQueuedPendingRequestsForProcessing() {
+        List<PendingRequestEntity> pendingRequests =
+            pendingRequestRepository.findQueuedPendingRequestsForProcessing(
                 getIntervalUnits(pendingWaitInterval), getIntervalMeasure(pendingWaitInterval));
-        if (null != pendingRequest) {
-            log.debug("findOldestPendingRequestForProcessing(): id<{}> hearingId<{}> ",
-                      pendingRequest.getId(), pendingRequest.getHearingId());
+        if (!pendingRequests.isEmpty()) {
+            pendingRequests.forEach(e ->
+                log.debug("findQueuedPendingRequestsForProcessing(): id<{}> hearingId<{}> ",
+                      e.getId(), e.getHearingId()));
         } else {
-            log.debug("findOldestPendingRequestForProcessing(): null");
+            log.debug("findQueuedPendingRequestsForProcessing(): empty");
         }
-        return pendingRequest;
+        return pendingRequests;
     }
 
     public void markRequestAsPending(Long id, Integer retryCount) {
@@ -101,16 +101,44 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
     }
 
-    public void identifyPendingRequestsForEscalation() {
-        log.debug("identifyPendingRequests for Escalation({})", escalationWaitInterval);
-        pendingRequestRepository.identifyRequestsForEscalation(
-            getIntervalUnits(escalationWaitInterval), getIntervalMeasure(escalationWaitInterval));
+    public void escalatePendingRequests() {
+        log.debug("escalatePendingRequests()");
+
+        markPendingRequestsForEscalation();
+
+        escalateMarkedPendingRequests();
     }
 
     public void deleteCompletedPendingRequests() {
         log.debug("deleteCompletedPendingRequests({})", deletionWaitInterval);
-        pendingRequestRepository.deleteCompletedRecords(
-            getIntervalUnits(deletionWaitInterval), getIntervalMeasure(deletionWaitInterval));
+        try {
+            int countOfDeletedRecords = pendingRequestRepository.deleteCompletedRecords(
+                getIntervalUnits(deletionWaitInterval), getIntervalMeasure(deletionWaitInterval));
+            log.debug("{} Completed pendingRequests deleted", countOfDeletedRecords);
+        } catch (Exception e) {
+            log.error("Failed to deleteCompletedRecords");
+        }
+    }
+
+    protected void markPendingRequestsForEscalation() {
+        log.debug("identifyPendingRequests for Escalation({})", escalationWaitInterval);
+        pendingRequestRepository.markRequestsForEscalation(
+            getIntervalUnits(escalationWaitInterval), getIntervalMeasure(escalationWaitInterval));
+    }
+
+    protected void escalateMarkedPendingRequests() {
+        log.debug("escalateMarkedPendingRequests()");
+        try {
+            List<PendingRequestEntity> pendingRequests = pendingRequestRepository.findMarkedRequestsForEscalation();
+            pendingRequests.forEach(this::escalatePendingRequest);
+        } catch (Exception e) {
+            log.error("Failed to escalate Marked Pending Requests");
+        }
+    }
+
+    protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
+        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing ID: {}.",
+                  "MessageProcessor", pendingRequest, "method?", pendingRequest.getHearingId());
     }
 
     protected Long getIntervalUnits(String envVarInterval) {

@@ -27,6 +27,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -74,21 +75,23 @@ public class MessageProcessor {
     @Transactional
     public void processPendingRequests() {
         log.debug("processPendingRequests (every {})- starting", pendingWaitInMilliseconds);
+
         pendingRequestService.deleteCompletedPendingRequests();
-        PendingRequestEntity pendingRequest = pendingRequestService.findOldestPendingRequestForProcessing();
-        if (null == pendingRequest) {
+
+        pendingRequestService.escalatePendingRequests();
+
+        List<PendingRequestEntity> pendingRequests = pendingRequestService.findQueuedPendingRequestsForProcessing();
+        if (pendingRequests.isEmpty()) {
             log.debug("No pending requests found for processing.");
         } else {
-            processOldestPendingRequest(pendingRequest);
+            pendingRequests.forEach(this::processPendingRequest);
         }
         log.debug("processPendingRequests - completed");
     }
 
     @Transactional
-    public void processOldestPendingRequest(PendingRequestEntity pendingRequest) {
+    public void processPendingRequest(PendingRequestEntity pendingRequest) {
         log.debug("processOldestPendingRequest(pendingRequest) starting : {}", pendingRequest);
-
-        pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
 
         // check if submittedDateTimePeriodElapsed
         if (pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)) {
@@ -99,11 +102,13 @@ public class MessageProcessor {
             return;
         }
 
+        pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
+
         pendingRequestService.markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.PROCESSING.name());
 
         try {
             processPendingMessage(convertMessage(pendingRequest.getMessage()),
-                                  pendingRequest.getApplicationProperties());
+                                  pendingRequest.getHearingId().toString(), pendingRequest.getMessageType());
         } catch (Exception ex) {
             pendingRequestService.markRequestAsPending(pendingRequest.getId(),
                                                        pendingRequest.getRetryCount() + 1);
@@ -172,25 +177,22 @@ public class MessageProcessor {
         }
     }
 
-    private void processPendingMessage(JsonNode message, Map<String, Object> applicationProperties)
+    private void processPendingMessage(JsonNode message, String hearingId, String messageTypeString)
         throws JsonProcessingException {
         log.debug("processPendingMessage");
-        if (log.isDebugEnabled()) {
-            log.debug("message <{}>", message);
-            log.debug("applicationProperties <{}>", applicationProperties);
-        }
-        if (applicationProperties.containsKey(MESSAGE_TYPE)) {
+        log.debug("hearingId<{}> messageType<{}> message <{}>", hearingId, messageTypeString, message);
+        if (null != messageTypeString) {
             MessageType messageType;
             try {
                 messageType =
-                    MessageType.valueOf(applicationProperties.get(MESSAGE_TYPE).toString());
+                    MessageType.valueOf(messageTypeString);
             } catch (Exception exception) {
                 throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
             }
-            String caseListingID;
 
+            String caseListingID;
             try {
-                caseListingID = applicationProperties.get(HEARING_ID).toString();
+                caseListingID = hearingId;
             } catch (Exception exception) {
                 throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
             }

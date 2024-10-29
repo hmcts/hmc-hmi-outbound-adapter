@@ -12,14 +12,13 @@ public interface PendingRequestService {
 
     List<PendingRequestEntity> findAndLockByHearingId(Long hearingId);
 
-    PendingRequestEntity findOldestPendingRequestForProcessing();
+    List<PendingRequestEntity> findQueuedPendingRequestsForProcessing();
 
     void markRequestWithGivenStatus(Long id, String status);
 
     void markRequestAsPending(Long hearingId, Integer retryCount);
 
-    void identifyPendingRequestsForEscalation();
-
     void deleteCompletedPendingRequests();
 
+    void escalatePendingRequests();
 }

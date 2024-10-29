@@ -5,39 +5,28 @@ import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.sql.Timestamp;
-import java.util.Map;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PendingRequestEntityTest {
 
+    final long id = 1L;
+    final long hearingId = 12345L;
+    final int versionNumber = 1;
+    final Timestamp submittedDateTime = Timestamp.valueOf("2023-10-01 10:00:00");
+    final int retryCount = 3;
+    final Timestamp lastTriedDateTime = Timestamp.valueOf("2023-10-02 09:00:00");
+    final String status = "PENDING";
+    final boolean incidentFlag = true;
+    final String message = "Test Message";
+    final String messageType = MessageType.REQUEST_HEARING.name();
+    final String deploymentId = "depIdXX";
+
     @Test
     void testPendingRequestEntity() {
-        final long id = 1L;
-        final long hearingId = 12345L;
-        final int versionNumber = 1;
-        final Timestamp submittedDateTime = Timestamp.valueOf("2023-10-01 10:00:00");
-        final int retryCount = 3;
-        final Timestamp lastTriedDateTime = Timestamp.valueOf("2023-10-02 09:00:00");
-        final String status = "PENDING";
-        final boolean incidentFlag = true;
-        final String message = "Test Message";
-        final String messageType = MessageType.REQUEST_HEARING.name();
-        final String deploymentId = "depIdXX";
 
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(id);
-        pendingRequest.setHearingId(hearingId);
-        pendingRequest.setVersionNumber(versionNumber);
-        pendingRequest.setSubmittedDateTime(submittedDateTime);
-        pendingRequest.setRetryCount(retryCount);
-        pendingRequest.setLastTriedDateTime(lastTriedDateTime);
-        pendingRequest.setStatus(status);
-        pendingRequest.setIncidentFlag(incidentFlag);
-        pendingRequest.setMessage(message);
-        pendingRequest.setMessageType(messageType);
-        pendingRequest.setDeploymentId(deploymentId);
+        PendingRequestEntity pendingRequest = generatePendingRequest();
 
         assertThat(id).isEqualTo(pendingRequest.getId());
         assertThat(hearingId).isEqualTo(pendingRequest.getHearingId());
@@ -61,51 +50,29 @@ class PendingRequestEntityTest {
     }
 
     @Test
-    void shouldReturnCorrectApplicationProperties() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setHearingId(12345L);
-        pendingRequest.setMessageType("REQUEST_HEARING");
-
-        Map<String, Object> properties = pendingRequest.getApplicationProperties();
-
-        assertThat(properties)
-            .containsEntry("hearing_id", 12345L)
-            .containsEntry("message_type", "REQUEST_HEARING");
-    }
-
-    @Test
     void shouldReturnTrueForEqualEntities() {
-        PendingRequestEntity pendingRequest1 = new PendingRequestEntity();
-        pendingRequest1.setId(1L);
-        pendingRequest1.setHearingId(12345L);
-
-        PendingRequestEntity pendingRequest2 = new PendingRequestEntity();
-        pendingRequest2.setId(1L);
-        pendingRequest2.setHearingId(12345L);
+        PendingRequestEntity pendingRequest1 = generatePendingRequest();
+        PendingRequestEntity pendingRequest2 = generatePendingRequest();
 
         assertThat(pendingRequest1).isEqualTo(pendingRequest2);
     }
 
     @Test
     void shouldReturnFalseForNonEqualEntities() {
-        PendingRequestEntity pendingRequest1 = new PendingRequestEntity();
-        pendingRequest1.setId(1L);
-        pendingRequest1.setHearingId(12345L);
+        PendingRequestEntity pendingRequest1 = generatePendingRequest();
 
-        PendingRequestEntity pendingRequest2 = new PendingRequestEntity();
+        PendingRequestEntity pendingRequest2 = generatePendingRequest();
         pendingRequest2.setId(2L);
-        pendingRequest2.setHearingId(12345L);
 
         assertThat(pendingRequest1).isNotEqualTo(pendingRequest2);
     }
 
     @Test
     void shouldReturnCorrectHashCode() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(1L);
-        pendingRequest.setHearingId(12345L);
+        PendingRequestEntity pendingRequest = generatePendingRequest();
 
-        int expectedHashCode = Objects.hash(1L, 12345L, null, null, null, null, null, null, null, null, null);
+        int expectedHashCode = Objects.hash(id, hearingId, versionNumber, messageType, submittedDateTime, retryCount,
+                                             lastTriedDateTime, status, incidentFlag, message, deploymentId);
         assertThat(expectedHashCode).isEqualTo(pendingRequest.hashCode());
     }
 
@@ -128,5 +95,21 @@ class PendingRequestEntityTest {
             + "submittedDateTime:<2023-10-01 10:00:00.0>,retryCount:<3>,lastTriedDateTime:<2023-10-02 09:00:00.0>,"
             + "status:<PENDING>,incidentFlag:<true>,message:<Test Message>,deploymentId:<depIdXX>";
         assertThat(expectedString).isEqualTo(pendingRequest.toString());
+    }
+
+    private PendingRequestEntity generatePendingRequest() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(id);
+        pendingRequest.setHearingId(hearingId);
+        pendingRequest.setVersionNumber(versionNumber);
+        pendingRequest.setSubmittedDateTime(submittedDateTime);
+        pendingRequest.setRetryCount(retryCount);
+        pendingRequest.setLastTriedDateTime(lastTriedDateTime);
+        pendingRequest.setStatus(status);
+        pendingRequest.setIncidentFlag(incidentFlag);
+        pendingRequest.setMessage(message);
+        pendingRequest.setMessageType(messageType);
+        pendingRequest.setDeploymentId(deploymentId);
+        return pendingRequest;
     }
 }

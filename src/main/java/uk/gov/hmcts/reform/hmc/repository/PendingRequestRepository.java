@@ -35,9 +35,8 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         + "             AND pr2.submitted_date_time < pr1.submitted_date_time "
         + "       )) "
         + "   ) "
-        + "ORDER BY pr1.submitted_date_time ASC "
-        + "LIMIT 1;", nativeQuery = true)
-    PendingRequestEntity findOldestPendingRequestForProcessing(
+        + "ORDER BY pr1.submitted_date_time ASC;", nativeQuery = true)
+    List<PendingRequestEntity> findQueuedPendingRequestsForProcessing(
         @Param("pendingWaitValue") Long pendingWaitValue,
         @Param("pendingWaitInterval") String pendingWaitInterval);
 
@@ -58,9 +57,13 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         + " - CAST(:escalationWaitValue || ' ' || :escalationWaitInterval AS INTERVAL) "
         + "AND incident_flag = false",
         nativeQuery = true)
-    int identifyRequestsForEscalation(
+    int markRequestsForEscalation(
         @Param("escalationWaitValue") Long escalationWaitValue,
         @Param("escalationWaitInterval") String escalationWaitInterval);
+
+    @Query(value = "SELECT * FROM public.pending_requests WHERE status = 'PENDING' AND incident_flag = true",
+        nativeQuery = true)
+    List<PendingRequestEntity> findMarkedRequestsForEscalation();
 
     @Modifying
     @Query(value = "DELETE FROM public.pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
@@ -68,10 +71,6 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     int deleteCompletedRecords(
         @Param("deletionWaitValue") Long deletionWaitValue,
         @Param("deletionWaitInterval") String deletionWaitInterval);
-
-    @Modifying
-    @Query("UPDATE PendingRequestEntity pr SET pr.status = :status, pr.retryCount = :retryCount WHERE pr.id = :id")
-    void updateStatusAndRetryCount(Long id, String status, int retryCount);
 
     @Modifying
     @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount WHERE pr.id = :id")

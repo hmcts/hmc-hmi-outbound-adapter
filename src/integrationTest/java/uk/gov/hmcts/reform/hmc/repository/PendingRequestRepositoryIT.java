@@ -43,9 +43,9 @@ class PendingRequestRepositoryIT extends BaseTest {
                                                                          LocalDateTime.now().minusHours(1));
         pendingRequestRepository.save(pendingRequest);
 
-        PendingRequestEntity result = pendingRequestRepository
-            .findOldestPendingRequestForProcessing(2L, " MINUTES");
-        assertThat(result).isNotNull();
+        List<PendingRequestEntity> results = pendingRequestRepository
+            .findQueuedPendingRequestsForProcessing(2L, " MINUTES");
+        assertThat(results).isNotNull();
     }
 
     @Test
@@ -76,7 +76,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
 
         int identifiedRows = pendingRequestRepository
-            .identifyRequestsForEscalation(1L, "DAY");
+            .markRequestsForEscalation(1L, "DAY");
         assertThat(identifiedRows).isEqualTo(1);
 
         PendingRequestEntity pendingRequest = pendingRequestRepository.findById(expectedPendingRequest.getId()).get();
@@ -118,61 +118,61 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITHOUT_EXCEPTION})
     void findLatestRecord_whenRequestHearingWithoutException_shouldReturnRequest() {
-        PendingRequestEntity result = pendingRequestRepository
-            .findOldestPendingRequestForProcessing(2L, "MINUTES");
-        assertThat(result).isNotNull();
-        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000001);
+        List<PendingRequestEntity> results = pendingRequestRepository
+            .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.get(0).getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITH_EXCEPTION})
     void findLatestRecord_whenRequestHearingWithException_shouldReturnNextHearing() {
-        PendingRequestEntity result = pendingRequestRepository
-            .findOldestPendingRequestForProcessing(2L, "MINUTES");
-        assertThat(result).isNotNull();
-        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000002);
+        List<PendingRequestEntity> results = pendingRequestRepository
+            .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.get(0).getHearingId()).isEqualTo(2000000002);
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITHOUT_EXCEPTION})
     void findLatestRecord_whenAmendHearingWithoutPreviousException_shouldReturnAmendHearing() {
-        PendingRequestEntity result = pendingRequestRepository
-            .findOldestPendingRequestForProcessing(2L, "MINUTES");
-        assertThat(result).isNotNull();
-        assertThat(result.getMessageType()).isEqualTo(AMEND_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000001);
+        List<PendingRequestEntity> results = pendingRequestRepository
+            .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getMessageType()).isEqualTo(AMEND_HEARING.name());
+        assertThat(results.get(0).getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITH_EXCEPTION})
     void findLatestRecord_whenAmendHearingWithPreviousException_shouldReturnNextHearing() {
-        PendingRequestEntity result = pendingRequestRepository
-            .findOldestPendingRequestForProcessing(2L, "MINUTES");
-        assertThat(result).isNotNull();
-        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000002);
+        List<PendingRequestEntity> results = pendingRequestRepository
+            .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.get(0).getHearingId()).isEqualTo(2000000002);
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITHOUT_EXCEPTION})
     void findLatestRecord_whenDeleteHearingWithoutPreviousException_shouldReturnDeleteHearing() {
-        PendingRequestEntity result = pendingRequestRepository
-            .findOldestPendingRequestForProcessing(2L, "MINUTES");
-        assertThat(result).isNotNull();
-        assertThat(result.getMessageType()).isEqualTo(DELETE_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000001);
+        List<PendingRequestEntity> results = pendingRequestRepository
+            .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getMessageType()).isEqualTo(DELETE_HEARING.name());
+        assertThat(results.get(0).getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION})
     void findLatestRecord_whenDeleteHearingWithPreviousException_shouldReturnNextHearing() {
-        PendingRequestEntity result = pendingRequestRepository
-            .findOldestPendingRequestForProcessing(2L, "MINUTES");
-        assertThat(result).isNotNull();
-        assertThat(result.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(result.getHearingId()).isEqualTo(2000000002);
+        List<PendingRequestEntity> results = pendingRequestRepository
+            .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.get(0).getHearingId()).isEqualTo(2000000002);
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {
