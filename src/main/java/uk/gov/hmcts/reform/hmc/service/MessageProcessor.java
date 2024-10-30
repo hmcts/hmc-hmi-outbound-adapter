@@ -84,6 +84,7 @@ public class MessageProcessor {
         if (pendingRequests.isEmpty()) {
             log.debug("No pending requests found for processing.");
         } else {
+            log.debug("process batch of {} PendingRequests", pendingRequests.size());
             pendingRequests.forEach(this::processPendingRequest);
         }
         log.debug("processPendingRequests - completed");
@@ -91,32 +92,38 @@ public class MessageProcessor {
 
     @Transactional
     public void processPendingRequest(PendingRequestEntity pendingRequest) {
-        log.debug("processOldestPendingRequest(pendingRequest) starting : {}", pendingRequest);
+        log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest);
 
-        // check if submittedDateTimePeriodElapsed
-        if (pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)) {
-            return;
+        if (!pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
+            && pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
+
+
+            pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
+
+            pendingRequestService.markRequestWithGivenStatus(
+                pendingRequest.getId(),
+                PendingStatusType.PROCESSING.name()
+            );
+
+            try {
+                processPendingMessage(convertMessage(pendingRequest.getMessage()),
+                                      pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
+                );
+            } catch (Exception ex) {
+                pendingRequestService.markRequestAsPending(
+                    pendingRequest.getId(),
+                    pendingRequest.getRetryCount() + 1
+                );
+                return;
+            }
+            pendingRequestService.markRequestWithGivenStatus(
+                pendingRequest.getId(),
+                PendingStatusType.COMPLETED.name()
+            );
+
         }
-        // continue if lastTriedDateTimePeriodNotElapsed
-        if (pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest)) {
-            return;
-        }
 
-        pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
-
-        pendingRequestService.markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.PROCESSING.name());
-
-        try {
-            processPendingMessage(convertMessage(pendingRequest.getMessage()),
-                                  pendingRequest.getHearingId().toString(), pendingRequest.getMessageType());
-        } catch (Exception ex) {
-            pendingRequestService.markRequestAsPending(pendingRequest.getId(),
-                                                       pendingRequest.getRetryCount() + 1);
-            return;
-        }
-        pendingRequestService.markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.COMPLETED.name());
-
-        log.debug("processOldestPendingRequest(pendingRequest) completed");
+        log.debug("processPendingRequest(pendingRequest) completed");
     }
 
     public void processMessage(ServiceBusReceivedMessageContext messageContext) {
@@ -181,47 +188,37 @@ public class MessageProcessor {
         throws JsonProcessingException {
         log.debug("processPendingMessage");
         log.debug("hearingId<{}> messageType<{}> message <{}>", hearingId, messageTypeString, message);
-        if (null != messageTypeString) {
-            MessageType messageType;
-            try {
-                messageType =
-                    MessageType.valueOf(messageTypeString);
-            } catch (Exception exception) {
+
+        MessageType messageType;
+        try {
+            messageType = MessageType.valueOf(messageTypeString);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
+        }
+
+        String caseListingID = hearingId;
+
+        switch (messageType) {
+            case REQUEST_HEARING:
+                log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
+                          caseListingID, message);
+                processSyncFutureHearingResponse(() -> futureHearingRepository
+                    .createHearingRequest(message), caseListingID);
+                break;
+            case AMEND_HEARING:
+                log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
+                          caseListingID, message);
+                processSyncFutureHearingResponse(() -> futureHearingRepository
+                    .amendHearingRequest(message, caseListingID), caseListingID);
+                break;
+            case DELETE_HEARING:
+                log.debug("Message of type DELETE_HEARING received for caseListingID: {} ,{}",
+                          caseListingID, message);
+                processSyncFutureHearingResponse(() -> futureHearingRepository
+                    .deleteHearingRequest(message, caseListingID), caseListingID);
+                break;
+            default:
                 throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
-            }
-
-            String caseListingID;
-            try {
-                caseListingID = hearingId;
-            } catch (Exception exception) {
-                throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
-            }
-
-            switch (messageType) {
-                case REQUEST_HEARING:
-                    log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
-                              caseListingID, message);
-                    processSyncFutureHearingResponse(() -> futureHearingRepository
-                        .createHearingRequest(message), caseListingID);
-                    break;
-                case AMEND_HEARING:
-                    log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
-                              caseListingID, message);
-                    processSyncFutureHearingResponse(() -> futureHearingRepository
-                        .amendHearingRequest(message, caseListingID), caseListingID);
-                    break;
-                case DELETE_HEARING:
-                    log.debug("Message of type DELETE_HEARING received for caseListingID: {} ,{}",
-                              caseListingID, message);
-                    processSyncFutureHearingResponse(() -> futureHearingRepository
-                        .deleteHearingRequest(message, caseListingID), caseListingID);
-                    break;
-                default:
-                    throw new MalformedMessageException(UNSUPPORTED_MESSAGE_TYPE);
-            }
-
-        } else {
-            throw new MalformedMessageException(MISSING_MESSAGE_TYPE);
         }
     }
 

@@ -34,8 +34,7 @@ class PendingRequestServiceImplTest {
 
     @Test
     void shouldReturnTrueWhenExceptionLimitExceeded() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(1L);
+        PendingRequestEntity pendingRequest = generatePendingRequest();
         pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now().minusHours(5)));
         pendingRequestService.escalationWaitInterval = "3,HOURS";
         pendingRequestService.exceptionLimitInHours = 4L;
@@ -47,8 +46,7 @@ class PendingRequestServiceImplTest {
 
     @Test
     void shouldReturnFalseWhenExceptionLimitNotExceeded() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(1L);
+        PendingRequestEntity pendingRequest = generatePendingRequest();
         pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now().minusHours(3)));
         pendingRequestService.escalationWaitInterval = "3,HOURS";
         pendingRequestService.exceptionLimitInHours = 4L;
@@ -60,7 +58,7 @@ class PendingRequestServiceImplTest {
 
     @Test
     void shouldHandleNullSubmittedDateTime() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        PendingRequestEntity pendingRequest = generatePendingRequest();
         pendingRequest.setSubmittedDateTime(null);
 
         assertThrows(NullPointerException.class,
@@ -70,26 +68,25 @@ class PendingRequestServiceImplTest {
 
     @Test
     void shouldLockPendingRequestsByHearingId() {
-        final Long hearingId = 1L;
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setHearingId(hearingId);
+        PendingRequestEntity pendingRequest = generatePendingRequest();
         List<PendingRequestEntity> pendingRequests = List.of(pendingRequest);
-        when(pendingRequestRepository.findAndLockByHearingId(hearingId)).thenReturn(pendingRequests);
+        when(pendingRequestRepository.findAndLockByHearingId(pendingRequest.getHearingId()))
+            .thenReturn(pendingRequests);
 
-        List<PendingRequestEntity> result = pendingRequestService.findAndLockByHearingId(hearingId);
+        List<PendingRequestEntity> result = pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
 
         assertThat(pendingRequest).isEqualTo(result.get(0));
-        verify(pendingRequestRepository, times(1)).findAndLockByHearingId(hearingId);
+        verify(pendingRequestRepository, times(1))
+            .findAndLockByHearingId(pendingRequest.getHearingId());
     }
 
     @Test
     void shouldReturnOldestPendingRequestForProcessing() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(1L);
-        pendingRequest.setHearingId(2000000001L);
+        PendingRequestEntity pendingRequest = generatePendingRequest();
         pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now().minusHours(5)));
         pendingRequestService.pendingWaitInterval = "2,MINUTES";
-        when(pendingRequestRepository.findQueuedPendingRequestsForProcessing(anyLong(), anyString()))
+        when(pendingRequestRepository
+                 .findQueuedPendingRequestsForProcessing(2L, "MINUTES"))
                  .thenReturn(List.of(pendingRequest));
 
         List<PendingRequestEntity> results = pendingRequestService.findQueuedPendingRequestsForProcessing();
@@ -100,40 +97,34 @@ class PendingRequestServiceImplTest {
     }
 
     @Test
-    void shouldReturnTrueWhenLastTriedDateTimePeriodNotElapsed() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(1L);
-        pendingRequest.setHearingId(2000000001L);
+    void shouldReturnFalseWhenLastTriedDateTimePeriodElapsed() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
         pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now().minusMinutes(10)));
         pendingRequestService.retryLimitInMinutes = 20L;
 
-        boolean result = pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest);
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void shouldReturnFalseWhenLastTriedDateTimePeriodElapsed() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(1L);
-        pendingRequest.setHearingId(2000000001L);
-        pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now().minusMinutes(30)));
-        pendingRequestService.retryLimitInMinutes = 20L;
-
-        boolean result = pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest);
+        boolean result = pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest);
 
         assertThat(result).isFalse();
     }
 
     @Test
+    void shouldReturnTrueWhenLastTriedDateTimePeriodElapsed() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+        pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now().minusMinutes(30)));
+        pendingRequestService.retryLimitInMinutes = 20L;
+
+        boolean result = pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
     void shouldHandleNullLastTriedDateTime() {
-        PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(1L);
-        pendingRequest.setHearingId(2000000001L);
+        PendingRequestEntity pendingRequest = generatePendingRequest();
         pendingRequest.setLastTriedDateTime(null);
 
         assertThrows(NullPointerException.class,
-                     () -> pendingRequestService.lastTriedDateTimePeriodNotElapsed(pendingRequest)
+                     () -> pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)
         );
     }
 
@@ -196,6 +187,13 @@ class PendingRequestServiceImplTest {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
         assertThat(pendingRequestService.getIntervalMeasure(
             pendingRequestService.deletionWaitInterval)).isEqualTo("DAYS");
+    }
+
+    private PendingRequestEntity generatePendingRequest() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(1L);
+        pendingRequest.setHearingId(2000000001L);
+        return pendingRequest;
     }
 
 }

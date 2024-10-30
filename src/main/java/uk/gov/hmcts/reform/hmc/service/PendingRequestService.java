@@ -8,7 +8,7 @@ public interface PendingRequestService {
 
     boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest);
 
-    boolean lastTriedDateTimePeriodNotElapsed(PendingRequestEntity pendingRequest);
+    boolean lastTriedDateTimePeriodElapsed(PendingRequestEntity pendingRequest);
 
     List<PendingRequestEntity> findAndLockByHearingId(Long hearingId);
 

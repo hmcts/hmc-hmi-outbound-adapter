@@ -54,14 +54,14 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return false;
     }
 
-    public boolean lastTriedDateTimePeriodNotElapsed(PendingRequestEntity pendingRequest) {
+    public boolean lastTriedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
         log.debug("lastTriedDateTimePeriodNotElapsed() hearingId<{}>", pendingRequest.getHearingId());
         LocalDateTime currentDateTime = LocalDateTime.now();
         LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime().toLocalDateTime();
         long minutesElapsed = ChronoUnit.MINUTES.between(lastTriedDateTime, currentDateTime);
         log.debug("Minutes elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
                   minutesElapsed, lastTriedDateTime, currentDateTime);
-        return (minutesElapsed < retryLimitInMinutes);
+        return (retryLimitInMinutes < minutesElapsed);
     }
 
     public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
