@@ -3,7 +3,7 @@ variable "product" {
 }
 
 variable "component" {
-  default = "hmi-inbound-adapter"
+  default = "hmi-outbound-adapter"
 }
 
 variable "env" {
