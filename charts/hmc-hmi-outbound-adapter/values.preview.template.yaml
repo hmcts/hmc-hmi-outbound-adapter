@@ -36,5 +36,5 @@ servicebus:
   sbNamespace: hmc-sb-preview
   setup:
     queues:
-      - name: hmc-to-hmi
-      - name: hmc-from-hmi
+      - name: hmc-cft-hearing-service-pr-271-servicebus-hmc-to-hmi
+      - name: hmc-cft-hearing-service-pr-271-servicebus-hmc-from-hmi
