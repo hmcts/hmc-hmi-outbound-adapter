@@ -3,8 +3,8 @@ java:
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
   environment:
-    HMC_SERVICE_BUS_OUTBOUND_QUEUE: hmc-to-hmi
-    HMC_SERVICE_BUS_INBOUND_QUEUE: hmc-from-hmi
+    HMC_SERVICE_BUS_OUTBOUND_QUEUE: hmc-cft-hearing-service-pr-271-servicebus-hmc-to-hmi
+    HMC_SERVICE_BUS_INBOUND_QUEUE: hmc-cft-hearing-service-pr-271-servicebus-hmc-from-hmi
     CFT_HEARING_SERVICE_DB_HOST: "{{ .Release.Name }}-postgresql"
     CFT_HEARING_SERVICE_DB_NAME: "{{ .Values.postgresql.auth.database}}"
     CFT_HEARING_SERVICE_DB_USERNAME: "{{ .Values.postgresql.auth.username}}"
@@ -36,5 +36,5 @@ servicebus:
   sbNamespace: hmc-sb-preview
   setup:
     queues:
-      - name: hmc-cft-hearing-service-pr-271-servicebus-hmc-to-hmi
-      - name: hmc-cft-hearing-service-pr-271-servicebus-hmc-from-hmi
+      - name: hmc-to-hmi
+      - name: hmc-from-hmi
