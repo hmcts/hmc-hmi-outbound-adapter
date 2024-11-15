@@ -140,6 +140,7 @@ public class MessageProcessor {
             log.debug("message <{}>", message);
             log.debug("applicationProperties <{}>", applicationProperties);
         }
+
         if (applicationProperties.containsKey(MESSAGE_TYPE)) {
             MessageType messageType;
             try {

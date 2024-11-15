@@ -137,8 +137,8 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
-        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing ID: {}.",
-                  "MessageProcessor", pendingRequest, "method?", pendingRequest.getHearingId());
+        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing ID:{}.",
+                  "MessageProcessor", pendingRequest, "escalatePendingRequest", pendingRequest.getHearingId());
     }
 
     protected Long getIntervalUnits(String envVarInterval) {
