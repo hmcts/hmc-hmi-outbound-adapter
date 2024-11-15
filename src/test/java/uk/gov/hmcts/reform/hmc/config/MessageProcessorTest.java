@@ -141,9 +141,12 @@ class MessageProcessorTest {
 
     private static Stream<Arguments> provideMessageTypes() {
         return Stream.of(
-            Arguments.of(MessageType.REQUEST_HEARING.name(), (Runnable) () -> verify(futureHearingRepository).createHearingRequest(any())),
-            Arguments.of(MessageType.AMEND_HEARING.name(), (Runnable) () -> verify(futureHearingRepository).amendHearingRequest(any(), any())),
-            Arguments.of(MessageType.DELETE_HEARING.name(), (Runnable) () -> verify(futureHearingRepository).deleteHearingRequest(any(), any()))
+            Arguments.of(MessageType.REQUEST_HEARING.name(),
+                         (Runnable) () -> verify(futureHearingRepository).createHearingRequest(any())),
+            Arguments.of(MessageType.AMEND_HEARING.name(),
+                         (Runnable) () -> verify(futureHearingRepository).amendHearingRequest(any(), any())),
+            Arguments.of(MessageType.DELETE_HEARING.name(),
+                         (Runnable) () -> verify(futureHearingRepository).deleteHearingRequest(any(), any()))
         );
     }
 
