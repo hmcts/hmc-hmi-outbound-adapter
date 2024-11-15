@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.hmc.config;
 
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +16,12 @@ import org.mockito.MockitoAnnotations;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
+import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
+import uk.gov.hmcts.reform.hmc.errorhandling.JsonProcessingRuntimeException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
@@ -28,6 +34,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -139,6 +146,49 @@ class MessageProcessorTest {
             .hasMessageContaining(MessageProcessor.MISSING_CASE_LISTING_ID);
     }
 
+    @Test
+    void shouldProcessPendingRequest() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideExceptions")
+    void shouldThrowJsonProcessingExceptionWhileProcessPendingRequest(Exception exception) {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).markRequestAsPending(pendingRequest.getId(),
+                                                           pendingRequest.getRetryCount() + 1);
+    }
+
+    private static Stream<Arguments> provideExceptions() {
+        return Stream.of(
+            Arguments.of(new JsonProcessingRuntimeException(new JsonProcessingException("N/A") {})),
+            Arguments.of(new MalformedMessageException("N/A")),
+            Arguments.of(new BadFutureHearingRequestException("N/A", null)),
+            Arguments.of(new AuthenticationException("N/A")),
+            Arguments.of(new ResourceNotFoundException("N/A"))
+        );
+    }
+
     private static Stream<Arguments> provideMessageTypes() {
         return Stream.of(
             Arguments.of(MessageType.REQUEST_HEARING.name(),
@@ -148,6 +198,16 @@ class MessageProcessorTest {
             Arguments.of(MessageType.DELETE_HEARING.name(),
                          (Runnable) () -> verify(futureHearingRepository).deleteHearingRequest(any(), any()))
         );
+    }
+
+    private PendingRequestEntity generatePendingRequest() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(1L);
+        pendingRequest.setHearingId(2000000001L);
+        pendingRequest.setMessageType("REQUEST_HEARING");
+        pendingRequest.setMessage("{\"test\": \"name\"}");
+        pendingRequest.setRetryCount(0);
+        return pendingRequest;
     }
 
 }
