@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -73,8 +74,9 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         @Param("deletionWaitInterval") String deletionWaitInterval);
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount WHERE pr.id = :id")
-    void markRequestAsPending(Long id, int retryCount);
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount, "
+        + "pr.lastTriedDateTime = :lastTriedDateTime WHERE pr.id = :id")
+    void markRequestAsPending(Long id, int retryCount, LocalDateTime lastTriedDateTime);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PendingRequestEntity p WHERE p.hearingId = :hearingId")

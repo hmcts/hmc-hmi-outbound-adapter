@@ -93,7 +93,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     public void markRequestAsPending(Long id, Integer retryCount) {
         log.debug("markRequestAsPending({}, {})", id, retryCount);
-        pendingRequestRepository.markRequestAsPending(id, retryCount + 1);
+        pendingRequestRepository.markRequestAsPending(id, retryCount + 1, LocalDateTime.now());
     }
 
     public void markRequestWithGivenStatus(Long id, String status) {

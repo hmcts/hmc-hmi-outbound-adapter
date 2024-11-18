@@ -16,8 +16,10 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -143,8 +145,9 @@ class PendingRequestServiceImplTest {
         int retryCount = 1;
         pendingRequestService.markRequestAsPending(id, retryCount);
 
-        verify(pendingRequestRepository, times(1)).markRequestAsPending(id,
-                                                                        retryCount + 1);
+        verify(pendingRequestRepository, times(1)).markRequestAsPending(eq(id),
+                                                                        eq(retryCount + 1),
+                                                                        any());
     }
 
     @Test
