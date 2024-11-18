@@ -35,6 +35,8 @@ class PendingRequestRepositoryIT extends BaseTest {
         = "classpath:sql/insert-pending_requests_delete_without_exception.sql";
     private static final String INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION
         = "classpath:sql/insert-pending_requests_delete_with_exception.sql";
+    private static final String INSERT_PENDING_REQUESTS_PROCESSING
+        = "classpath:sql/insert-pending_requests_processing.sql";
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
@@ -173,6 +175,22 @@ class PendingRequestRepositoryIT extends BaseTest {
         assertThat(results).isNotEmpty();
         assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
         assertThat(results.get(0).getHearingId()).isEqualTo(2000000002);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_PROCESSING})
+    void markRequestAsPending_shouldBeSuccessful() {
+        final long id = 1;
+        PendingRequestEntity pendingRequestBefore = pendingRequestRepository.findById(id).get();
+        assertThat(pendingRequestBefore.getStatus()).isEqualTo(PendingStatusType.PROCESSING.name());
+        assertThat(pendingRequestBefore.getRetryCount()).isEqualTo(1);
+
+        pendingRequestRepository.markRequestAsPending(pendingRequestBefore.getId(),
+                                                      pendingRequestBefore.getRetryCount() + 1,
+                                                      LocalDateTime.now());
+        PendingRequestEntity pendingRequestUpdated = pendingRequestRepository.findById(id).get();
+        assertThat(pendingRequestUpdated.getStatus()).isEqualTo(PendingStatusType.PENDING.name());
+        assertThat(pendingRequestUpdated.getRetryCount()).isEqualTo(pendingRequestBefore.getRetryCount() + 1);
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {
