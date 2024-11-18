@@ -73,7 +73,8 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         @Param("deletionWaitInterval") String deletionWaitInterval);
 
     @Modifying
-    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount WHERE pr.id = :id")
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PENDING', pr.retryCount = :retryCount, "
+        + "pr.lastTriedDateTime = NOW() WHERE pr.id = :id")
     void markRequestAsPending(Long id, int retryCount);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
