@@ -193,7 +193,7 @@ class PendingRequestRepositoryIT extends BaseTest {
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_PROCESSING})
-    void markRequestAsPending_shouldBeFailValuesTheSameAsBefore() {
+    void markRequestAsPending_shouldFail_ValuesTheSameAsBefore() {
         final long id = 1;
         PendingRequestEntity pendingRequestBefore = pendingRequestRepository.findById(id).get();
         assertThat(pendingRequestBefore.getStatus()).isEqualTo(PendingStatusType.PROCESSING.name());
@@ -207,7 +207,8 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity pendingRequestUpdated = pendingRequestRepository.findById(id).get();
         assertThat(pendingRequestUpdated.getStatus()).isEqualTo(pendingRequestBefore.getStatus());
         assertThat(pendingRequestUpdated.getRetryCount()).isEqualTo(pendingRequestBefore.getRetryCount());
-        assertThat(pendingRequestUpdated.getLastTriedDateTime().toLocalDateTime())
+        assertThat(null != pendingRequestUpdated.getLastTriedDateTime()
+                       ? pendingRequestUpdated.getLastTriedDateTime().toLocalDateTime() : null)
             .isEqualTo(pendingRequestBefore.getLastTriedDateTime());
     }
 
