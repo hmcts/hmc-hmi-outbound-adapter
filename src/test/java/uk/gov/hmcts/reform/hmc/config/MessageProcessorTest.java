@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -175,8 +176,9 @@ class MessageProcessorTest {
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
         verify(futureHearingRepository).createHearingRequest(any());
-        verify(pendingRequestService).markRequestAsPending(pendingRequest.getId(),
-                                                           pendingRequest.getRetryCount() + 1);
+        verify(pendingRequestService).markRequestAsPending(eq(pendingRequest.getId()),
+                                                           eq(pendingRequest.getRetryCount()),
+                                                           any());
     }
 
     private static Stream<Arguments> provideExceptions() {

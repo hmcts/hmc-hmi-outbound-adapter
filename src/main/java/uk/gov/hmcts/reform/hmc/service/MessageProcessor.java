@@ -112,7 +112,9 @@ public class MessageProcessor {
             } catch (Exception ex) {
                 pendingRequestService.markRequestAsPending(
                     pendingRequest.getId(),
-                    pendingRequest.getRetryCount() + 1
+                    pendingRequest.getRetryCount(),
+                    null != pendingRequest.getLastTriedDateTime()
+                        ? pendingRequest.getLastTriedDateTime().toLocalDateTime() : null
                 );
                 return;
             }

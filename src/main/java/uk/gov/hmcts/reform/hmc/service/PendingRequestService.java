@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.hmc.service;
 
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface PendingRequestService {
@@ -16,7 +17,7 @@ public interface PendingRequestService {
 
     void markRequestWithGivenStatus(Long id, String status);
 
-    void markRequestAsPending(Long hearingId, Integer retryCount);
+    void markRequestAsPending(Long hearingId, Integer retryCount, LocalDateTime lastTriedDateTimeIn);
 
     void deleteCompletedPendingRequests();
 

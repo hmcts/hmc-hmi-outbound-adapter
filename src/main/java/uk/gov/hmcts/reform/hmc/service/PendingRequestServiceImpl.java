@@ -91,9 +91,12 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return pendingRequests;
     }
 
-    public void markRequestAsPending(Long id, Integer retryCount) {
-        log.debug("markRequestAsPending({}, {})", id, retryCount);
-        pendingRequestRepository.markRequestAsPending(id, retryCount + 1, LocalDateTime.now());
+    public void markRequestAsPending(Long id, Integer retryCountIn, LocalDateTime lastTriedDateTimeIn) {
+        log.debug("markRequestAsPending({}, {}, )", id, retryCountIn, lastTriedDateTimeIn);
+        int retryCountOut = retryCountIn + 1;
+        LocalDateTime lastTriedDateTimeOut = LocalDateTime.now();
+        pendingRequestRepository.markRequestAsPending(id, retryCountOut, lastTriedDateTimeOut);
+        log.debug("markRequestAsPending({}, {}, {})", id, retryCountOut, lastTriedDateTimeOut);
     }
 
     public void markRequestWithGivenStatus(Long id, String status) {

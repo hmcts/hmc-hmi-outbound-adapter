@@ -143,7 +143,8 @@ class PendingRequestServiceImplTest {
     void shouldMarkRequestAsPending() {
         long id = 1L;
         int retryCount = 1;
-        pendingRequestService.markRequestAsPending(id, retryCount);
+        LocalDateTime lastRetriedDateTime = LocalDateTime.now();
+        pendingRequestService.markRequestAsPending(id, retryCount, lastRetriedDateTime);
 
         verify(pendingRequestRepository, times(1)).markRequestAsPending(eq(id),
                                                                         eq(retryCount + 1),

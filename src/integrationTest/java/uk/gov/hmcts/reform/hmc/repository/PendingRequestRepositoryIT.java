@@ -179,18 +179,36 @@ class PendingRequestRepositoryIT extends BaseTest {
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_PROCESSING})
-    void markRequestAsPending_shouldBeSuccessful() {
+    void markRequestWithGivenStatus_shouldBeSuccessful() {
         final long id = 1;
         PendingRequestEntity pendingRequestBefore = pendingRequestRepository.findById(id).get();
         assertThat(pendingRequestBefore.getStatus()).isEqualTo(PendingStatusType.PROCESSING.name());
         assertThat(pendingRequestBefore.getRetryCount()).isEqualTo(1);
 
-        pendingRequestRepository.markRequestAsPending(pendingRequestBefore.getId(),
-                                                      pendingRequestBefore.getRetryCount() + 1,
-                                                      LocalDateTime.now());
+        pendingRequestRepository.markRequestWithGivenStatus(pendingRequestBefore.getId(),
+                                                      PendingStatusType.COMPLETED.name());
         PendingRequestEntity pendingRequestUpdated = pendingRequestRepository.findById(id).get();
-        assertThat(pendingRequestUpdated.getStatus()).isEqualTo(PendingStatusType.PENDING.name());
-        assertThat(pendingRequestUpdated.getRetryCount()).isEqualTo(pendingRequestBefore.getRetryCount() + 1);
+        assertThat(pendingRequestUpdated.getStatus()).isEqualTo(PendingStatusType.COMPLETED.name());
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_PROCESSING})
+    void markRequestAsPending_shouldBeFailValuesTheSameAsBefore() {
+        final long id = 1;
+        PendingRequestEntity pendingRequestBefore = pendingRequestRepository.findById(id).get();
+        assertThat(pendingRequestBefore.getStatus()).isEqualTo(PendingStatusType.PROCESSING.name());
+        assertThat(pendingRequestBefore.getRetryCount()).isEqualTo(1);
+
+        final int retryCountNow = pendingRequestBefore.getRetryCount() + 1;
+        final LocalDateTime lastTriedDateTimeNow = LocalDateTime.now();
+        pendingRequestRepository.markRequestAsPending(500001L,
+                                                      retryCountNow,
+                                                      lastTriedDateTimeNow);
+        PendingRequestEntity pendingRequestUpdated = pendingRequestRepository.findById(id).get();
+        assertThat(pendingRequestUpdated.getStatus()).isEqualTo(pendingRequestBefore.getStatus());
+        assertThat(pendingRequestUpdated.getRetryCount()).isEqualTo(pendingRequestBefore.getRetryCount());
+        assertThat(pendingRequestUpdated.getLastTriedDateTime().toLocalDateTime())
+            .isEqualTo(pendingRequestBefore.getLastTriedDateTime());
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {
