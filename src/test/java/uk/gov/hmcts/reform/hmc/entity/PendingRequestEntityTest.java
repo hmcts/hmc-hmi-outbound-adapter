@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,9 +14,11 @@ class PendingRequestEntityTest {
     final long id = 1L;
     final long hearingId = 12345L;
     final int versionNumber = 1;
-    final Timestamp submittedDateTime = Timestamp.valueOf("2023-10-01 10:00:00");
+    final LocalDateTime submittedDateTime
+        = LocalDateTime.of(2023,10,1,10,0,0);
     final int retryCount = 3;
-    final Timestamp lastTriedDateTime = Timestamp.valueOf("2023-10-02 09:00:00");
+    final LocalDateTime lastTriedDateTime
+        = LocalDateTime.of(2023,10,2,9,0,0);
     final String status = "PENDING";
     final boolean incidentFlag = true;
     final String message = "Test Message";
@@ -82,9 +84,11 @@ class PendingRequestEntityTest {
         pendingRequest.setId(1L);
         pendingRequest.setHearingId(12345L);
         pendingRequest.setVersionNumber(1);
-        pendingRequest.setSubmittedDateTime(Timestamp.valueOf("2023-10-01 10:00:00"));
+        pendingRequest.setSubmittedDateTime(
+            LocalDateTime.of(2023,10,1,10,9,8));
         pendingRequest.setRetryCount(3);
-        pendingRequest.setLastTriedDateTime(Timestamp.valueOf("2023-10-02 09:00:00"));
+        pendingRequest.setLastTriedDateTime(
+            LocalDateTime.of(2023, 10, 2, 9, 8, 7));
         pendingRequest.setStatus("PENDING");
         pendingRequest.setIncidentFlag(true);
         pendingRequest.setMessage("Test Message");
@@ -92,7 +96,7 @@ class PendingRequestEntityTest {
         pendingRequest.setDeploymentId("depIdXX");
 
         String expectedString = "id:<1>,hearingId:<12345>,versionNumber:<1>,messageType:<REQUEST_HEARING>,"
-            + "submittedDateTime:<2023-10-01 10:00:00.0>,retryCount:<3>,lastTriedDateTime:<2023-10-02 09:00:00.0>,"
+            + "submittedDateTime:<2023-10-01T10:09:08>,retryCount:<3>,lastTriedDateTime:<2023-10-02T09:08:07>,"
             + "status:<PENDING>,incidentFlag:<true>,message:<Test Message>,deploymentId:<depIdXX>";
         assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }

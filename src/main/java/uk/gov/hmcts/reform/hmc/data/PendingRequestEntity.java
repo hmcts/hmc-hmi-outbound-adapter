@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Table(name = "pending_requests")
@@ -39,13 +39,13 @@ public class PendingRequestEntity implements Serializable {
     private String messageType;
 
     @Column(name = "submitted_date_time", nullable = false)
-    private Timestamp submittedDateTime;
+    private LocalDateTime submittedDateTime;
 
     @Column(name = "retry_count", nullable = false)
     private Integer retryCount;
 
     @Column(name = "last_tried_date_time", nullable = false)
-    private Timestamp lastTriedDateTime;
+    private LocalDateTime lastTriedDateTime;
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
@@ -100,7 +100,7 @@ public class PendingRequestEntity implements Serializable {
     }
 
     public String toString() {
-        String sb = "id:<" + id + ">,"
+        return "id:<" + id + ">,"
             + "hearingId:<" + hearingId + ">,"
             + "versionNumber:<" + versionNumber + ">,"
             + "messageType:<" + messageType + ">,"
@@ -111,6 +111,5 @@ public class PendingRequestEntity implements Serializable {
             + "incidentFlag:<" + incidentFlag + ">,"
             + "message:<" + message + ">,"
             + "deploymentId:<" + deploymentId + ">";
-        return sb;
     }
 }

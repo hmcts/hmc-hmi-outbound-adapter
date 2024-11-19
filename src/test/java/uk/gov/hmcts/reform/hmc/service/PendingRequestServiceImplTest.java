@@ -10,7 +10,6 @@ import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,7 +36,7 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldReturnTrueWhenExceptionLimitExceeded() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now().minusHours(5)));
+        pendingRequest.setSubmittedDateTime(LocalDateTime.now().minusHours(5));
         pendingRequestService.escalationWaitInterval = "3,HOURS";
         pendingRequestService.exceptionLimitInHours = 4L;
 
@@ -49,7 +48,7 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldReturnFalseWhenExceptionLimitNotExceeded() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now().minusHours(3)));
+        pendingRequest.setSubmittedDateTime(LocalDateTime.now().minusHours(3));
         pendingRequestService.escalationWaitInterval = "3,HOURS";
         pendingRequestService.exceptionLimitInHours = 4L;
 
@@ -85,7 +84,7 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldReturnOldestPendingRequestForProcessing() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setSubmittedDateTime(Timestamp.valueOf(LocalDateTime.now().minusHours(5)));
+        pendingRequest.setSubmittedDateTime(LocalDateTime.now().minusHours(5));
         pendingRequestService.pendingWaitInterval = "2,MINUTES";
         when(pendingRequestRepository
                  .findQueuedPendingRequestsForProcessing(2L, "MINUTES"))
@@ -101,7 +100,7 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldReturnFalseWhenLastTriedDateTimePeriodElapsed() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now().minusMinutes(10)));
+        pendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(10));
         pendingRequestService.retryLimitInMinutes = 20L;
 
         boolean result = pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest);
@@ -112,7 +111,7 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldReturnTrueWhenLastTriedDateTimePeriodElapsed() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setLastTriedDateTime(Timestamp.valueOf(LocalDateTime.now().minusMinutes(30)));
+        pendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
         pendingRequestService.retryLimitInMinutes = 20L;
 
         boolean result = pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest);

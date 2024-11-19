@@ -7,7 +7,6 @@ import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -207,8 +206,7 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity pendingRequestUpdated = pendingRequestRepository.findById(id).get();
         assertThat(pendingRequestUpdated.getStatus()).isEqualTo(pendingRequestBefore.getStatus());
         assertThat(pendingRequestUpdated.getRetryCount()).isEqualTo(pendingRequestBefore.getRetryCount());
-        assertThat(null != pendingRequestUpdated.getLastTriedDateTime()
-                       ? pendingRequestUpdated.getLastTriedDateTime().toLocalDateTime() : null)
+        assertThat(pendingRequestUpdated.getLastTriedDateTime())
             .isEqualTo(pendingRequestBefore.getLastTriedDateTime());
     }
 
@@ -238,9 +236,8 @@ class PendingRequestRepositoryIT extends BaseTest {
         pendingRequest.setStatus(status);
         pendingRequest.setIncidentFlag(false);
         pendingRequest.setVersionNumber(1);
-        Timestamp currentTimestamp = Timestamp.valueOf(localDateTime);
-        pendingRequest.setLastTriedDateTime(currentTimestamp);
-        pendingRequest.setSubmittedDateTime(currentTimestamp);
+        pendingRequest.setLastTriedDateTime(localDateTime);
+        pendingRequest.setSubmittedDateTime(localDateTime);
         pendingRequest.setRetryCount(0);
         pendingRequest.setDeploymentId(deploymentId);
         return pendingRequest;
