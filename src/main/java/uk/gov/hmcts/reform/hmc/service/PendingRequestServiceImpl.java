@@ -37,31 +37,33 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
-        log.debug("submittedDateTimePeriodElapsed() hearingId<{}>", pendingRequest.getHearingId());
         LocalDateTime currentDateTime = LocalDateTime.now();
         LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime();
         long hoursElapsed = ChronoUnit.HOURS.between(submittedDateTime, currentDateTime);
         log.debug("Hours elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
                   hoursElapsed, submittedDateTime, currentDateTime);
+        boolean result = false;
         if (hoursElapsed >= exceptionLimitInHours) {
             log.debug("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
                       pendingRequest.getHearingId());
             markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.EXCEPTION.name());
             log.error("Submitted time of request with ID {} is {} hours later than before.",
                       pendingRequest.getHearingId(), exceptionLimitInHours);
-            return true;
+            result = true;
         }
-        return false;
+        log.debug("submittedDateTimePeriodElapsed()={} hearingId<{}>", result, pendingRequest.getHearingId());
+        return result;
     }
 
     public boolean lastTriedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
-        log.debug("lastTriedDateTimePeriodNotElapsed() hearingId<{}>", pendingRequest.getHearingId());
         LocalDateTime currentDateTime = LocalDateTime.now();
         LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime();
         long minutesElapsed = ChronoUnit.MINUTES.between(lastTriedDateTime, currentDateTime);
-        log.debug("Minutes elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
-                  minutesElapsed, lastTriedDateTime, currentDateTime);
-        return (retryLimitInMinutes < minutesElapsed);
+        boolean result = retryLimitInMinutes < minutesElapsed;
+        log.debug("lastTriedDateTimePeriodNotElapsed()={}  hearingId<{}> Minutes elapsed = {}; submittedDateTime: {}; "
+                      + "currentDateTime: {}",
+                  result, pendingRequest.getHearingId(), minutesElapsed, lastTriedDateTime, currentDateTime);
+        return result;
     }
 
     public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
