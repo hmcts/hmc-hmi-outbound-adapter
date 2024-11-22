@@ -28,6 +28,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -110,7 +111,7 @@ public class MessageProcessor {
                 processPendingMessage(convertMessage(pendingRequest.getMessage()),
                                       pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
                 );
-            } catch (IOException ioex) {
+            } catch (ConnectException ex) {
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
                     PendingStatusType.EXCEPTION.name()
@@ -194,7 +195,7 @@ public class MessageProcessor {
     }
 
     private void processPendingMessage(JsonNode message, String hearingId, String messageTypeString)
-        throws JsonProcessingException {
+        throws IOException {
         log.debug("processPendingMessage");
         log.debug("hearingId<{}> messageType<{}> message <{}>", hearingId, messageTypeString, message);
 
