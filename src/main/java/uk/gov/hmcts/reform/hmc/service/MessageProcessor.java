@@ -27,6 +27,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -109,6 +110,12 @@ public class MessageProcessor {
                 processPendingMessage(convertMessage(pendingRequest.getMessage()),
                                       pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
                 );
+            } catch (IOException ioex) {
+                pendingRequestService.markRequestWithGivenStatus(
+                    pendingRequest.getId(),
+                    PendingStatusType.EXCEPTION.name()
+                );
+                return;
             } catch (Exception ex) {
                 pendingRequestService.markRequestAsPending(
                     pendingRequest.getId(),
