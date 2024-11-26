@@ -28,7 +28,6 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -111,13 +110,15 @@ public class MessageProcessor {
                 processPendingMessage(convertMessage(pendingRequest.getMessage()),
                                       pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
                 );
-            } catch (ConnectException ex) {
+            } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException e) {
+                log.debug("{} {}", e.getClass().getSimpleName(), e.getMessage());
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
                     PendingStatusType.EXCEPTION.name()
                 );
                 return;
             } catch (Exception ex) {
+                log.debug("Exception {}", ex.getMessage());
                 pendingRequestService.markRequestAsPending(
                     pendingRequest.getId(),
                     pendingRequest.getRetryCount(),
@@ -286,7 +287,6 @@ public class MessageProcessor {
 
         } catch (MalformedMessageException ex) {
             logErrors(message, ex);
-
             return new MessageProcessingResult(MessageProcessingResultType.GENERIC_ERROR, ex);
         } catch (BadFutureHearingRequestException | AuthenticationException | ResourceNotFoundException ex) {
             logErrors(message, ex);
@@ -323,7 +323,7 @@ public class MessageProcessor {
 
     private void processSyncFutureHearingResponse(Supplier<HearingManagementInterfaceResponse> responseSupplier,
                                                   String hearingId)
-        throws JsonProcessingException {
+        throws JsonProcessingException, BadFutureHearingRequestException {
         SyncMessage syncMessage;
         try {
             responseSupplier.get();
@@ -331,14 +331,19 @@ public class MessageProcessor {
                 .listAssistHttpStatus(202)
                 .build();
         } catch (BadFutureHearingRequestException ex) {
-            log.error(MESSAGE_ERROR + ex.getErrorDetails().getErrorCode() + WITH_ERROR + ex.getMessage()
+            final Integer errorCode = (null == ex.getErrorDetails() ? null : ex.getErrorDetails().getErrorCode());
+            final String errorDescription =
+                (null == ex.getErrorDetails() ? null : ex.getErrorDetails().getErrorDescription());
+            log.error(MESSAGE_ERROR + errorCode
+                          + WITH_ERROR + ex.getMessage()
                           + HEARING_ID + hearingId);
             ErrorDetails errorDetails = ex.getErrorDetails();
             syncMessage = SyncMessage.builder()
                 .listAssistHttpStatus(400)
-                .listAssistErrorCode(errorDetails.getErrorCode())
-                .listAssistErrorDescription(errorDetails.getErrorDescription())
+                .listAssistErrorCode(errorCode)
+                .listAssistErrorDescription(errorDescription)
                 .build();
+            throw ex;
         }
         log.debug("preparing to send message to queue for hearingId {} ", hearingId);
         messageSenderConfiguration.sendMessage(objectMapper

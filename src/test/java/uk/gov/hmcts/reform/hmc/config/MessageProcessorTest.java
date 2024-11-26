@@ -163,8 +163,26 @@ class MessageProcessorTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideExceptions")
-    void shouldThrowJsonProcessingExceptionWhileProcessPendingRequest(Exception exception) {
+    @MethodSource("provideNonRetryableExceptions")
+    void shouldThrowNonRetryableExceptionWhileProcessPendingRequest(Exception exception) {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).markRequestWithGivenStatus(eq(pendingRequest.getId()),
+                                                           eq(PendingStatusType.EXCEPTION.name()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideRetryableExceptions")
+    void shouldThrowRetryableExceptionWhileProcessPendingRequest(Exception exception) {
         PendingRequestEntity pendingRequest = generatePendingRequest();
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
@@ -181,10 +199,15 @@ class MessageProcessorTest {
                                                            any());
     }
 
-    private static Stream<Arguments> provideExceptions() {
+    private static Stream<Arguments> provideRetryableExceptions() {
         return Stream.of(
             Arguments.of(new JsonProcessingRuntimeException(new JsonProcessingException("N/A") {})),
-            Arguments.of(new MalformedMessageException("N/A")),
+            Arguments.of(new MalformedMessageException("N/A"))
+        );
+    }
+
+    private static Stream<Arguments> provideNonRetryableExceptions() {
+        return Stream.of(
             Arguments.of(new BadFutureHearingRequestException("N/A", null)),
             Arguments.of(new AuthenticationException("N/A")),
             Arguments.of(new ResourceNotFoundException("N/A"))
