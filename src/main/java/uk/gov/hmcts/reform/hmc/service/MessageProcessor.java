@@ -72,7 +72,7 @@ public class MessageProcessor {
     @Value("${pending.request.pending-wait-in-milliseconds:120000}")
     private Long pendingWaitInMilliseconds;
 
-    @Scheduled(fixedRateString = "${pendingWaitInMilliseconds:120000}") // Execute every 2 minutes
+    @Scheduled(fixedRateString = "${pending.request.pending-wait-in-milliseconds:120000}") // Execute every 2 minutes
     @Transactional
     public void processPendingRequests() {
         log.debug("processPendingRequests (every {})- starting", pendingWaitInMilliseconds);

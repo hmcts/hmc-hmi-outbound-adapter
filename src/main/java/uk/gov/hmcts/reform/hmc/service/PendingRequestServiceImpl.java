@@ -27,7 +27,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     @Value("${pending.request.exception-limit-in-hours:4}")
     public Long exceptionLimitInHours;
 
-    @Value("${pending.request.pending.request.retry-limit-in-minutes:20}")
+    @Value("${pending.request.retry-limit-in-minutes:20}")
     public Long retryLimitInMinutes;
 
     private final PendingRequestRepository pendingRequestRepository;
@@ -60,9 +60,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime();
         long minutesElapsed = ChronoUnit.MINUTES.between(lastTriedDateTime, currentDateTime);
         boolean result = retryLimitInMinutes < minutesElapsed;
-        log.debug("lastTriedDateTimePeriodNotElapsed()={}  hearingId<{}> Minutes elapsed = {}; submittedDateTime: {}; "
-                      + "currentDateTime: {}",
-                  result, pendingRequest.getHearingId(), minutesElapsed, lastTriedDateTime, currentDateTime);
+        log.debug("lastTriedDateTimePeriodNotElapsed()={}  retryLimitInMinutes<{}> hearingId<{}> Minutes elapsed<{}> "
+                      + "submittedDateTime<{}> currentDateTime<{}>",
+                  result, retryLimitInMinutes, pendingRequest.getHearingId(), minutesElapsed, lastTriedDateTime,
+                  currentDateTime);
         return result;
     }
 
@@ -109,9 +110,15 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     public void escalatePendingRequests() {
         log.debug("escalatePendingRequests()");
 
-        markPendingRequestsForEscalation();
+        try {
+            List<PendingRequestEntity> pendingRequests =
+                pendingRequestRepository.findRequestsForEscalation(getIntervalUnits(escalationWaitInterval),
+                                                                   getIntervalMeasure(escalationWaitInterval));
+            pendingRequests.forEach(this::escalatePendingRequest);
+        } catch (Exception e) {
+            log.error("Failed to escalate Pending Requests");
+        }
 
-        escalateMarkedPendingRequests();
     }
 
     public void deleteCompletedPendingRequests() {
@@ -125,24 +132,11 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         }
     }
 
-    protected void markPendingRequestsForEscalation() {
-        log.debug("identifyPendingRequests for Escalation({})", escalationWaitInterval);
-        pendingRequestRepository.markRequestsForEscalation(
-            getIntervalUnits(escalationWaitInterval), getIntervalMeasure(escalationWaitInterval));
-    }
-
-    protected void escalateMarkedPendingRequests() {
-        log.debug("escalateMarkedPendingRequests()");
-        try {
-            List<PendingRequestEntity> pendingRequests = pendingRequestRepository.findMarkedRequestsForEscalation();
-            pendingRequests.forEach(this::escalatePendingRequest);
-        } catch (Exception e) {
-            log.error("Failed to escalate Marked Pending Requests");
-        }
-    }
-
     protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
-        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing ID:{}.",
+        log.debug("escalatePendingRequests");
+        pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
+
+        log.error("Error occurred for pending request. Service:{}. Entity:{}. Method:{}. Hearing ID:{}.",
                   "MessageProcessor", pendingRequest, "escalatePendingRequest", pendingRequest.getHearingId());
     }
 

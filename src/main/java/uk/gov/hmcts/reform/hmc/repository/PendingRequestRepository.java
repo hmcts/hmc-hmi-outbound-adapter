@@ -54,13 +54,11 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         @Param("escalationWaitInterval") String escalationWaitInterval);
 
     @Modifying
-    @Query(value = "UPDATE public.pending_requests SET incident_flag = true WHERE submitted_date_time < NOW()"
-        + " - CAST(:escalationWaitValue || ' ' || :escalationWaitInterval AS INTERVAL) "
-        + "AND incident_flag = false",
+    @Query(value = "UPDATE public.pending_requests "
+        + "SET incident_flag = true, last_tried_date_time = :lastTriedDateTime "
+        + "WHERE id = :id AND incident_flag = false",
         nativeQuery = true)
-    int markRequestsForEscalation(
-        @Param("escalationWaitValue") Long escalationWaitValue,
-        @Param("escalationWaitInterval") String escalationWaitInterval);
+    int markRequestForEscalation(Long id, LocalDateTime lastTriedDateTime);
 
     @Query(value = "SELECT * FROM public.pending_requests WHERE status = 'PENDING' AND incident_flag = true",
         nativeQuery = true)

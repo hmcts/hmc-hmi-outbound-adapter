@@ -90,8 +90,7 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
 
-        int identifiedRows = pendingRequestRepository
-            .markRequestsForEscalation(1L, "DAY");
+        int identifiedRows = pendingRequestRepository.markRequestForEscalation(1L, LocalDateTime.now());
         assertThat(identifiedRows).isEqualTo(1);
 
         PendingRequestEntity pendingRequest = pendingRequestRepository.findById(expectedPendingRequest.getId()).get();
@@ -233,8 +232,7 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
 
-        int countMarkedRequests = pendingRequestRepository
-            .markRequestsForEscalation(1L, "DAY");
+        int countMarkedRequests = pendingRequestRepository.markRequestForEscalation(1L, LocalDateTime.now());
         assertThat(countMarkedRequests).isEqualTo(1);
     }
 
@@ -243,8 +241,7 @@ class PendingRequestRepositoryIT extends BaseTest {
     void markRequestsForEscalation_shouldFindNone() {
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
 
-        int countMarkedRequests = pendingRequestRepository
-            .markRequestsForEscalation(1L, "DAY");
+        int countMarkedRequests = pendingRequestRepository.markRequestForEscalation(1L, LocalDateTime.now());
         assertThat(countMarkedRequests).isZero();
     }
 
