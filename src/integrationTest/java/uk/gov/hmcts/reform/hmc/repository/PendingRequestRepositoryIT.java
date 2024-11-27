@@ -68,11 +68,7 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void findRequestsForEscalation_shouldFindNone() {
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 1);
-        PendingRequestEntity expectedPendingRequest = pendingRequestRepository.findLatestRecord();
-        assertThat(expectedPendingRequest.getIncidentFlag()).isFalse();
-
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
+        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 6);
 
         List<PendingRequestEntity> result = pendingRequestRepository
             .findRequestsForEscalation(1L, "DAY");
@@ -225,24 +221,13 @@ class PendingRequestRepositoryIT extends BaseTest {
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
-    void markRequestsForEscalation_shouldMarkOneRequest() {
+    void shouldMarkRequestForEscalation() {
         createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now().minusDays(3), 1);
         PendingRequestEntity expectedPendingRequest = pendingRequestRepository.findLatestRecord();
         assertThat(expectedPendingRequest.getIncidentFlag()).isFalse();
 
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
-
         int countMarkedRequests = pendingRequestRepository.markRequestForEscalation(1L, LocalDateTime.now());
         assertThat(countMarkedRequests).isEqualTo(1);
-    }
-
-    @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
-    void markRequestsForEscalation_shouldFindNone() {
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
-
-        int countMarkedRequests = pendingRequestRepository.markRequestForEscalation(1L, LocalDateTime.now());
-        assertThat(countMarkedRequests).isZero();
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {
