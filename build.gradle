@@ -228,9 +228,8 @@ def versions = [
   mapstruct       : '1.4.2.Final',
   reformLogging   : '6.1.4',
   springBoot      : springBoot.class.package.implementationVersion,
-  testcontainers  : '1.15.2',
+  testcontainers  : '1.16.3',
   jetty           : '11.0.19'
-
 ]
 
 ext {
