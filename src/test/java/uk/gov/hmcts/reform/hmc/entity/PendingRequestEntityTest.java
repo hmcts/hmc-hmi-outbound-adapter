@@ -51,6 +51,19 @@ class PendingRequestEntityTest {
         assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }
 
+    void shouldReturnNullWhenLastTriedDateTimeIsNull() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setLastTriedDateTime(null);
+        assertThat(pendingRequest.getLastTriedDateTime()).isNull();
+    }
+
+    void shouldReturnLocalDateTimeWhenLastTriedDateTimeIsNotNull() {
+        LocalDateTime now = LocalDateTime.now();
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setLastTriedDateTime(now);
+        assertThat(pendingRequest.getLastTriedDateTime()).isEqualTo(now);
+    }
+
     @Test
     void shouldReturnTrueForEqualEntities() {
         PendingRequestEntity pendingRequest1 = generatePendingRequest();
