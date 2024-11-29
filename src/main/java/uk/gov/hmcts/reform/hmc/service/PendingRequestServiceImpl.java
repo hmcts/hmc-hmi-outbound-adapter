@@ -136,7 +136,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         log.debug("escalatePendingRequests");
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
 
-        log.error("Error occurred for pending request. Service:{}. Entity:{}. Method:{}. Hearing ID:{}.",
+        log.error("Error occurred for pending request. Service:{}. Entity:{}. Method:{}. Hearing id:{}.",
                   "MessageProcessor", pendingRequest, "escalatePendingRequest", pendingRequest.getHearingId());
     }
 
