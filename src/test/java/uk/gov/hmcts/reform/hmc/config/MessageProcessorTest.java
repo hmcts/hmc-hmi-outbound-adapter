@@ -176,7 +176,7 @@ class MessageProcessorTest {
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
         verify(futureHearingRepository).createHearingRequest(any());
-        verify(pendingRequestService).markRequestWithGivenStatus(eq(pendingRequest.getId()),
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(),
                                                            eq(PendingStatusType.EXCEPTION.name()));
     }
 
