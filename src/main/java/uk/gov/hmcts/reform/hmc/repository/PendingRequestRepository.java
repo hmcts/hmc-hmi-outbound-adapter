@@ -60,10 +60,6 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         nativeQuery = true)
     int markRequestForEscalation(Long id, LocalDateTime lastTriedDateTime);
 
-    @Query(value = "SELECT * FROM public.pending_requests WHERE status = 'PENDING' AND incident_flag = true",
-        nativeQuery = true)
-    List<PendingRequestEntity> findMarkedRequestsForEscalation();
-
     @Modifying
     @Query(value = "DELETE FROM public.pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
         + " - CAST(:deletionWaitValue || ' ' || :deletionWaitInterval AS INTERVAL)", nativeQuery = true)

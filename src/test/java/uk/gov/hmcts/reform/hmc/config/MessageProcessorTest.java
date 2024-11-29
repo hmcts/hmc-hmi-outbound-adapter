@@ -177,7 +177,7 @@ class MessageProcessorTest {
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
         verify(futureHearingRepository).createHearingRequest(any());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(),
-                                                           eq(PendingStatusType.EXCEPTION.name()));
+                                                           PendingStatusType.EXCEPTION.name());
     }
 
     @ParameterizedTest
