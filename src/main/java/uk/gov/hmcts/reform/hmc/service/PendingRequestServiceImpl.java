@@ -134,7 +134,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         log.debug("escalatePendingRequests");
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
 
-        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing id:{}.",
+        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing ID:{}.",
                   "MessageProcessor", pendingRequest, "escalatePendingRequest", pendingRequest.getHearingId());
     }
 
