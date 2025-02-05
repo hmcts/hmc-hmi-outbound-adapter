@@ -40,6 +40,9 @@ public class QueueWriter {
         // create a Service Bus Sender client for the queue
         ServiceBusSenderClient senderClient = new ServiceBusClientBuilder()
             .connectionString(System.getenv(CONNECTION_STRING_KEY))
+            .configuration(new ConfigurationBuilder()
+                               .putProperty(AMQP_CACHE, AMQP_CACHE_VALUE)
+                               .build())
             .sender()
             .queueName(System.getenv(QUEUE_NAME))
             .buildClient();
