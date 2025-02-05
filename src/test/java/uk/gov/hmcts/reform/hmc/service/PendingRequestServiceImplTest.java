@@ -124,9 +124,7 @@ class PendingRequestServiceImplTest {
         PendingRequestEntity pendingRequest = generatePendingRequest();
         pendingRequest.setLastTriedDateTime(null);
 
-        assertThrows(NullPointerException.class,
-                     () -> pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)
-        );
+        assertThat(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).isTrue();
     }
 
     @Test
