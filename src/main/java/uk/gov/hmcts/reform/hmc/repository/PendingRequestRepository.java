@@ -47,7 +47,7 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
 
     @Query(value = "SELECT * FROM public.pending_requests WHERE submitted_date_time < NOW() - "
         + "CAST(:escalationWaitValue || ' ' || :escalationWaitInterval AS INTERVAL) "
-        + "AND incident_flag = false",
+        + "AND incident_flag = false AND status != 'COMPLETED' ",
         nativeQuery = true)
     List<PendingRequestEntity> findRequestsForEscalation(
         @Param("escalationWaitValue") Long escalationWaitValue,
