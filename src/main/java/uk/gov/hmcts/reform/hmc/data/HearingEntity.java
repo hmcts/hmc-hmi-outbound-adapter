@@ -68,4 +68,9 @@ public class HearingEntity extends BaseEntity implements Serializable {
             .orElseThrow(() -> new ResourceNotFoundException("Cannot find latest case "
                                                                  + "hearing request for hearing " + id));
     }
+
+    public String getLatestCaseReferenceNumber() {
+        return getLatestCaseHearingRequest().getCaseReference();
+    }
+
 }

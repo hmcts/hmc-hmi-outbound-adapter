@@ -22,4 +22,6 @@ public interface PendingRequestService {
     void deleteCompletedPendingRequests();
 
     void escalatePendingRequests();
+
+    void catchExceptionAndUpdateHearing(Long hearingId, Exception exception);
 }

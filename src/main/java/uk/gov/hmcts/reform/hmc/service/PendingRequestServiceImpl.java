@@ -1,20 +1,32 @@
 package uk.gov.hmcts.reform.hmc.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
+import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
+
+import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_FAILURE_STATUS;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_RESPONSE;
 
 @Slf4j
 @Service
 public class PendingRequestServiceImpl implements PendingRequestService {
 
+    private final HearingRepository hearingRepository;
     @Value("${pending.request.pending-wait-interval:15,MINUTES}")
     public String pendingWaitInterval;
 
@@ -30,10 +42,18 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     @Value("${pending.request.retry-limit-in-minutes:20}")
     public Long retryLimitInMinutes;
 
+    private final HearingStatusAuditService hearingStatusAuditService;
+    private final ObjectMapper objectMapper;
     private final PendingRequestRepository pendingRequestRepository;
 
-    public PendingRequestServiceImpl(PendingRequestRepository pendingRequestRepository) {
+    public PendingRequestServiceImpl(ObjectMapper objectMapper,
+                                     PendingRequestRepository pendingRequestRepository,
+                                     HearingRepository hearingRepository,
+                                     HearingStatusAuditService hearingStatusAuditService) {
+        this.objectMapper = objectMapper;
         this.pendingRequestRepository = pendingRequestRepository;
+        this.hearingRepository = hearingRepository;
+        this.hearingStatusAuditService = hearingStatusAuditService;
     }
 
     public boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
@@ -108,6 +128,28 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
     }
 
+    public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
+        log.error("Error processing message with Hearing id {} exception was {}",
+                  hearingId, exception.getMessage());
+        Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
+        if (hearingResult.isPresent()) {
+            HearingEntity hearingEntity = hearingResult.get();
+            hearingEntity.setStatus("EXCEPTION");
+            hearingEntity.setErrorDescription(exception.getMessage());
+            hearingRepository.save(hearingEntity);
+            logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
+                                      hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
+                                      hearingEntity.getErrorDescription());
+
+            JsonNode errorDescription = objectMapper.convertValue(exception.getMessage(), JsonNode.class);
+            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
+                                                                            LA_RESPONSE, LA_FAILURE_STATUS,
+                                                                            FH, HMC, errorDescription);
+        } else {
+            log.error("Hearing id {} not found", hearingId);
+        }
+    }
+
     public void escalatePendingRequests() {
         log.debug("escalatePendingRequests()");
 
@@ -147,6 +189,11 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     protected String getIntervalMeasure(String envVarInterval) {
         return envVarInterval.split(",")[1];
+    }
+
+    private void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
+                                           String errorDescription) {
+        log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, "EXCEPTION");
     }
 
 }

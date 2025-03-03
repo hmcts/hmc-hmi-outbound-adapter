@@ -8,4 +8,8 @@ public interface HearingStatusAuditService {
     void saveAuditTriageDetails(HearingEntity hearingEntity, String hearingEvent,
                                 String httpStatus, String source, String target, JsonNode errorDescription);
 
+    void saveAuditTriageDetailsWithUpdatedDate(HearingEntity hearingEntity, String hearingEvent,
+                                               String httpStatus,String source, String target,
+                                               JsonNode errorDescription);
+
 }

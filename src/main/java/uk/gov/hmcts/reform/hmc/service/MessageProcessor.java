@@ -110,12 +110,13 @@ public class MessageProcessor {
                 processPendingMessage(convertMessage(pendingRequest.getMessage()),
                                       pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
                 );
-            } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException e) {
-                log.debug("{} {}", e.getClass().getSimpleName(), e.getMessage());
+            } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException exception) {
+                log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
                     PendingStatusType.EXCEPTION.name()
                 );
+                pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
                 return;
             } catch (Exception ex) {
                 log.debug("Exception {}", ex.getMessage());
@@ -304,12 +305,13 @@ public class MessageProcessor {
         log.error("Unexpected Error", exception);
         Map<String, Object> applicationProperties;
 
-        if (message instanceof ServiceBusReceivedMessage serviceBusReceivedMessage) {
-            applicationProperties = serviceBusReceivedMessage.getApplicationProperties();
-        } else if (message instanceof ServiceBusMessage serviceBusMessage) {
-            applicationProperties = serviceBusMessage.getApplicationProperties();
-        } else {
-            throw new IllegalArgumentException("Unsupported message type");
+        switch (message) {
+            case ServiceBusReceivedMessage serviceBusReceivedMessage ->
+                applicationProperties = serviceBusReceivedMessage.getApplicationProperties();
+            case ServiceBusMessage serviceBusMessage ->
+                applicationProperties = serviceBusMessage.getApplicationProperties();
+            default ->
+                throw new IllegalArgumentException("Unsupported message type");
         }
 
         log.error(
@@ -337,7 +339,6 @@ public class MessageProcessor {
             log.error(MESSAGE_ERROR + errorCode
                           + WITH_ERROR + ex.getMessage()
                           + HEARING_ID + hearingId);
-            ErrorDetails errorDetails = ex.getErrorDetails();
             syncMessage = SyncMessage.builder()
                 .listAssistHttpStatus(400)
                 .listAssistErrorCode(errorCode)
