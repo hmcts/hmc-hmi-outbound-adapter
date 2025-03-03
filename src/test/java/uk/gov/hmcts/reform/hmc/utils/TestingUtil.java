@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.hmc.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.http.HttpStatus;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
@@ -9,6 +10,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import static uk.gov.hmcts.reform.hmc.constants.Constants.CREATE_HEARING_REQUEST;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
 
 public class TestingUtil {
 
@@ -59,6 +64,19 @@ public class TestingUtil {
         entity.setHearingRequestReceivedDateTime(LocalDateTime.parse("2020-08-10T12:20:00"));
         return entity;
 
+    }
+
+    public static HearingStatusAuditEntity hearingStatusAuditEntity() {
+        HearingStatusAuditEntity hearingStatusAuditEntity = new HearingStatusAuditEntity();
+        hearingStatusAuditEntity.setHmctsServiceId("ABA1");
+        hearingStatusAuditEntity.setHearingId("2000000000");
+        hearingStatusAuditEntity.setStatus("HEARING_REQUESTED");
+        hearingStatusAuditEntity.setHearingEvent(CREATE_HEARING_REQUEST);
+        hearingStatusAuditEntity.setHttpStatus(String.valueOf(HttpStatus.SC_OK));
+        hearingStatusAuditEntity.setSource(HMC);
+        hearingStatusAuditEntity.setTarget(HMI);
+        hearingStatusAuditEntity.setRequestVersion("1");
+        return hearingStatusAuditEntity;
     }
 
 }

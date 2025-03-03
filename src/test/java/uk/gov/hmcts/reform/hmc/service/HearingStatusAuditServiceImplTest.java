@@ -10,10 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.HearingStatusAuditRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,11 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.FAILURE_STATUS;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.SUCCESS_STATUS;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.*;
 
 class HearingStatusAuditServiceImplTest {
 
@@ -93,6 +92,20 @@ class HearingStatusAuditServiceImplTest {
             assertNull(auditEntity.getErrorDescription());
             verify(hearingStatusAuditRepository, times(1)).save(any());
         }
+
+        @Test
+        void shouldSaveAuditTriageDetailsWithUpdatedDateWhenSuccess() {
+            given(hearingStatusAuditRepository.save(TestingUtil.hearingStatusAuditEntity())).willReturn(
+                TestingUtil.hearingStatusAuditEntity());
+            HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+            hearingEntity.setCreatedDateTime(LocalDateTime.now());
+            hearingEntity.setUpdatedDateTime(LocalDateTime.now());
+            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
+                                                                            CREATE_HEARING_REQUEST,SUCCESS_STATUS,
+                                                                            HMC, HMI,null);
+            verify(hearingStatusAuditRepository, times(1)).save(any());
+        }
+
     }
 
 }

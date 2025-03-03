@@ -29,4 +29,5 @@ public final class Constants {
     public static final String FH = "fh";
     public static final String LA_RESPONSE = "list-assist-response";
     public static final String LA_FAILURE_STATUS = "400";
+    public static final String CREATE_HEARING_REQUEST = "create-hearing-request";
 }
