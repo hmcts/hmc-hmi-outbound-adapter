@@ -20,6 +20,19 @@ public class TestingUtil {
     private TestingUtil() {
     }
 
+    public static HearingStatusAuditEntity hearingStatusAuditEntity() {
+        HearingStatusAuditEntity hearingStatusAuditEntity = new HearingStatusAuditEntity();
+        hearingStatusAuditEntity.setHmctsServiceId("ABA1");
+        hearingStatusAuditEntity.setHearingId("2000000000");
+        hearingStatusAuditEntity.setStatus("HEARING_REQUESTED");
+        hearingStatusAuditEntity.setHearingEvent(CREATE_HEARING_REQUEST);
+        hearingStatusAuditEntity.setHttpStatus(String.valueOf(HttpStatus.SC_OK));
+        hearingStatusAuditEntity.setSource(HMC);
+        hearingStatusAuditEntity.setTarget(HMI);
+        hearingStatusAuditEntity.setRequestVersion("1");
+        return hearingStatusAuditEntity;
+    }
+
     public static Optional<HearingStatusAuditEntity> hearingStatusAuditEntity(String hearingEvent, String failureStatus,
                                                                               String source, String target,
                                                                               JsonNode errorDetails) {
@@ -64,19 +77,6 @@ public class TestingUtil {
         entity.setHearingRequestReceivedDateTime(LocalDateTime.parse("2020-08-10T12:20:00"));
         return entity;
 
-    }
-
-    public static HearingStatusAuditEntity hearingStatusAuditEntity() {
-        HearingStatusAuditEntity hearingStatusAuditEntity = new HearingStatusAuditEntity();
-        hearingStatusAuditEntity.setHmctsServiceId("ABA1");
-        hearingStatusAuditEntity.setHearingId("2000000000");
-        hearingStatusAuditEntity.setStatus("HEARING_REQUESTED");
-        hearingStatusAuditEntity.setHearingEvent(CREATE_HEARING_REQUEST);
-        hearingStatusAuditEntity.setHttpStatus(String.valueOf(HttpStatus.SC_OK));
-        hearingStatusAuditEntity.setSource(HMC);
-        hearingStatusAuditEntity.setTarget(HMI);
-        hearingStatusAuditEntity.setRequestVersion("1");
-        return hearingStatusAuditEntity;
     }
 
 }

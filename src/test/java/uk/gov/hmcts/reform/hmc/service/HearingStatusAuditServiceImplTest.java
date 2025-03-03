@@ -25,7 +25,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.*;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.CREATE_HEARING_REQUEST;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.FAILURE_STATUS;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.SUCCESS_STATUS;
 
 class HearingStatusAuditServiceImplTest {
 
