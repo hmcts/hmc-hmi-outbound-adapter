@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -7,11 +8,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
+import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
+import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
+import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,7 +34,16 @@ import static org.mockito.Mockito.when;
 class PendingRequestServiceImplTest {
 
     @Mock
+    private ObjectMapper objectMapper;
+
+    @Mock
+    private HearingRepository hearingRepository;
+
+    @Mock
     private PendingRequestRepository pendingRequestRepository;
+
+    @Mock
+    private HearingStatusAuditServiceImpl hearingStatusAuditService;
 
     @InjectMocks
     private PendingRequestServiceImpl pendingRequestService;
@@ -188,6 +203,38 @@ class PendingRequestServiceImplTest {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
         assertThat(pendingRequestService.getIntervalMeasure(
             pendingRequestService.deletionWaitInterval)).isEqualTo("DAYS");
+    }
+
+    @Test
+    void shouldUpdateHearingStatusToExceptionWhenHearingExists() {
+        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
+        caseHearingRequest.setCaseReference("12345");
+        caseHearingRequest.setHmctsServiceCode("serviceCode");
+        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
+        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
+        Exception exception = new Exception("Test Exception");
+        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
+
+        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
+
+        verify(hearingRepository, times(1)).save(any());
+        assertThat(hearingEntity.getStatus()).isEqualTo("EXCEPTION");
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo("Test Exception");
+    }
+
+    @Test
+    void shouldLogErrorWhenHearingDoesNotExist() {
+        Long hearingId = 1L;
+        Exception exception = new Exception("Test Exception");
+        when(hearingRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        pendingRequestService.catchExceptionAndUpdateHearing(hearingId, exception);
+
+        verify(hearingRepository, times(0)).save(any());
+        verify(hearingStatusAuditService,
+               times(0))
+                    .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
     }
 
     private PendingRequestEntity generatePendingRequest() {
