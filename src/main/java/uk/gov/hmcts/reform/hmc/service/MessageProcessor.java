@@ -198,7 +198,7 @@ public class MessageProcessor {
     private void processPendingMessage(JsonNode message, String hearingId, String messageTypeString)
         throws IOException {
         log.debug("processPendingMessage");
-        log.debug("hearingId<{}> messageType<{}> message <{}>", hearingId, messageTypeString, message);
+        log.debug("hearingId<{}> messageType<{}> message<{}>", hearingId, messageTypeString, message);
 
         MessageType messageType;
         try {
