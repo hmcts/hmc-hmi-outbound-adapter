@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 
 @DisplayName("PendingRequestServiceImpl")
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +48,8 @@ class PendingRequestServiceImplTest {
 
     @InjectMocks
     private PendingRequestServiceImpl pendingRequestService;
+
+    private static final String EXCEPTION_MESSAGE = "Test Exception";
 
     @Test
     void shouldReturnTrueWhenExceptionLimitExceeded() {
@@ -175,10 +178,10 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldMarkRequestAsException() {
         long id = 1L;
-        pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.EXCEPTION.name());
+        pendingRequestService.markRequestWithGivenStatus(id, EXCEPTION.name());
 
         verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
-                                                                              PendingStatusType.EXCEPTION.name());
+                                                                              EXCEPTION.name());
     }
 
     @Test
@@ -213,14 +216,14 @@ class PendingRequestServiceImplTest {
         caseHearingRequest.setHmctsServiceCode("serviceCode");
         hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
         Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
-        Exception exception = new Exception("Test Exception");
+        Exception exception = new Exception(EXCEPTION_MESSAGE);
         when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
 
         pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
 
         verify(hearingRepository, times(1)).save(any());
-        assertThat(hearingEntity.getStatus()).isEqualTo("EXCEPTION");
-        assertThat(hearingEntity.getErrorDescription()).isEqualTo("Test Exception");
+        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo(EXCEPTION_MESSAGE);
     }
 
     @Test
