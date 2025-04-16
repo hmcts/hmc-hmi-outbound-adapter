@@ -24,4 +24,10 @@ public final class Constants {
     public static final String SUCCESS_STATUS = "200";
     public static final String AMQP_CACHE = "com.azure.core.amqp.cache";
     public static final String AMQP_CACHE_VALUE = "true";
+    public static final String EXCEPTION_MESSAGE = "Hearing id: {} with Case reference: {} , Service Code: {}"
+        + " and Error Description: {} updated to status {}";
+    public static final String FH = "fh";
+    public static final String LA_RESPONSE = "list-assist-response";
+    public static final String LA_FAILURE_STATUS = "400";
+    public static final String CREATE_HEARING_REQUEST = "create-hearing-request";
 }
