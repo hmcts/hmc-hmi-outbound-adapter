@@ -7,37 +7,50 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
+import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
+import uk.gov.hmcts.reform.hmc.errorhandling.JsonProcessingRuntimeException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
+import uk.gov.hmcts.reform.hmc.service.PendingRequestService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 class MessageProcessorTest {
 
     private MessageProcessor messageProcessor;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
-    public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
-    public static final String UNSUPPORTED_MESSAGE_TYPE = "Message has unsupported value for message_type";
-    public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
 
     @Mock
-    private DefaultFutureHearingRepository futureHearingRepository;
+    private static DefaultFutureHearingRepository futureHearingRepository;
+
+    @Mock
+    private PendingRequestService pendingRequestService;
 
     @Mock
     private MessageSenderConfiguration messageSenderConfiguration;
@@ -59,74 +72,43 @@ class MessageProcessorTest {
 
     private JsonNode anyData;
 
-
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
                 messageSenderConfiguration,
-                objectMapper);
+                objectMapper,
+                pendingRequestService);
         anyData = objectMapper.convertValue("test data", JsonNode.class);
         String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
-        given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
-        given(applicationParams.getClientId()).willReturn("CLIENT_ID");
-        given(applicationParams.getScope()).willReturn("SCOPE");
-        given(applicationParams.getClientSecret()).willReturn("CLIENT_SECRET");
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(new AuthenticationResponse());
+        when(applicationParams.getGrantType()).thenReturn("GRANT_TYPE");
+        when(applicationParams.getClientId()).thenReturn("CLIENT_ID");
+        when(applicationParams.getScope()).thenReturn("SCOPE");
+        when(applicationParams.getClientSecret()).thenReturn("CLIENT_SECRET");
+        when(activeDirectoryApiClient.authenticate(requestString)).thenReturn(new AuthenticationResponse());
     }
 
-    @Test
-    void shouldInitiateRequestHearing() {
-        Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put(HEARING_ID, "1234567890");
-        applicationProperties.put(MESSAGE_TYPE, MessageType.REQUEST_HEARING);
-        when(message.getApplicationProperties()).thenReturn(applicationProperties);
-        when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
-        try {
-            messageProcessor.processMessage(anyData, applicationProperties);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        verify(futureHearingRepository).createHearingRequest(any());
-    }
-
-    @Test
-    void shouldInitiateAmendHearing() {
-        Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put(HEARING_ID, "1234567890");
-        applicationProperties.put(MESSAGE_TYPE, MessageType.AMEND_HEARING);
-        when(message.getApplicationProperties()).thenReturn(applicationProperties);
-        when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
-        try {
-            messageProcessor.processMessage(anyData, applicationProperties);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        verify(futureHearingRepository).amendHearingRequest(any(), any());
-    }
-
-    @Test
-    void shouldInitiateDeleteHearing() {
-        Map<String, Object> applicationProperties = new HashMap<>();
-        applicationProperties.put(HEARING_ID, "1234567890");
-        applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
-        when(message.getApplicationProperties()).thenReturn(applicationProperties);
-        when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
-        try {
-            messageProcessor.processMessage(anyData, applicationProperties);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        verify(futureHearingRepository).deleteHearingRequest(any(), any());
+    @ParameterizedTest
+    @MethodSource("provideMessageTypes")
+    void shouldInitiateHearing(String messageType, Runnable verifyMethod) {
+        Map<String, Object> applicationProperties = Map.of(
+            HEARING_ID, "1234567890",
+            MESSAGE_TYPE, messageType
+        );
+        Mockito.when(message.getApplicationProperties()).thenReturn(applicationProperties);
+        Mockito.when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
+        assertDoesNotThrow(() -> messageProcessor.processMessage(anyData, applicationProperties));
+        verifyMethod.run();
     }
 
     @Test
     void shouldThrowErrorWhenMessageTypeIsNull() {
         Map<String, Object> applicationProperties = new HashMap<>();
+        applicationProperties.put(MESSAGE_TYPE, null);
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
-            .hasMessageContaining(MISSING_MESSAGE_TYPE);
+            .hasMessageContaining(MessageProcessor.UNSUPPORTED_MESSAGE_TYPE);
     }
 
     @Test
@@ -136,7 +118,7 @@ class MessageProcessorTest {
         when(message.getBody()).thenReturn(BinaryData.fromString("invalid data"));
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
                 .isInstanceOf(MalformedMessageException.class)
-                .hasMessageContaining(MISSING_MESSAGE_TYPE);
+                .hasMessageContaining(MessageProcessor.MISSING_MESSAGE_TYPE);
     }
 
     @Test
@@ -144,7 +126,7 @@ class MessageProcessorTest {
         Map<String, Object> applicationProperties = new HashMap<>();
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
-            .hasMessageContaining(MISSING_MESSAGE_TYPE);
+            .hasMessageContaining(MessageProcessor.MISSING_MESSAGE_TYPE);
     }
 
     @Test
@@ -153,7 +135,7 @@ class MessageProcessorTest {
         applicationProperties.put(MESSAGE_TYPE, "invalid message type");
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
-            .hasMessageContaining(UNSUPPORTED_MESSAGE_TYPE);
+            .hasMessageContaining(MessageProcessor.UNSUPPORTED_MESSAGE_TYPE);
     }
 
     @Test
@@ -162,6 +144,95 @@ class MessageProcessorTest {
         applicationProperties.put(MESSAGE_TYPE, MessageType.DELETE_HEARING);
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
-            .hasMessageContaining(MISSING_CASE_LISTING_ID);
+            .hasMessageContaining(MessageProcessor.MISSING_CASE_LISTING_ID);
     }
+
+    @Test
+    void shouldProcessPendingRequest() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideNonRetryableExceptions")
+    void shouldThrowNonRetryableExceptionWhileProcessPendingRequest(Exception exception) {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(),
+                                                           PendingStatusType.EXCEPTION.name());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideRetryableExceptions")
+    void shouldThrowRetryableExceptionWhileProcessPendingRequest(Exception exception) {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).markRequestAsPending(eq(pendingRequest.getId()),
+                                                           eq(pendingRequest.getRetryCount()),
+                                                           any());
+    }
+
+    private static Stream<Arguments> provideRetryableExceptions() {
+        return Stream.of(
+            Arguments.of(new JsonProcessingRuntimeException(new JsonProcessingException("N/A") {})),
+            Arguments.of(new MalformedMessageException("N/A"))
+        );
+    }
+
+    private static Stream<Arguments> provideNonRetryableExceptions() {
+        return Stream.of(
+            Arguments.of(new BadFutureHearingRequestException("N/A", null)),
+            Arguments.of(new AuthenticationException("N/A")),
+            Arguments.of(new ResourceNotFoundException("N/A"))
+        );
+    }
+
+    private static Stream<Arguments> provideMessageTypes() {
+        return Stream.of(
+            Arguments.of(MessageType.REQUEST_HEARING.name(),
+                         (Runnable) () -> verify(futureHearingRepository).createHearingRequest(any())),
+            Arguments.of(MessageType.AMEND_HEARING.name(),
+                         (Runnable) () -> verify(futureHearingRepository).amendHearingRequest(any(), any())),
+            Arguments.of(MessageType.DELETE_HEARING.name(),
+                         (Runnable) () -> verify(futureHearingRepository).deleteHearingRequest(any(), any()))
+        );
+    }
+
+    private PendingRequestEntity generatePendingRequest() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(1L);
+        pendingRequest.setHearingId(2000000001L);
+        pendingRequest.setMessageType("REQUEST_HEARING");
+        pendingRequest.setMessage("{\"test\": \"name\"}");
+        pendingRequest.setRetryCount(0);
+        return pendingRequest;
+    }
+
 }
