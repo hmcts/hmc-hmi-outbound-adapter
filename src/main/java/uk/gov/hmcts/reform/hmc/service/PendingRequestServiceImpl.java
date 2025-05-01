@@ -67,7 +67,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             log.info("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
                       pendingRequest.getHearingId());
             markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.EXCEPTION.name());
-            log.info("Submitted time of request with ID {} is {} hours later than before.",
+            log.error("Submitted time of request with ID {} is {} hours later than before.",
                       pendingRequest.getHearingId(), exceptionLimitInHours);
             result = true;
         }
