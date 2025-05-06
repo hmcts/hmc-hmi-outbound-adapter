@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
@@ -61,6 +62,11 @@ public class HearingEntity extends BaseEntity implements Serializable {
 
     @Column(name = "deployment_id")
     private String deploymentId;
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedDateTime = LocalDateTime.now();
+    }
 
     public CaseHearingRequestEntity getLatestCaseHearingRequest() {
         return getCaseHearingRequests().stream()

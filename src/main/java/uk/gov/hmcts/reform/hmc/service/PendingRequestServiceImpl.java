@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
@@ -16,6 +15,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
+import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
@@ -66,7 +66,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         if (hoursElapsed >= exceptionLimitInHours) {
             log.debug("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
                       pendingRequest.getHearingId());
-            markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.EXCEPTION.name());
+            markRequestWithGivenStatus(pendingRequest.getId(), EXCEPTION.name());
             log.error("Submitted time of request with ID {} is {} hours later than before.",
                       pendingRequest.getHearingId(), exceptionLimitInHours);
             result = true;
@@ -193,7 +193,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     private void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
                                            String errorDescription) {
-        log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, "EXCEPTION");
+        log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, EXCEPTION.name());
     }
 
 }
