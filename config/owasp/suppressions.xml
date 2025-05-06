@@ -8,6 +8,8 @@
         CVE-2024-6763 refer [https://tools.hmcts.net/jira/browse/CCD-6281]
         CVE-2024-22201 refer [https://tools.hmcts.net/jira/browse/CCD-6284]
         CVE-2024-8184 refer [https://tools.hmcts.net/jira/browse/CCD-6282]
+        CVE-2025-31650 refer [https://tools.hmcts.net/jira/browse/CCD-6353]
+        CVE-2025-31651 refer [https://tools.hmcts.net/jira/browse/CCD-6353]
     </notes>
     <cve>CVE-2025-24813</cve>
     <cve>CVE-2025-25193</cve>
@@ -16,5 +18,7 @@
     <cve>CVE-2024-6763</cve>
     <cve>CVE-2024-22201</cve>
     <cve>CVE-2024-8184</cve>
+    <cve>CVE-2025-31650</cve>
+    <cve>CVE-2025-31651</cve>
   </suppress>
 </suppressions>
