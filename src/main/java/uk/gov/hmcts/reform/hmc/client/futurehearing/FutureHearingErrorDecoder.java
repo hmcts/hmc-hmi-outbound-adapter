@@ -28,10 +28,13 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
     public Exception decode(String methodKey, Response response) {
         ErrorDetails errorDetails = getResponseBody(response, ErrorDetails.class)
             .orElseThrow(() -> new AuthenticationException(SERVER_ERROR));
-        log.error(String.format("Response from FH failed with HTTP code %s, error code %s, error message '%s'",
+        log.error(String.format("Response from FH failed with HTTP code %s, error code %s, error message '%s', " +
+                                    "AuthErrorCode %s, AuthErrorMessage '%s'",
                   response.status(),
                   errorDetails.getErrorCode(),
-                  errorDetails.getErrorDescription()));
+                  errorDetails.getErrorDescription(),
+                  errorDetails.getError_codes().get(0),
+                  errorDetails.getError_description()));
 
         if (log.isDebugEnabled()) {
             try (InputStream is = response.body().asInputStream()) {
@@ -53,11 +56,11 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
             case 400:
                 return new BadFutureHearingRequestException(INVALID_REQUEST, errorDetails);
             case 401:
-                return new AuthenticationException(INVALID_SECRET);
+                return new AuthenticationException(INVALID_SECRET, errorDetails);
             case 404:
                 return new ResourceNotFoundException(REQUEST_NOT_FOUND);
             default:
-                return new AuthenticationException(SERVER_ERROR);
+                return new AuthenticationException(SERVER_ERROR, errorDetails);
         }
     }
 

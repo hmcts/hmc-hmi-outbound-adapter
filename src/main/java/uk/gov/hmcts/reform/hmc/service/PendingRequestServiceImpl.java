@@ -3,10 +3,14 @@ package uk.gov.hmcts.reform.hmc.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jetty.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
@@ -129,19 +133,38 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
-        log.error("Error processing message with Hearing id {} exception was {}",
-                  hearingId, exception.getMessage());
+        JsonNode errorDescription = null;
         Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
         if (hearingResult.isPresent()) {
             HearingEntity hearingEntity = hearingResult.get();
-            hearingEntity.setStatus("EXCEPTION");
-            hearingEntity.setErrorDescription(exception.getMessage());
+            hearingEntity.setStatus(EXCEPTION.name());
+            if (exception instanceof ResourceNotFoundException) {
+                ResourceNotFoundException resourceNotFoundException =  (ResourceNotFoundException) exception;
+                log.error("Error processing message with Hearing id {} exception was {}",
+                          hearingId, resourceNotFoundException.getMessage());
+                hearingEntity.setErrorCode(HttpStatus.NOT_FOUND_404);
+                hearingEntity.setErrorDescription(resourceNotFoundException.getMessage());
+                errorDescription = objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
+            } else if (exception instanceof AuthenticationException) {
+                AuthenticationException authException = (AuthenticationException) exception;
+                log.error("Error processing message with Hearing id {} exception was {}",
+                          hearingId, authException.getErrorDetails().getError_description());
+                hearingEntity.setErrorCode(authException.getErrorDetails().getError_codes().get(0));
+                hearingEntity.setErrorDescription(authException.getErrorDetails().getError_description());
+                errorDescription = objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
+            } else if (exception instanceof BadFutureHearingRequestException){
+                BadFutureHearingRequestException badRequestException = (BadFutureHearingRequestException) exception;
+                log.error("Error processing message with Hearing id {} exception was {}",
+                          hearingId, badRequestException.getErrorDetails().getErrorDescription());
+                hearingEntity.setErrorDescription(badRequestException.getErrorDetails().getErrorDescription());
+                hearingEntity.setErrorCode(badRequestException.getErrorDetails().getErrorCode());
+                errorDescription = objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
+            }
             hearingRepository.save(hearingEntity);
             logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                       hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
                                       hearingEntity.getErrorDescription());
 
-            JsonNode errorDescription = objectMapper.convertValue(exception.getMessage(), JsonNode.class);
             hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
                                                                             LA_RESPONSE, LA_FAILURE_STATUS,
                                                                             FH, HMC, errorDescription);
