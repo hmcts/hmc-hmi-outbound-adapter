@@ -26,9 +26,9 @@ public class ErrorDetails {
     private String errorLinkId;
 
     @JsonProperty("error_codes")
-    private List<Integer> error_codes ;
+    private List<Integer> authErrorCodes;
 
     @JsonProperty("error_description")
-    private String error_description;
+    private String authErrorDescription;
 
 }

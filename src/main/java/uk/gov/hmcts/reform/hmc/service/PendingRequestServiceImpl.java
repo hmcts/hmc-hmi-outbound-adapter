@@ -148,11 +148,11 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             } else if (exception instanceof AuthenticationException) {
                 AuthenticationException authException = (AuthenticationException) exception;
                 log.error("Error processing message with Hearing id {} exception was {}",
-                          hearingId, authException.getErrorDetails().getError_description());
-                hearingEntity.setErrorCode(authException.getErrorDetails().getError_codes().get(0));
-                hearingEntity.setErrorDescription(authException.getErrorDetails().getError_description());
+                          hearingId, authException.getErrorDetails().getAuthErrorDescription());
+                hearingEntity.setErrorCode(authException.getErrorDetails().getAuthErrorCodes().get(0));
+                hearingEntity.setErrorDescription(authException.getErrorDetails().getAuthErrorDescription());
                 errorDescription = objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
-            } else if (exception instanceof BadFutureHearingRequestException){
+            } else if (exception instanceof BadFutureHearingRequestException) {
                 BadFutureHearingRequestException badRequestException = (BadFutureHearingRequestException) exception;
                 log.error("Error processing message with Hearing id {} exception was {}",
                           hearingId, badRequestException.getErrorDetails().getErrorDescription());
@@ -160,6 +160,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                 hearingEntity.setErrorCode(badRequestException.getErrorDetails().getErrorCode());
                 errorDescription = objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
             }
+            hearingEntity.setUpdatedDateTime(LocalDateTime.now());
             hearingRepository.save(hearingEntity);
             logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                       hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
