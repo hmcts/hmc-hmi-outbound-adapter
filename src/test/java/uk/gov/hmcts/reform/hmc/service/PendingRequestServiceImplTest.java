@@ -11,6 +11,8 @@ import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
@@ -216,7 +218,9 @@ class PendingRequestServiceImplTest {
         caseHearingRequest.setHmctsServiceCode("serviceCode");
         hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
         Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
-        Exception exception = new Exception(EXCEPTION_MESSAGE);
+        Exception exception = new BadFutureHearingRequestException(EXCEPTION_MESSAGE,TestingUtil.generateErrorDetails(
+            EXCEPTION_MESSAGE, 400));
+
         when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
 
         pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
@@ -224,6 +228,26 @@ class PendingRequestServiceImplTest {
         verify(hearingRepository, times(1)).save(any());
         assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
         assertThat(hearingEntity.getErrorDescription()).isEqualTo(EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    void shouldUpdateHearingStatusThrowsAuthenticationException() {
+        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
+        caseHearingRequest.setCaseReference("12345");
+        caseHearingRequest.setHmctsServiceCode("serviceCode");
+        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
+        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
+        Exception exception = new AuthenticationException("Test Auth Exception", TestingUtil.generateAuthErrorDetails(
+            "Test Auth Exception", 1234 ));
+
+        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
+
+        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
+
+        verify(hearingRepository, times(1)).save(any());
+        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo("Test Auth Exception");
     }
 
     @Test
