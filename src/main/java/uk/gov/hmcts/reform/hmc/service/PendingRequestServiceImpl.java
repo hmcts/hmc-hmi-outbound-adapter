@@ -50,6 +50,9 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     private final ObjectMapper objectMapper;
     private final PendingRequestRepository pendingRequestRepository;
 
+    private static final String ERROR_PROCESSING_MESSAGE = "Error processing message with Hearing id {} "
+        + "exception was {}";
+
     public PendingRequestServiceImpl(ObjectMapper objectMapper,
                                      PendingRequestRepository pendingRequestRepository,
                                      HearingRepository hearingRepository,
@@ -138,24 +141,20 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         if (hearingResult.isPresent()) {
             HearingEntity hearingEntity = hearingResult.get();
             hearingEntity.setStatus(EXCEPTION.name());
-            if (exception instanceof ResourceNotFoundException) {
-                ResourceNotFoundException resourceNotFoundException =  (ResourceNotFoundException) exception;
-                log.error("Error processing message with Hearing id {} exception was {}",
-                          hearingId, resourceNotFoundException.getMessage());
+            if (exception instanceof ResourceNotFoundException resourceNotFoundException) {
+                log.error(ERROR_PROCESSING_MESSAGE, hearingId, resourceNotFoundException.getMessage());
                 hearingEntity.setErrorCode(HttpStatus.NOT_FOUND_404);
                 hearingEntity.setErrorDescription(resourceNotFoundException.getMessage());
                 errorDescription = objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
-            } else if (exception instanceof AuthenticationException) {
-                AuthenticationException authException = (AuthenticationException) exception;
-                log.error("Error processing message with Hearing id {} exception was {}",
-                          hearingId, authException.getErrorDetails().getAuthErrorDescription());
+            } else if (exception instanceof AuthenticationException authException) {
+                log.error(ERROR_PROCESSING_MESSAGE, hearingId,
+                          authException.getErrorDetails().getAuthErrorDescription());
                 hearingEntity.setErrorCode(authException.getErrorDetails().getAuthErrorCodes().get(0));
                 hearingEntity.setErrorDescription(authException.getErrorDetails().getAuthErrorDescription());
                 errorDescription = objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
-            } else if (exception instanceof BadFutureHearingRequestException) {
-                BadFutureHearingRequestException badRequestException = (BadFutureHearingRequestException) exception;
-                log.error("Error processing message with Hearing id {} exception was {}",
-                          hearingId, badRequestException.getErrorDetails().getErrorDescription());
+            } else if (exception instanceof BadFutureHearingRequestException badRequestException) {
+                log.error(ERROR_PROCESSING_MESSAGE, hearingId,
+                          badRequestException.getErrorDetails().getErrorDescription());
                 hearingEntity.setErrorDescription(badRequestException.getErrorDetails().getErrorDescription());
                 hearingEntity.setErrorCode(badRequestException.getErrorDetails().getErrorCode());
                 errorDescription = objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);

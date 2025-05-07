@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.service;
 
+import ch.qos.logback.classic.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
@@ -53,6 +55,10 @@ class PendingRequestServiceImplTest {
     private PendingRequestServiceImpl pendingRequestService;
 
     private static final String EXCEPTION_MESSAGE = "Test Exception";
+
+    private static final String EXPECTED_ERROR = "Error processing message with Hearing id {}";
+
+    private final Logger logger = (Logger) LoggerFactory.getLogger(PendingRequestServiceImplTest.class);
 
     @Test
     void shouldReturnTrueWhenExceptionLimitExceeded() {
@@ -266,6 +272,7 @@ class PendingRequestServiceImplTest {
         pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
 
         verify(hearingRepository, times(1)).save(any());
+        assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
         assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
         assertThat(hearingEntity.getErrorDescription()).isEqualTo(EXCEPTION_MESSAGE);
     }
