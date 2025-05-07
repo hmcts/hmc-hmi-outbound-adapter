@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_UPDATE_HEARING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
@@ -49,9 +50,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     private final HearingStatusAuditService hearingStatusAuditService;
     private final ObjectMapper objectMapper;
     private final PendingRequestRepository pendingRequestRepository;
-
-    private static final String ERROR_PROCESSING_MESSAGE = "Error processing message with Hearing id {} "
-        + "exception was {}";
 
     public PendingRequestServiceImpl(ObjectMapper objectMapper,
                                      PendingRequestRepository pendingRequestRepository,
@@ -142,18 +140,18 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             HearingEntity hearingEntity = hearingResult.get();
             hearingEntity.setStatus(EXCEPTION.name());
             if (exception instanceof ResourceNotFoundException resourceNotFoundException) {
-                log.error(ERROR_PROCESSING_MESSAGE, hearingId, resourceNotFoundException.getMessage());
+                log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, hearingId, resourceNotFoundException.getMessage());
                 hearingEntity.setErrorCode(HttpStatus.NOT_FOUND_404);
                 hearingEntity.setErrorDescription(resourceNotFoundException.getMessage());
                 errorDescription = objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
             } else if (exception instanceof AuthenticationException authException) {
-                log.error(ERROR_PROCESSING_MESSAGE, hearingId,
+                log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, hearingId,
                           authException.getErrorDetails().getAuthErrorDescription());
                 hearingEntity.setErrorCode(authException.getErrorDetails().getAuthErrorCodes().get(0));
                 hearingEntity.setErrorDescription(authException.getErrorDetails().getAuthErrorDescription());
                 errorDescription = objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
             } else if (exception instanceof BadFutureHearingRequestException badRequestException) {
-                log.error(ERROR_PROCESSING_MESSAGE, hearingId,
+                log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, hearingId,
                           badRequestException.getErrorDetails().getErrorDescription());
                 hearingEntity.setErrorDescription(badRequestException.getErrorDetails().getErrorDescription());
                 hearingEntity.setErrorCode(badRequestException.getErrorDetails().getErrorCode());
