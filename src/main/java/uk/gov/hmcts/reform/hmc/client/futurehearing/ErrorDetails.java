@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
@@ -14,7 +15,9 @@ import java.util.List;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ErrorDetails {
+public class ErrorDetails implements Serializable {
+
+    private static final long serialVersionUID = 1440867514864615134L;
 
     @JsonProperty("errCode")
     private Integer errorCode;
