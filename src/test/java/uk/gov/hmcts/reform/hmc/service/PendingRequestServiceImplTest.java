@@ -239,7 +239,7 @@ class PendingRequestServiceImplTest {
         hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
         Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
         Exception exception = new AuthenticationException("Test Auth Exception", TestingUtil.generateAuthErrorDetails(
-            "Test Auth Exception", 1234 ));
+            "Test Auth Exception", 1234));
 
         when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
 

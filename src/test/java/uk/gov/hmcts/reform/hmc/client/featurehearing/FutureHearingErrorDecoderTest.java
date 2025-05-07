@@ -41,8 +41,8 @@ class FutureHearingErrorDecoderTest {
         + "    \"exception\": null\n"
         + "}";
     private static final String EXPECTED_ERROR = "Response from FH failed with HTTP code %s, error code 1000, "
-        + "error message ''300' is not a valid value for 'caseCourt.locationId''," +
-        " AuthErrorCode null, AuthErrorMessage 'null'";
+        + "error message ''300' is not a valid value for 'caseCourt.locationId'',"
+        +  " AuthErrorCode null, AuthErrorMessage 'null'";
     private RequestTemplate template;
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
