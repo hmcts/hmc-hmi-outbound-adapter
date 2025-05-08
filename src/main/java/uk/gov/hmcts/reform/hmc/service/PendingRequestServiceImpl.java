@@ -17,7 +17,9 @@ import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_UPDATE_HEARING_MESSAGE;
@@ -134,41 +136,73 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
-        JsonNode errorDescription = null;
+        JsonNode errorDetails = null;
         Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
-        if (hearingResult.isPresent()) {
-            HearingEntity hearingEntity = hearingResult.get();
-            hearingEntity.setStatus(EXCEPTION.name());
-            if (exception instanceof ResourceNotFoundException resourceNotFoundException) {
-                log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, hearingId, resourceNotFoundException.getMessage());
-                hearingEntity.setErrorCode(HttpStatus.NOT_FOUND_404);
-                hearingEntity.setErrorDescription(resourceNotFoundException.getMessage());
-                errorDescription = objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
-            } else if (exception instanceof AuthenticationException authException) {
-                log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, hearingId,
-                          authException.getErrorDetails().getAuthErrorDescription());
-                hearingEntity.setErrorCode(authException.getErrorDetails().getAuthErrorCodes().get(0));
-                hearingEntity.setErrorDescription(authException.getErrorDetails().getAuthErrorDescription());
-                errorDescription = objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
-            } else if (exception instanceof BadFutureHearingRequestException badRequestException) {
-                log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, hearingId,
-                          badRequestException.getErrorDetails().getErrorDescription());
-                hearingEntity.setErrorDescription(badRequestException.getErrorDetails().getErrorDescription());
-                hearingEntity.setErrorCode(badRequestException.getErrorDetails().getErrorCode());
-                errorDescription = objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
-            }
-            hearingEntity.setUpdatedDateTime(LocalDateTime.now());
-            hearingRepository.save(hearingEntity);
-            logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
-                                      hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
-                                      hearingEntity.getErrorDescription());
-
-            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
-                                                                            LA_RESPONSE, LA_FAILURE_STATUS,
-                                                                            FH, HMC, errorDescription);
-        } else {
+        if (hearingResult.isEmpty()) {
             log.error("Hearing id {} not found", hearingId);
+            return;
         }
+        HearingEntity hearingEntity = hearingResult.get();
+        hearingEntity.setStatus(EXCEPTION.name());
+        hearingEntity.setUpdatedDateTime(LocalDateTime.now());
+
+        BiConsumer<Exception, HearingEntity> handler = EXCEPTION_HANDLERS.get(exception.getClass());
+        if (handler != null) {
+            handler.accept(exception, hearingEntity);
+            errorDetails = extractErrorDetails(exception);
+        } else {
+            log.error("Unhandled exception type for hearing id {}, exception {}, errorMessage {} ", hearingId,
+                      exception.getClass(), exception.getMessage());
+        }
+        hearingRepository.save(hearingEntity);
+        logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
+                                  hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
+                                  hearingEntity.getErrorDescription());
+
+        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
+                          LA_RESPONSE, LA_FAILURE_STATUS,
+                          FH, HMC, objectMapper.convertValue(errorDetails, JsonNode.class));
+    }
+
+    private static final Map<Class<? extends Exception>, BiConsumer<Exception, HearingEntity>> EXCEPTION_HANDLERS =
+        Map.of(
+        ResourceNotFoundException.class, (ex, entity) ->
+            handleResourceNotFoundException((ResourceNotFoundException) ex, entity),
+        AuthenticationException.class, (ex, entity) ->
+            handleAuthenticationException((AuthenticationException) ex, entity),
+        BadFutureHearingRequestException.class, (ex, entity) ->
+            handleBadFutureHearingRequestException((BadFutureHearingRequestException) ex, entity)
+    );
+
+    private static void handleResourceNotFoundException(ResourceNotFoundException ex, HearingEntity entity) {
+        log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(), ex.getMessage());
+        entity.setErrorCode(HttpStatus.NOT_FOUND_404);
+        entity.setErrorDescription(ex.getMessage());
+    }
+
+    private static void handleAuthenticationException(AuthenticationException ex, HearingEntity entity) {
+        log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(),
+                  ex.getErrorDetails().getAuthErrorDescription());
+        entity.setErrorCode(ex.getErrorDetails().getAuthErrorCodes().get(0));
+        entity.setErrorDescription(ex.getErrorDetails().getAuthErrorDescription());
+    }
+
+    private static void handleBadFutureHearingRequestException(BadFutureHearingRequestException ex,
+                                                               HearingEntity entity) {
+        log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(), ex.getErrorDetails().getErrorDescription());
+        entity.setErrorCode(ex.getErrorDetails().getErrorCode());
+        entity.setErrorDescription(ex.getErrorDetails().getErrorDescription());
+    }
+
+    private JsonNode extractErrorDetails(Exception exception) {
+        if (exception instanceof ResourceNotFoundException resourceNotFoundException) {
+            return objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
+        } else if (exception instanceof AuthenticationException authException) {
+            return objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
+        } else if (exception instanceof BadFutureHearingRequestException badRequestException) {
+            return objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
+        }
+        return objectMapper.convertValue(exception.getMessage(), JsonNode.class);
     }
 
     public void escalatePendingRequests() {
