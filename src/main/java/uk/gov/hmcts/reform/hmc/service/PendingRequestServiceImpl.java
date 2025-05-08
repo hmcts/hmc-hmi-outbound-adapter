@@ -183,7 +183,9 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     private static void handleAuthenticationException(AuthenticationException ex, HearingEntity entity) {
         log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(),
                   ex.getErrorDetails().getAuthErrorDescription());
-        entity.setErrorCode(ex.getErrorDetails().getAuthErrorCodes().get(0));
+        if (ex.getErrorDetails().getAuthErrorCodes() != null && !ex.getErrorDetails().getAuthErrorCodes().isEmpty()) {
+            entity.setErrorCode(ex.getErrorDetails().getAuthErrorCodes().get(0));
+        }
         entity.setErrorDescription(ex.getErrorDetails().getAuthErrorDescription());
     }
 
