@@ -1,16 +1,25 @@
 package uk.gov.hmcts.reform.hmc.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
@@ -20,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -29,6 +39,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_UPDATE_HEARING_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 
 @DisplayName("PendingRequestServiceImpl")
 @ExtendWith(MockitoExtension.class)
@@ -49,7 +61,9 @@ class PendingRequestServiceImplTest {
     @InjectMocks
     private PendingRequestServiceImpl pendingRequestService;
 
-    private static final String EXCEPTION_MESSAGE = "Test Exception";
+    private static final String TEST_EXCEPTION_MESSAGE = "Test Exception";
+
+    private final Logger logger = (Logger) LoggerFactory.getLogger(PendingRequestServiceImpl.class);
 
     @Test
     void shouldReturnTrueWhenExceptionLimitExceeded() {
@@ -216,14 +230,61 @@ class PendingRequestServiceImplTest {
         caseHearingRequest.setHmctsServiceCode("serviceCode");
         hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
         Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
-        Exception exception = new Exception(EXCEPTION_MESSAGE);
+        Exception exception = new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE,
+                          TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE, 400));
+
         when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
 
         pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
 
         verify(hearingRepository, times(1)).save(any());
         assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
-        assertThat(hearingEntity.getErrorDescription()).isEqualTo(EXCEPTION_MESSAGE);
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo(TEST_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    void shouldUpdateHearingStatusThrowsAuthenticationException() {
+        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
+        caseHearingRequest.setCaseReference("12345");
+        caseHearingRequest.setHmctsServiceCode("serviceCode");
+        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
+        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+
+        Exception exception = new AuthenticationException("Test Auth Exception", TestingUtil.generateAuthErrorDetails(
+            "Test Auth Exception", 1234));
+
+        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
+
+        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
+
+        verifyLogErrors(listAppender);
+        verify(hearingRepository, times(1)).save(any());
+        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo("Test Auth Exception");
+    }
+
+    @Test
+    void shouldUpdateHearingStatusThrowsResourceNotFoundException() {
+        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
+        caseHearingRequest.setCaseReference("12345");
+        caseHearingRequest.setHmctsServiceCode("serviceCode");
+        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
+        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+        Exception exception = new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE);
+
+        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
+
+        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
+        verifyLogErrors(listAppender);
+
+        verify(hearingRepository, times(1)).save(any());
+        assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
+        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo(TEST_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -245,6 +306,21 @@ class PendingRequestServiceImplTest {
         pendingRequest.setId(1L);
         pendingRequest.setHearingId(2000000001L);
         return pendingRequest;
+    }
+
+    private static void verifyLogErrors(ListAppender<ILoggingEvent> listAppender) {
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(2, logsList.size());
+        assertEquals(Level.ERROR, logsList.get(0).getLevel());
+        assertEquals(String.format(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE),logsList.get(0).getMessage());
+        assertEquals(String.format(EXCEPTION_MESSAGE), logsList.get(1).getMessage());
+    }
+
+    private @NotNull ListAppender<ILoggingEvent> getILoggingEventListAppender() {
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+        return listAppender;
     }
 
 }

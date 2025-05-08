@@ -30,4 +30,6 @@ public final class Constants {
     public static final String LA_RESPONSE = "list-assist-response";
     public static final String LA_FAILURE_STATUS = "400";
     public static final String CREATE_HEARING_REQUEST = "create-hearing-request";
+    public static final String ERROR_PROCESSING_UPDATE_HEARING_MESSAGE = "Error processing message with Hearing id {} "
+        + "exception was {}";
 }
