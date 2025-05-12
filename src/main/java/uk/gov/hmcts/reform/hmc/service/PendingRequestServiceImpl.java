@@ -22,12 +22,16 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_UPDATE_HEARING_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ESCALATE_PENDING_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_FAILURE_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_RESPONSE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_PROCESSOR;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.PENDING_REQUEST;
 
 @Slf4j
 @Service
@@ -174,6 +178,53 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             handleBadFutureHearingRequestException((BadFutureHearingRequestException) ex, entity)
     );
 
+    public void escalatePendingRequests() {
+        log.debug("escalatePendingRequests()");
+
+        try {
+            List<PendingRequestEntity> pendingRequests =
+                pendingRequestRepository.findRequestsForEscalation(getIntervalUnits(escalationWaitInterval),
+                                                                   getIntervalMeasure(escalationWaitInterval));
+            pendingRequests.forEach(this::escalatePendingRequest);
+        } catch (Exception e) {
+            log.error("Failed to escalate Pending Requests");
+        }
+
+    }
+
+    public void deleteCompletedPendingRequests() {
+        log.debug("deleteCompletedPendingRequests({})", deletionWaitInterval);
+        try {
+            int countOfDeletedRecords = pendingRequestRepository.deleteCompletedRecords(
+                getIntervalUnits(deletionWaitInterval), getIntervalMeasure(deletionWaitInterval));
+            log.debug("{} Completed pendingRequests deleted", countOfDeletedRecords);
+        } catch (Exception e) {
+            log.error("Failed to deleteCompletedRecords");
+        }
+    }
+
+    protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
+        log.debug("escalatePendingRequests");
+        pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
+
+        log.error(ERROR_PROCESSING_MESSAGE, MESSAGE_PROCESSOR, PENDING_REQUEST,
+                  ESCALATE_PENDING_REQUEST, pendingRequest.getHearingId());
+
+    }
+
+    protected Long getIntervalUnits(String envVarInterval) {
+        return Long.valueOf(envVarInterval.split(",")[0]);
+    }
+
+    protected String getIntervalMeasure(String envVarInterval) {
+        return envVarInterval.split(",")[1];
+    }
+
+    private void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
+                                           String errorDescription) {
+        log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, EXCEPTION.name());
+    }
+
     private static void handleResourceNotFoundException(ResourceNotFoundException ex, HearingEntity entity) {
         log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(), ex.getMessage());
         entity.setErrorCode(HttpStatus.NOT_FOUND_404);
@@ -205,52 +256,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             return objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
         }
         return objectMapper.convertValue(exception.getMessage(), JsonNode.class);
-    }
-
-    public void escalatePendingRequests() {
-        log.debug("escalatePendingRequests()");
-
-        try {
-            List<PendingRequestEntity> pendingRequests =
-                pendingRequestRepository.findRequestsForEscalation(getIntervalUnits(escalationWaitInterval),
-                                                                   getIntervalMeasure(escalationWaitInterval));
-            pendingRequests.forEach(this::escalatePendingRequest);
-        } catch (Exception e) {
-            log.error("Failed to escalate Pending Requests");
-        }
-
-    }
-
-    public void deleteCompletedPendingRequests() {
-        log.debug("deleteCompletedPendingRequests({})", deletionWaitInterval);
-        try {
-            int countOfDeletedRecords = pendingRequestRepository.deleteCompletedRecords(
-                getIntervalUnits(deletionWaitInterval), getIntervalMeasure(deletionWaitInterval));
-            log.debug("{} Completed pendingRequests deleted", countOfDeletedRecords);
-        } catch (Exception e) {
-            log.error("Failed to deleteCompletedRecords");
-        }
-    }
-
-    protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
-        log.debug("escalatePendingRequests");
-        pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
-
-        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing ID:{}.",
-                  "MessageProcessor", pendingRequest, "escalatePendingRequest", pendingRequest.getHearingId());
-    }
-
-    protected Long getIntervalUnits(String envVarInterval) {
-        return Long.valueOf(envVarInterval.split(",")[0]);
-    }
-
-    protected String getIntervalMeasure(String envVarInterval) {
-        return envVarInterval.split(",")[1];
-    }
-
-    private void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
-                                           String errorDescription) {
-        log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, EXCEPTION.name());
     }
 
 }
