@@ -209,8 +209,8 @@ class MessageProcessorTest {
     private static Stream<Arguments> provideNonRetryableExceptions() {
         return Stream.of(
             Arguments.of(new BadFutureHearingRequestException("N/A", null)),
-            Arguments.of(new AuthenticationException("N/A")),
-            Arguments.of(new ResourceNotFoundException("N/A"))
+            Arguments.of(new AuthenticationException("N/A", null)),
+            Arguments.of(new ResourceNotFoundException("N/A , null"))
         );
     }
 
