@@ -40,7 +40,6 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
         @Param("pendingWaitValue") Long pendingWaitValue,
         @Param("pendingWaitInterval") String pendingWaitInterval);
 
-
     @Modifying
     @Query("UPDATE PendingRequestEntity pr SET pr.status = :status WHERE pr.id = :id")
     void markRequestWithGivenStatus(Long id, String status);
