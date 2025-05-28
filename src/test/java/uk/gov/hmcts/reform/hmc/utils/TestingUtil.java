@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.hmc.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpStatus;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
@@ -77,6 +78,20 @@ public class TestingUtil {
         entity.setHearingRequestReceivedDateTime(LocalDateTime.parse("2020-08-10T12:20:00"));
         return entity;
 
+    }
+
+    public static ErrorDetails generateErrorDetails(String description, Integer code) {
+        ErrorDetails errorDetails = new ErrorDetails();
+        errorDetails.setErrorDescription(description);
+        errorDetails.setErrorCode(code);
+        return errorDetails;
+    }
+
+    public static ErrorDetails generateAuthErrorDetails(String description, Integer code) {
+        ErrorDetails errorDetails = new ErrorDetails();
+        errorDetails.setAuthErrorCodes(List.of(code));
+        errorDetails.setAuthErrorDescription(description);
+        return errorDetails;
     }
 
 }
