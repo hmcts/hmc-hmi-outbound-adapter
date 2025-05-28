@@ -97,43 +97,46 @@ public class MessageProcessor {
         if (!pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
             && pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
 
-
             pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
-
-            pendingRequestService.markRequestWithGivenStatus(
-                pendingRequest.getId(),
-                PendingStatusType.PROCESSING.name()
-            );
-
-            try {
-                processPendingMessage(convertMessage(pendingRequest.getMessage()),
-                                      pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
-                );
-            } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException exception) {
-                log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
+            log.debug("Locked record Id {} , {}", pendingRequest.getId(), pendingRequest.getStatus());
+            if (pendingRequest.getStatus().equals(PendingStatusType.PENDING.name())) {
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
-                    PendingStatusType.EXCEPTION.name()
+                    PendingStatusType.PROCESSING.name()
                 );
-                pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
-                return;
-            } catch (Exception ex) {
-                log.debug("Exception {}", ex.getMessage());
-                pendingRequestService.markRequestAsPending(
+                try {
+                    processPendingMessage(
+                        convertMessage(pendingRequest.getMessage()),
+                        pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
+                    );
+                } catch (AuthenticationException | BadFutureHearingRequestException
+                         | ResourceNotFoundException exception) {
+                    log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
+                    pendingRequestService.markRequestWithGivenStatus(
+                        pendingRequest.getId(),
+                        PendingStatusType.EXCEPTION.name()
+                    );
+                    pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
+                    return;
+                } catch (Exception ex) {
+                    log.debug("Exception {}", ex.getMessage());
+                    pendingRequestService.markRequestAsPending(
+                        pendingRequest.getId(),
+                        pendingRequest.getRetryCount(),
+                        pendingRequest.getLastTriedDateTime()
+                    );
+                    return;
+                }
+                pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
-                    pendingRequest.getRetryCount(),
-                    pendingRequest.getLastTriedDateTime()
+                    PendingStatusType.COMPLETED.name()
                 );
-                return;
+                log.debug("processPendingRequest(pendingRequest) completed");
+            } else {
+                log.debug("Pending request with id {}, status {}  is skipping processing",
+                          pendingRequest.getId(), pendingRequest.getStatus());
             }
-            pendingRequestService.markRequestWithGivenStatus(
-                pendingRequest.getId(),
-                PendingStatusType.COMPLETED.name()
-            );
-
         }
-
-        log.debug("processPendingRequest(pendingRequest) completed");
     }
 
     public void processMessage(ServiceBusReceivedMessageContext messageContext) {

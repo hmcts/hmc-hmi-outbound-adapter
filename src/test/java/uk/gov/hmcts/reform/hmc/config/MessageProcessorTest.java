@@ -73,7 +73,7 @@ class MessageProcessorTest {
     private JsonNode anyData;
 
     @BeforeEach
-    public void setUp() {
+     void setUp() {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
@@ -232,6 +232,7 @@ class MessageProcessorTest {
         pendingRequest.setMessageType("REQUEST_HEARING");
         pendingRequest.setMessage("{\"test\": \"name\"}");
         pendingRequest.setRetryCount(0);
+        pendingRequest.setStatus(PendingStatusType.PENDING.name());
         return pendingRequest;
     }
 
