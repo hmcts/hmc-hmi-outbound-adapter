@@ -3,8 +3,8 @@ package uk.gov.hmcts.reform.hmc.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jetty.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
@@ -227,7 +227,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     private static void handleResourceNotFoundException(ResourceNotFoundException ex, HearingEntity entity) {
         log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(), ex.getMessage());
-        entity.setErrorCode(HttpStatus.NOT_FOUND_404);
+        entity.setErrorCode(HttpStatus.NOT_FOUND.value());
         entity.setErrorDescription(ex.getMessage());
     }
 
