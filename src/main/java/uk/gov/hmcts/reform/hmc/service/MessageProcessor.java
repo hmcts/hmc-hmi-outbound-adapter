@@ -18,7 +18,6 @@ import uk.gov.hmcts.reform.hmc.config.MessageSenderConfiguration;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
-import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
@@ -26,24 +25,18 @@ import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
-import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_HMI_OUTBOUND_ADAPTER;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_ERROR;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.NOT_DEFINED;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.READ;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.SUCCESS_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.WITH_ERROR;
 
 @Slf4j
@@ -55,8 +48,6 @@ public class MessageProcessor {
     private final MessageSenderConfiguration messageSenderConfiguration;
     private final ObjectMapper objectMapper;
     private final PendingRequestService pendingRequestService;
-    private final HearingStatusAuditService hearingStatusAuditService;
-    private final HearingRepository hearingRepository;
     private static final String HEARING_ID = "hearing_id";
     public static final String MESSAGE_TYPE = "message_type";
     public static final String MISSING_CASE_LISTING_ID = "Message is missing custom header hearing_id";
@@ -69,16 +60,12 @@ public class MessageProcessor {
                             ServiceBusMessageErrorHandler errorHandler,
                             MessageSenderConfiguration messageSenderConfiguration,
                             ObjectMapper objectMapper,
-                            PendingRequestService pendingRequestService,
-                            HearingStatusAuditService hearingStatusAuditService,
-                            HearingRepository hearingRepository) {
+                            PendingRequestService pendingRequestService) {
         this.errorHandler = errorHandler;
         this.futureHearingRepository = futureHearingRepository;
         this.messageSenderConfiguration = messageSenderConfiguration;
         this.objectMapper = objectMapper;
         this.pendingRequestService = pendingRequestService;
-        this.hearingStatusAuditService = hearingStatusAuditService;
-        this.hearingRepository = hearingRepository;
     }
 
     @Value("${pending.request.pending-wait-in-milliseconds:120000}")
@@ -174,35 +161,28 @@ public class MessageProcessor {
             }
 
             String caseListingID;
-            Optional<HearingEntity> hearingEntity;
             try {
                 caseListingID = applicationProperties.get(HEARING_ID).toString();
             } catch (Exception exception) {
                 throw new MalformedMessageException(MISSING_CASE_LISTING_ID);
             }
-            hearingEntity = hearingRepository.findById(Long.valueOf(caseListingID));
+
             switch (messageType) {
                 case REQUEST_HEARING:
                     log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                               caseListingID, message);
-                    hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity.get(),
-                                               HMC_TO_HMI_AUTH, null, HMC, HMI , null);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
-                        .createHearingRequest(message), caseListingID);
+                        .createHearingRequest(message, caseListingID), caseListingID);
                     break;
                 case AMEND_HEARING:
                     log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
                               caseListingID, message);
-                    hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity.get(),
-                                              HMC_TO_HMI_AUTH, null, HMC, HMI , null);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
                         .amendHearingRequest(message, caseListingID), caseListingID);
                     break;
                 case DELETE_HEARING:
                     log.debug("Message of type DELETE_HEARING received for caseListingID: {} ,{}",
                               caseListingID, message);
-                    hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity.get(),
-                                               HMC_TO_HMI_AUTH, null, HMC, HMI , null);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
                         .deleteHearingRequest(message, caseListingID), caseListingID);
                     break;
@@ -234,7 +214,7 @@ public class MessageProcessor {
                 log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                           caseListingID, message);
                 processSyncFutureHearingResponse(() -> futureHearingRepository
-                    .createHearingRequest(message), caseListingID);
+                    .createHearingRequest(message, caseListingID), caseListingID);
                 break;
             case AMEND_HEARING:
                 log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
