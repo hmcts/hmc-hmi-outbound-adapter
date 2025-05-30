@@ -2,11 +2,12 @@ plugins {
   id 'application'
   id 'idea'
   id 'jacoco'
-  id 'io.spring.dependency-management' version '1.1.4'
-  id 'org.springframework.boot' version '3.1.12'
-  id 'com.github.ben-manes.versions' version '0.38.0'
-  id 'org.sonarqube' version '5.1.0.4882'
-  id 'uk.gov.hmcts.java' version '0.12.55'
+  id 'org.owasp.dependencycheck' version '12.1.1'
+  id 'io.spring.dependency-management' version '1.1.7'
+  id 'org.springframework.boot' version '3.2.12'
+  id 'com.github.ben-manes.versions' version '0.52.0'
+  id 'org.sonarqube' version '6.2.0.5505'
+  id 'uk.gov.hmcts.java' version '0.12.66'
   id 'com.github.spacialcircumstances.gradle-cucumber-reporting' version '0.1.25'
 }
 
@@ -32,7 +33,7 @@ configurations.configureEach {
   }
 
   tasks.withType(Copy).configureEach {
-    duplicatesStrategy 'exclude'
+    duplicatesStrategy = 'exclude'
   }
 }
 
@@ -70,10 +71,14 @@ sourceSets {
 idea {
   module {
     // config to allow Intellij to mark test source and resource files correctly to help linting tools
-    testSourceDirs += project.sourceSets.functionalTest.java.srcDirs
-    testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
-    testResourceDirs += project.sourceSets.functionalTest.resources.srcDirs
-    testResourceDirs += project.sourceSets.integrationTest.resources.srcDirs
+    testSources.from(
+      project.sourceSets.functionalTest.java.srcDirs,
+      project.sourceSets.integrationTest.java.srcDirs
+    )
+    testResources.from(
+      project.sourceSets.functionalTest.resources.srcDirs,
+      project.sourceSets.integrationTest.resources.srcDirs
+    )
   }
 }
 
@@ -225,8 +230,8 @@ def versions = [
   mapstruct       : '1.4.2.Final',
   reformLogging   : '6.1.4',
   springBoot      : springBoot.class.package.implementationVersion,
-  testcontainers  : '1.16.3',
-  jetty           : '11.0.18'
+  testcontainers  : '1.21.1',
+  jetty           : '11.0.25'
 ]
 
 ext {
@@ -280,7 +285,7 @@ repositories {
   mavenLocal()
   mavenCentral()
   maven {
-    url "https://jitpack.io"
+    url = "https://jitpack.io"
   }
 }
 
@@ -317,26 +322,26 @@ dependencies {
   implementation group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '7.4'
   implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.12'
   implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.12'
-  implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.9'
-  implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.9'
+  implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
+  implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.17'
   implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
 
-  implementation group: 'javax.inject', name: 'javax.inject', version: '1'
-  implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.17.4'
-  implementation group: 'com.azure', name: 'azure-core', version: '1.52.0'
-  implementation group: 'com.azure', name: 'azure-core-amqp', version: '2.9.9'
+  implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.1'
+  implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.17.11'
+  implementation group: 'com.azure', name: 'azure-core', version: '1.55.3'
+  implementation group: 'com.azure', name: 'azure-core-amqp', version: '2.9.16'
 
   implementation group: 'net.minidev', name: 'json-smart', version: '2.4.9'
 
   // CVE Fixes
   implementation group: 'org.glassfish', name: 'jakarta.el', version: '4.0.2' // CVE-2021-28170
-  implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13' // CVE-2020-13956
+  implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14' // CVE-2020-13956
   implementation group: 'com.squareup.okio', name: 'okio', version: '3.4.0' // CVE-2023-3635
   implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.6.1.202309021850-r' // CVE-2023-4759
   implementation group: 'net.minidev', name: 'json-smart', version: '2.4.11' // CVE-2023-1370
 
   implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.5'
-  implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
+  implementation group: 'commons-io', name: 'commons-io', version: '2.19.0'
 
 
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
@@ -362,10 +367,10 @@ dependencies {
   implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-client', version: versions.jetty
 
   // Explicitly set versions of io.netty components to resolve CVE-2021-37136 and CVE-2021-37137
-  implementation group: 'io.projectreactor.netty', name: 'reactor-netty-core', version: '1.1.15'
-  implementation group: 'io.projectreactor.netty', name: 'reactor-netty-http', version: '1.1.15'
+  implementation group: 'io.projectreactor.netty', name: 'reactor-netty-core', version: '1.2.6'
+  implementation group: 'io.projectreactor.netty', name: 'reactor-netty-http', version: '1.2.6'
 
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.5.5'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.6'
 
   testImplementation libraries.junit5
   testImplementation 'org.apiguardian:apiguardian-api:1.0.0' // Temporary fix see https://github.com/junit-team/junit5/issues/1065
@@ -390,15 +395,17 @@ dependencies {
   integrationTestImplementation sourceSets.test.runtimeClasspath
 
   functionalTestImplementation sourceSets.main.runtimeClasspath
-  functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '9.2.0'
+  functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '9.2.3'
   functionalTestImplementation libraries.junit5
 
-  testImplementation 'com.github.hmcts:fortify-client:1.3.0:all', {
+  testImplementation 'com.github.hmcts:fortify-client:1.4.8:all', {
     exclude group: 'org.slf4j', module: 'slf4j-api'
   }
 }
 
-mainClassName = 'uk.gov.hmcts.reform.hmc.Application'
+application {
+  mainClass = 'uk.gov.hmcts.reform.hmc.Application'
+}
 
 bootJar {
   getArchiveFileName().set(provider {
@@ -419,7 +426,7 @@ wrapper {
 }
 
 task fortifyScan(type: JavaExec)  {
-  main = "uk.gov.hmcts.fortifyclient.FortifyClientMainApp"
+  mainClass = "uk.gov.hmcts.fortifyclient.FortifyClientMainApp"
   classpath += sourceSets.test.runtimeClasspath
   jvmArgs = ['--add-opens=java.base/java.lang.reflect=ALL-UNNAMED']
 }
