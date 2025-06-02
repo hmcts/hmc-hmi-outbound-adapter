@@ -53,17 +53,27 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
     }
 
     @Override
-    public HearingManagementInterfaceResponse createHearingRequest(JsonNode data) {
-        log.debug("CreateHearingRequest sent to FH : {}", data.toString());
+    public HearingManagementInterfaceResponse createHearingRequest(JsonNode data, String caseListingRequestId) {
+        log.debug("In createHearingRequest process: {}", data.toString());
         String authorization = retrieveAuthToken().getAccessToken();
-        return hmiClient.requestHearing(BEARER + authorization, data);
+        HearingEntity hearingEntity = getHearingEntity(caseListingRequestId).get();
+        saveAuditDetails(hearingEntity, HMC_TO_HMI_AUTH_REQUEST, null, HMC, HMI);
+
+        log.debug("CreateHearingRequest sent to FH : {}", data.toString());
+        HearingManagementInterfaceResponse response = hmiClient.requestHearing(BEARER + authorization, data);
+        saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_RESPONSE, response.getResponseCode().toString(), HMI, HMC);
+        log.debug("Received response for CreateHearingRequest from FH with responseCode: {},description: {}",
+                  response.getResponseCode(),response.getDescription());
+        return response;
     }
 
     @Override
     public HearingManagementInterfaceResponse amendHearingRequest(JsonNode data, String caseListingRequestId) {
+        log.debug("In AmendHearingRequest process: {}", data.toString());
         String authorization = retrieveAuthToken().getAccessToken();
         HearingEntity hearingEntity = getHearingEntity(caseListingRequestId).get();
         saveAuditDetails(hearingEntity, HMC_TO_HMI_AUTH_REQUEST, null, HMC, HMI);
+
         log.debug("AmendHearingRequest sent to FH : {}", data.toString());
         HearingManagementInterfaceResponse response = hmiClient
             .amendHearing(caseListingRequestId, BEARER + authorization, data);
@@ -76,9 +86,19 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
 
     @Override
     public HearingManagementInterfaceResponse deleteHearingRequest(JsonNode data, String caseListingRequestId) {
-        log.debug("DeleteHearingRequest sent to FH : {}", data.toString());
+        log.debug("In deleteHearingRequest process: {}", data.toString());
         String authorization = retrieveAuthToken().getAccessToken();
-        return hmiClient.deleteHearing(caseListingRequestId, BEARER + authorization, data);
+        HearingEntity hearingEntity = getHearingEntity(caseListingRequestId).get();
+        saveAuditDetails(hearingEntity, HMC_TO_HMI_AUTH_REQUEST, null, HMC, HMI);
+
+        log.debug("DeleteHearingRequest sent to FH : {}", data.toString());
+        HearingManagementInterfaceResponse response = hmiClient
+            .deleteHearing(caseListingRequestId, BEARER + authorization, data);
+
+        saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_RESPONSE, response.getResponseCode().toString(), HMI, HMC);
+        log.debug("Received response for deleteHearingRequest from FH with responseCode: {},description: {}",
+                  response.getResponseCode(),response.getDescription());
+        return response;
     }
 
     private void saveAuditDetails(HearingEntity hearingEntity, String action, String responseCode,

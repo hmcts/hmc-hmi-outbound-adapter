@@ -80,7 +80,8 @@ class FutureHearingRepositoryTest {
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(hmiClient.requestHearing("Bearer test-token", anyData))
             .willReturn(expectedResponse);
-        HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData);
+        HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData,
+                                                                                            CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
     }
 

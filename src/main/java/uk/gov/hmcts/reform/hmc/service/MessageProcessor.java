@@ -172,7 +172,7 @@ public class MessageProcessor {
                     log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                               caseListingID, message);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
-                        .createHearingRequest(message), caseListingID);
+                        .createHearingRequest(message, caseListingID), caseListingID);
                     break;
                 case AMEND_HEARING:
                     log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
@@ -214,7 +214,7 @@ public class MessageProcessor {
                 log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                           caseListingID, message);
                 processSyncFutureHearingResponse(() -> futureHearingRepository
-                    .createHearingRequest(message), caseListingID);
+                    .createHearingRequest(message, caseListingID), caseListingID);
                 break;
             case AMEND_HEARING:
                 log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
