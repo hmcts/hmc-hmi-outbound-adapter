@@ -88,6 +88,12 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         log.debug("In {} process: {}", operation, data.toString());
         Optional<HearingEntity> hearingEntityOpt = getHearingEntity(caseListingRequestId);
         HearingEntity hearingEntity = hearingEntityOpt.get();
+        String authorization = getAuthToken(caseListingRequestId, operation, hearingEntity);
+        log.debug("{} sending to FH: {}", operation, data.toString());
+        return processor.process(authorization, data);
+    }
+
+    private String getAuthToken(String caseListingRequestId, String operation, HearingEntity hearingEntity) {
         String authorization;
         try {
             log.debug("Retrieving authorization token for operation: {} hearingId: {}", operation,
@@ -96,21 +102,18 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
             authorization = retrieveAuthToken().getAccessToken();
             log.debug("Authorization token retrieved successfully for operation: {} hearingId: {}", operation,
                       caseListingRequestId);
-            saveAuditDetails(
-                hearingEntity, HMI_TO_HMC_AUTH_SUCCESS, String.valueOf(HttpStatus.OK_200),
-                HMI, HMC, null);
+            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_SUCCESS, String.valueOf(HttpStatus.OK_200),
+                                HMI, HMC, null);
         } catch (Exception ex) {
             log.error("Failed to retrieve authorization token for hearingId: {} with exception {}",
                       caseListingRequestId, ex.getMessage());
             JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
-            saveAuditDetails(
-                hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED_401),
-                HMI, HMC, errorDescription);
+            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED_401),
+                             HMI, HMC, errorDescription);
             throw new RuntimeException("Failed to retrieve authorization token for operation: " + operation
                                               + " hearingId: " + caseListingRequestId, ex);
         }
-        log.debug("{} sending to FH: {}", operation, data.toString());
-        return processor.process(authorization, data);
+        return authorization;
     }
 
     private void saveAuditDetails(HearingEntity hearingEntity, String action, String responseCode,
