@@ -34,5 +34,6 @@ public final class Constants {
     public static final String ESCALATE_PENDING_REQUEST = "escalatePendingRequest";
     public static final String PENDING_REQUEST = "pendingRequest";
     public static final String HMC_TO_HMI_AUTH_REQUEST = "HMC to HMI auth request";
-    public static final String HMI_TO_HMC_AUTH_RESPONSE = "HMI to HMC auth response";
+    public static final String HMI_TO_HMC_AUTH_SUCCESS = "HMI to HMC auth success";
+    public static final String HMI_TO_HMC_AUTH_FAIL = "HMI to HMC auth fail";
 }

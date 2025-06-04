@@ -140,6 +140,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
+        log.debug("catchExceptionAndUpdateHearing ({}, {})", hearingId, exception.getMessage());
         JsonNode errorDetails = null;
         Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
         if (hearingResult.isEmpty()) {

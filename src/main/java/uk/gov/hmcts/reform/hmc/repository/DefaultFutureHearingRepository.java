@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jetty.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
@@ -19,7 +20,8 @@ import java.util.Optional;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI_TO_HMC_AUTH_RESPONSE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI_TO_HMC_AUTH_FAIL;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI_TO_HMC_AUTH_SUCCESS;
 
 @Slf4j
 @Repository("defaultFutureHearingRepository")
@@ -84,25 +86,31 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
                                                                      String operation,
                                                                      HearingRequestProcessor processor) {
         log.debug("In {} process: {}", operation, data.toString());
-        String authorization = retrieveAuthToken().getAccessToken();
         Optional<HearingEntity> hearingEntityOpt = getHearingEntity(caseListingRequestId);
-
         HearingEntity hearingEntity = hearingEntityOpt.get();
-        saveAuditDetails(hearingEntity, HMC_TO_HMI_AUTH_REQUEST, null, HMC, HMI, null);
-
-        log.debug("{} sent to FH: {}", operation, data.toString());
-        HearingManagementInterfaceResponse response = processor.process(authorization, data);
-
-        JsonNode errorDescription = response.getResponseCode() != 200
-            ? objectMapper.convertValue(response.getDescription(), JsonNode.class) : null;
-
-        saveAuditDetails(
-            hearingEntity, HMI_TO_HMC_AUTH_RESPONSE, response.getResponseCode().toString(), HMI, HMC, errorDescription);
-
-        log.debug(
-            "Received response for {} from FH with responseCode: {}, description: {}", operation,
-            response.getResponseCode(), response.getDescription());
-        return response;
+        String authorization;
+        try {
+            log.debug("Retrieving authorization token for operation: {} hearingId: {}", operation,
+                      caseListingRequestId);
+            saveAuditDetails(hearingEntity, HMC_TO_HMI_AUTH_REQUEST, null, HMC, HMI, null);
+            authorization = retrieveAuthToken().getAccessToken();
+            log.debug("Authorization token retrieved successfully for operation: {} hearingId: {}", operation,
+                      caseListingRequestId);
+            saveAuditDetails(
+                hearingEntity, HMI_TO_HMC_AUTH_SUCCESS, String.valueOf(HttpStatus.OK_200),
+                HMI, HMC, null);
+        } catch (Exception ex) {
+            log.error("Failed to retrieve authorization token for hearingId: {} with exception {}",
+                      caseListingRequestId, ex.getMessage());
+            JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
+            saveAuditDetails(
+                hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED_401),
+                HMI, HMC, errorDescription);
+            throw new RuntimeException("Failed to retrieve authorization token for operation: " + operation
+                                              + " hearingId: " + caseListingRequestId, ex);
+        }
+        log.debug("{} sending to FH: {}", operation, data.toString());
+        return processor.process(authorization, data);
     }
 
     private void saveAuditDetails(HearingEntity hearingEntity, String action, String responseCode,
