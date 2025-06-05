@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
@@ -56,15 +57,18 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     private final HearingStatusAuditService hearingStatusAuditService;
     private final ObjectMapper objectMapper;
     private final PendingRequestRepository pendingRequestRepository;
+    private final MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
 
     public PendingRequestServiceImpl(ObjectMapper objectMapper,
                                      PendingRequestRepository pendingRequestRepository,
                                      HearingRepository hearingRepository,
-                                     HearingStatusAuditService hearingStatusAuditService) {
+                                     HearingStatusAuditService hearingStatusAuditService,
+                                     MessageSenderToTopicConfiguration messageSenderToTopicConfiguration) {
         this.objectMapper = objectMapper;
         this.pendingRequestRepository = pendingRequestRepository;
         this.hearingRepository = hearingRepository;
         this.hearingStatusAuditService = hearingStatusAuditService;
+        this.messageSenderToTopicConfiguration = messageSenderToTopicConfiguration;
     }
 
     public boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
@@ -159,6 +163,13 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                       exception.getClass(), exception.getMessage());
         }
         hearingRepository.save(hearingEntity);
+        // TODO : Uncomment when HMCHearingResponse is available
+        /*messageSenderToTopicConfiguration
+            .sendMessage(objectMapperService.convertObjectToJsonNode(hmcHearingResponse).toString(),
+                         hmcHearingResponse.getHmctsServiceCode(),hearingId.toString(),
+                         getDeploymentIdForHearing(hearingResult.get()));*/
+        messageSenderToTopicConfiguration
+            .sendMessage("Hearing Response","TEST", "200000");
         logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                   hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
                                   hearingEntity.getErrorDescription());
