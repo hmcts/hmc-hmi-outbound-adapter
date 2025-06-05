@@ -39,4 +39,6 @@ public final class Constants {
         + "Service:{} . Entity: {}. Method: {}. Hearing ID: {}.";
     public static final String TOPIC_HMC_TO_CFT = "hmc-to-cft";
     public static final String HMCTS_SERVICE_ID = "hmctsServiceId";
+    public static final String HMCTS_DEPLOYMENT_ID = "hmctsDeploymentId";
+    public static final String EXCEPTION = "EXCEPTION";
 }
