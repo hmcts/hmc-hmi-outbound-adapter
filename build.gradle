@@ -226,7 +226,7 @@ def versions = [
   reformLogging   : '6.1.4',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.16.3',
-  jetty           : '11.0.18'
+  jetty           : '11.0.24'
 ]
 
 ext {
