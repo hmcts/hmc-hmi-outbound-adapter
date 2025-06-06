@@ -105,9 +105,11 @@ public class MessageProcessor {
 
             if (pendingRequestEntity.isPresent() && pendingRequestEntity.get().getStatus()
                 .equals(PendingStatusType.PENDING.name())) {
-                log.debug("Processing pending request with Id: {} status : {} hearingId: {}",
-                          pendingRequestEntity.get().getId(), pendingRequestEntity.get().getStatus(),
-                          pendingRequestEntity.get().getHearingId());
+                log.debug(
+                    "Processing pending request with Id: {} status : {} hearingId: {}",
+                    pendingRequestEntity.get().getId(), pendingRequestEntity.get().getStatus(),
+                    pendingRequestEntity.get().getHearingId()
+                );
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
                     PendingStatusType.PROCESSING.name()
@@ -141,9 +143,12 @@ public class MessageProcessor {
                 );
                 log.debug("processPendingRequest(pendingRequest) completed");
             } else {
-                log.debug("Pending request with Id: {} is not in PENDING status. Status: {} hearingId: {}",
-                         pendingRequestEntity.get().getId(),
-                         pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId());
+                log.debug(
+                    "Pending request with Id: {} is not in PENDING status. Status: {} hearingId: {}",
+                    pendingRequestEntity.get().getId(),
+                    pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId()
+                );
+            }
         }
     }
 
