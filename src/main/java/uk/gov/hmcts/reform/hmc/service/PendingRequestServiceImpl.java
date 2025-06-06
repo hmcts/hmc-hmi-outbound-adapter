@@ -169,6 +169,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                           FH, HMC, objectMapper.convertValue(errorDetails, JsonNode.class));
     }
 
+    public Optional<PendingRequestEntity> findById(Long pendingRequestId) {
+        return pendingRequestRepository.findById(pendingRequestId);
+    }
+
     private static final Map<Class<? extends Exception>, BiConsumer<Exception, HearingEntity>> EXCEPTION_HANDLERS =
         Map.of(
         ResourceNotFoundException.class, (ex, entity) ->

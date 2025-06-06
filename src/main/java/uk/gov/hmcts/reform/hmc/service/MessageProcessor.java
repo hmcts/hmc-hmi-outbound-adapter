@@ -29,6 +29,7 @@ import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
@@ -99,41 +100,51 @@ public class MessageProcessor {
 
 
             pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
+            log.debug("Locked record Id {} , {}", pendingRequest.getId(), pendingRequest.getStatus());
+            Optional<PendingRequestEntity> pendingRequestEntity = pendingRequestService
+                .findById(pendingRequest.getId());
 
-            pendingRequestService.markRequestWithGivenStatus(
-                pendingRequest.getId(),
-                PendingStatusType.PROCESSING.name()
-            );
-
-            try {
-                processPendingMessage(convertMessage(pendingRequest.getMessage()),
-                                      pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
-                );
-            } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException exception) {
-                log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
+            if (pendingRequestEntity.isPresent() && pendingRequestEntity.get().getStatus()
+                .equals(PendingStatusType.PENDING.name())) {
+                log.debug(
+                    "Processing pending request with Id: {} status : {} hearingId: {}",
+                    pendingRequestEntity.get().getId(), pendingRequestEntity.get().getStatus(),
+                    pendingRequestEntity.get().getHearingId());
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
-                    PendingStatusType.EXCEPTION.name()
-                );
-                pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
-                return;
-            } catch (Exception ex) {
-                log.debug("Exception {}", ex.getMessage());
-                pendingRequestService.markRequestAsPending(
+                    PendingStatusType.PROCESSING.name());
+
+                try {
+                    processPendingMessage(
+                        convertMessage(pendingRequest.getMessage()),
+                        pendingRequest.getHearingId().toString(), pendingRequest.getMessageType());
+                } catch (AuthenticationException | BadFutureHearingRequestException
+                         | ResourceNotFoundException exception) {
+                    log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
+                    pendingRequestService.markRequestWithGivenStatus(
+                        pendingRequest.getId(),
+                        PendingStatusType.EXCEPTION.name());
+                    pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
+                    return;
+                } catch (Exception ex) {
+                    log.debug("Exception {}", ex.getMessage());
+                    pendingRequestService.markRequestAsPending(
+                        pendingRequest.getId(),
+                        pendingRequest.getRetryCount(),
+                        pendingRequest.getLastTriedDateTime());
+                    return;
+                }
+                pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
-                    pendingRequest.getRetryCount(),
-                    pendingRequest.getLastTriedDateTime()
-                );
-                return;
+                    PendingStatusType.COMPLETED.name());
+                log.debug("processPendingRequest(pendingRequest) completed");
+            } else {
+                log.debug(
+                    "Pending request with Id: {} is not in PENDING status. Status: {} hearingId: {}",
+                    pendingRequestEntity.get().getId(),
+                    pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId());
             }
-            pendingRequestService.markRequestWithGivenStatus(
-                pendingRequest.getId(),
-                PendingStatusType.COMPLETED.name()
-            );
-
         }
-
-        log.debug("processPendingRequest(pendingRequest) completed");
     }
 
     public void processMessage(ServiceBusReceivedMessageContext messageContext) {
