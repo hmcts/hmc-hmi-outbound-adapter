@@ -9,6 +9,7 @@ import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.eclipse.jetty.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
-import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
@@ -34,9 +34,7 @@ import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -250,76 +248,30 @@ class PendingRequestServiceImplTest {
     }
 
     @Test
-    void shouldUpdateHearingStatusToExceptionWhenHearingExists() {
-        HearingEntity hearingEntity =TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                 500, "Unable to create case");
+    void shouldUpdateHearingStatusThrowsBadRequestException() {
+        HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                                HttpStatus.BAD_REQUEST_400, "version is invalid");
         Exception exception = new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE,
-                          TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE, 400));
-        JsonNode data = OBJECT_MAPPER.convertValue(
-            generateErrorDetails("Unable to create case", 2000),
-            JsonNode.class);
-        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
-        when(hearingRepository.findById(2000000000L)).thenReturn(Optional.of(hearingEntity));
-        when(hearingRepository.save(any())).thenReturn(hearingEntity);
-
-        when(hmiHearingResponseMapper.mapEntityToHmcModel(any(), any()))
-            .thenReturn(generateHmcResponse(EXCEPTION.name()));
-        when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
-        doNothing().when(messageSenderToTopicConfiguration).sendMessage(any(), any(), any(), any());
-        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
-
-        verify(hearingRepository, times(1)).save(any());
-        verify(hearingStatusAuditService, times(1))
-            .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
-        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
-        verifyLogErrors(listAppender);
-        assertThat(hearingEntity.getErrorDescription()).isEqualTo(TEST_EXCEPTION_MESSAGE);
-
+                                            TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE,
+                                                                             HttpStatus.BAD_REQUEST_400));
+        testUpdateHearingStatusThrowsException(hearingEntity, exception, TEST_EXCEPTION_MESSAGE);
     }
 
     @Test
     void shouldUpdateHearingStatusThrowsAuthenticationException() {
-        HearingEntity hearingEntity =TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                500, "Unable to create case");
-        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
-        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
-        JsonNode data = OBJECT_MAPPER.convertValue(
-            generateErrorDetails("Unable to create case", 2000),
-            JsonNode.class);
+        HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                             HttpStatus.INTERNAL_SERVER_ERROR_500, "invalid credentials");
         Exception exception = new AuthenticationException("Test Auth Exception", TestingUtil.generateAuthErrorDetails(
-            "Test Auth Exception", 1234));
-
-        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
-        when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
-
-        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
-
-        verifyLogErrors(listAppender);
-        verify(hearingRepository, times(1)).save(any());
-        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
-        assertThat(hearingEntity.getErrorDescription()).isEqualTo("Test Auth Exception");
+            "Test Auth Exception", HttpStatus.INTERNAL_SERVER_ERROR_500));
+        testUpdateHearingStatusThrowsException(hearingEntity, exception, "Test Auth Exception");
     }
 
     @Test
     void shouldUpdateHearingStatusThrowsResourceNotFoundException() {
-        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
-        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
-        caseHearingRequest.setCaseReference("12345");
-        caseHearingRequest.setHmctsServiceCode("serviceCode");
-        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
-        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
-        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+        HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                                 HttpStatus.NOT_FOUND_404, "invalid credentials");
         Exception exception = new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE);
-
-        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
-
-        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
-        verifyLogErrors(listAppender);
-
-        verify(hearingRepository, times(1)).save(any());
-        assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
-        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
-        assertThat(hearingEntity.getErrorDescription()).isEqualTo(TEST_EXCEPTION_MESSAGE);
+        testUpdateHearingStatusThrowsException(hearingEntity, exception, TEST_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -334,6 +286,28 @@ class PendingRequestServiceImplTest {
         verify(hearingStatusAuditService,
                times(0))
                     .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
+    }
+
+    private void testUpdateHearingStatusThrowsException(HearingEntity hearingEntity, Exception exception,
+                                                        String expectedErrorDescription) {
+        JsonNode data = OBJECT_MAPPER.convertValue(
+            generateErrorDetails(expectedErrorDescription, HttpStatus.BAD_REQUEST_400),
+            JsonNode.class);
+        when(hearingRepository.findById(hearingEntity.getId())).thenReturn(Optional.of(hearingEntity));
+        when(hearingRepository.save(any())).thenReturn(hearingEntity);
+
+        when(hmiHearingResponseMapper.mapEntityToHmcModel(any(), any()))
+            .thenReturn(generateHmcResponse(EXCEPTION.name()));
+        when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
+        doNothing().when(messageSenderToTopicConfiguration).sendMessage(any(), any(), any(), any());
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
+        verifyLogErrors(listAppender);
+        verify(hearingRepository, times(1)).save(any());
+        verify(hearingStatusAuditService, times(1))
+            .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
+        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo(expectedErrorDescription);
     }
 
     private PendingRequestEntity generatePendingRequest() {

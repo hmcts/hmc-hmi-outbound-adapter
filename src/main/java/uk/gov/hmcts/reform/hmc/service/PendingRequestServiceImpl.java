@@ -96,6 +96,11 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return result;
     }
 
+
+    public Optional<PendingRequestEntity> findById(Long pendingRequestId) {
+        return pendingRequestRepository.findById(pendingRequestId);
+    }
+
     public boolean lastTriedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
         LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime();
         if (lastTriedDateTime == null) {
@@ -147,6 +152,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     public void markRequestWithGivenStatus(Long id, String status) {
         log.debug("markRequestWithGivenStatus({}, {})", id, status);
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
+        log.debug("markRequestWithGivenStatus({}, {} completed)", id, status);
     }
 
     public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
