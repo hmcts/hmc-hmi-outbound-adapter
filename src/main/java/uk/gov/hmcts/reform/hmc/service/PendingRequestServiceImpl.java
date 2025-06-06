@@ -170,7 +170,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         }
         hearingRepository.save(hearingEntity);
         HmcHearingResponse hmcHearingResponse = getHmcHearingResponse(hearingEntity);
-        // TODO : Uncomment when HMCHearingResponse is available
         messageSenderToTopicConfiguration
             .sendMessage(objectMapper.convertValue(hmcHearingResponse, JsonNode.class).toString(),
                          hmcHearingResponse.getHmctsServiceCode(),hearingId.toString(),

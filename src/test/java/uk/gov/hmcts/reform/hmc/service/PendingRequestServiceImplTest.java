@@ -4,7 +4,11 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
+import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
@@ -20,12 +26,17 @@ import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
+import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
+import uk.gov.hmcts.reform.hmc.model.HmcHearingUpdate;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +46,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,7 +74,21 @@ class PendingRequestServiceImplTest {
     @InjectMocks
     private PendingRequestServiceImpl pendingRequestService;
 
+    @Mock
+    private HmiHearingResponseMapper hmiHearingResponseMapper;
+
+    @Mock
+    private MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
+
+    @Mock
+    private ServiceBusReceivedMessageContext messageContext = mock(ServiceBusReceivedMessageContext.class);
+
+    @Mock
+    private ServiceBusReceivedMessage message;
+
     private static final String TEST_EXCEPTION_MESSAGE = "Test Exception";
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(PendingRequestServiceImpl.class);
 
@@ -224,38 +251,46 @@ class PendingRequestServiceImplTest {
 
     @Test
     void shouldUpdateHearingStatusToExceptionWhenHearingExists() {
-        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
-        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
-        caseHearingRequest.setCaseReference("12345");
-        caseHearingRequest.setHmctsServiceCode("serviceCode");
-        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
-        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
+        HearingEntity hearingEntity =TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                                                 500, "Unable to create case");
         Exception exception = new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE,
                           TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE, 400));
+        JsonNode data = OBJECT_MAPPER.convertValue(
+            generateErrorDetails("Unable to create case", 2000),
+            JsonNode.class);
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+        when(hearingRepository.findById(2000000000L)).thenReturn(Optional.of(hearingEntity));
+        when(hearingRepository.save(any())).thenReturn(hearingEntity);
 
-        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
-
+        when(hmiHearingResponseMapper.mapEntityToHmcModel(any(), any()))
+            .thenReturn(generateHmcResponse(EXCEPTION.name()));
+        when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
+        doNothing().when(messageSenderToTopicConfiguration).sendMessage(any(), any(), any(), any());
         pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
 
         verify(hearingRepository, times(1)).save(any());
+        verify(hearingStatusAuditService, times(1))
+            .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
         assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
+        verifyLogErrors(listAppender);
         assertThat(hearingEntity.getErrorDescription()).isEqualTo(TEST_EXCEPTION_MESSAGE);
+
     }
 
     @Test
     void shouldUpdateHearingStatusThrowsAuthenticationException() {
-        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
-        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
-        caseHearingRequest.setCaseReference("12345");
-        caseHearingRequest.setHmctsServiceCode("serviceCode");
-        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
+        HearingEntity hearingEntity =TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                                                500, "Unable to create case");
         Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
         ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
-
+        JsonNode data = OBJECT_MAPPER.convertValue(
+            generateErrorDetails("Unable to create case", 2000),
+            JsonNode.class);
         Exception exception = new AuthenticationException("Test Auth Exception", TestingUtil.generateAuthErrorDetails(
             "Test Auth Exception", 1234));
 
         when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
+        when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
 
         pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
 
@@ -322,5 +357,32 @@ class PendingRequestServiceImplTest {
         logger.addAppender(listAppender);
         return listAppender;
     }
+
+    private HmcHearingResponse generateHmcResponse(String status) {
+        HmcHearingResponse hmcHearingResponse = new HmcHearingResponse();
+        HmcHearingUpdate hmcHearingUpdate = new HmcHearingUpdate();
+        hmcHearingUpdate.setHmcStatus(status);
+        hmcHearingResponse.setHearingUpdate(hmcHearingUpdate);
+        return hmcHearingResponse;
+    }
+
+    private ErrorDetails generateErrorDetails(String description, int code) {
+        ErrorDetails errorDetails = new ErrorDetails();
+        errorDetails.setErrorDescription(description);
+        errorDetails.setErrorCode(code);
+        return errorDetails;
+    }
+
+    private void assertDynatraceLogMessage(ListAppender<ILoggingEvent> listAppender, String hearingID,  String caseRef,
+                                           String serviceCode, String errorDescription) {
+        List<ILoggingEvent> logsList = listAppender.list;
+        int finalErrorIndex = logsList.size() - 1;
+        assertEquals(Level.ERROR, logsList.get(finalErrorIndex).getLevel());
+        assertEquals("Hearing id: " + hearingID + " with Case reference: "
+                         + caseRef + " , Service Code: " + serviceCode + " and Error Description: "
+                         + errorDescription + " updated to status "
+                         + EXCEPTION.name(), logsList.get(finalErrorIndex).getFormattedMessage());
+    }
+
 
 }
