@@ -98,9 +98,8 @@ public class MessageProcessor {
         if (!pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
             && pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
 
-
             pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
-
+            log.debug("Locked record Id {} , {}", pendingRequest.getId(), pendingRequest.getStatus());
             Optional<PendingRequestEntity> pendingRequestEntity = pendingRequestService
                 .findById(pendingRequest.getId());
 
@@ -113,7 +112,6 @@ public class MessageProcessor {
                     pendingRequest.getId(),
                     PendingStatusType.PROCESSING.name()
                 );
-
                 try {
                     processPendingMessage(
                         convertMessage(pendingRequest.getMessage()),
@@ -144,9 +142,8 @@ public class MessageProcessor {
                 log.debug("processPendingRequest(pendingRequest) completed");
             } else {
                 log.debug("Pending request with Id: {} is not in PENDING status. Status: {} hearingId: {}",
-                          pendingRequestEntity.get().getId(),
-                          pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId());
-            }
+                         pendingRequestEntity.get().getId(),
+                         pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId());
         }
     }
 
