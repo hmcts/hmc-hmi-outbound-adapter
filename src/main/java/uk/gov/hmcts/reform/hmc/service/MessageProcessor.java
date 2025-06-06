@@ -108,12 +108,15 @@ public class MessageProcessor {
                 log.debug(
                     "Processing pending request with Id: {} status : {} hearingId: {}",
                     pendingRequestEntity.get().getId(), pendingRequestEntity.get().getStatus(),
-                    pendingRequestEntity.get().getHearingId());
+                    pendingRequestEntity.get().getHearingId()
+                );
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
-                    PendingStatusType.PROCESSING.name());
+                    PendingStatusType.PROCESSING.name()
+                );
 
-                try {        processPendingMessage(
+                try {
+                    processPendingMessage(
                         convertMessage(pendingRequest.getMessage()),
                         pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
                     );
@@ -144,7 +147,8 @@ public class MessageProcessor {
                 log.debug(
                     "Pending request with Id: {} is not in PENDING status. Status: {} hearingId: {}",
                     pendingRequestEntity.get().getId(),
-                    pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId());
+                    pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId()
+                );
             }
         }
     }
