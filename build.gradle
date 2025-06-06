@@ -226,6 +226,7 @@ def versions = [
   reformLogging   : '6.1.4',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.16.3',
+  netty           : '4.2.1.Final',
   jetty           : '11.0.18'
 ]
 
@@ -325,6 +326,23 @@ dependencies {
   implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.17.4'
   implementation group: 'com.azure', name: 'azure-core', version: '1.52.0'
   implementation group: 'com.azure', name: 'azure-core-amqp', version: '2.9.9'
+
+  // Explicitly set versions of io.netty components to resolve CVE-2021-37136 and CVE-2021-37137 and CVE-2025-25193
+  implementation group: 'io.netty', name: 'netty-buffer', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-codec', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-codec-dns', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-codec-http', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-codec-http2', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-codec-socks', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-common', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-handler', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-handler-proxy', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-resolver', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-resolver-dns', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-resolver-dns-native-macos', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-transport', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-transport-native-epoll', version: versions.netty
+  implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: versions.netty
 
   implementation group: 'net.minidev', name: 'json-smart', version: '2.4.9'
 
