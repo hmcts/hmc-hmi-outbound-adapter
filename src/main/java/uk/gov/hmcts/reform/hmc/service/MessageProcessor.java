@@ -98,7 +98,6 @@ public class MessageProcessor {
         if (!pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
             && pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
 
-
             pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
             log.debug("Locked record Id {} , {}", pendingRequest.getId(), pendingRequest.getStatus());
             Optional<PendingRequestEntity> pendingRequestEntity = pendingRequestService
@@ -114,16 +113,17 @@ public class MessageProcessor {
                     pendingRequest.getId(),
                     PendingStatusType.PROCESSING.name());
 
-                try {
-                    processPendingMessage(
+                try {        processPendingMessage(
                         convertMessage(pendingRequest.getMessage()),
-                        pendingRequest.getHearingId().toString(), pendingRequest.getMessageType());
+                        pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
+                    );
                 } catch (AuthenticationException | BadFutureHearingRequestException
                          | ResourceNotFoundException exception) {
                     log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
                     pendingRequestService.markRequestWithGivenStatus(
                         pendingRequest.getId(),
-                        PendingStatusType.EXCEPTION.name());
+                        PendingStatusType.EXCEPTION.name()
+                    );
                     pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
                     return;
                 } catch (Exception ex) {
@@ -131,12 +131,14 @@ public class MessageProcessor {
                     pendingRequestService.markRequestAsPending(
                         pendingRequest.getId(),
                         pendingRequest.getRetryCount(),
-                        pendingRequest.getLastTriedDateTime());
+                        pendingRequest.getLastTriedDateTime()
+                    );
                     return;
                 }
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
-                    PendingStatusType.COMPLETED.name());
+                    PendingStatusType.COMPLETED.name()
+                );
                 log.debug("processPendingRequest(pendingRequest) completed");
             } else {
                 log.debug(

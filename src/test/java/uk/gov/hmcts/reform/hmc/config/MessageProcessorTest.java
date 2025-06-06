@@ -73,7 +73,7 @@ class MessageProcessorTest {
     private JsonNode anyData;
 
     @BeforeEach
-    public void setUp() {
+     void setUp() {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
