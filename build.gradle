@@ -342,7 +342,8 @@ dependencies {
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
 
-  implementation group: 'org.eclipse.jetty.http2', name: 'jetty-http2-server', version: versions.jetty
+  //implementation group: 'org.eclipse.jetty.http2', name: 'jetty-http2-server', version: versions.jetty
+  implementation 'org.eclipse.jetty.http2:jetty-http2-server:12.0.12'
   implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-client', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-util', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-util-ajax', version: versions.jetty
