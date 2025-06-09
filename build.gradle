@@ -226,7 +226,7 @@ def versions = [
   reformLogging   : '6.1.4',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.16.3',
-  jetty           : '11.0.25'
+  jetty           : '12.0.12'
 ]
 
 ext {
@@ -342,7 +342,7 @@ dependencies {
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
 
-  implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: versions.jetty
+  implementation group: 'org.eclipse.jetty.http2', name: 'jetty-http2-server', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-client', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-util', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-util-ajax', version: versions.jetty
@@ -352,14 +352,21 @@ dependencies {
   implementation group: 'org.eclipse.jetty', name: 'jetty-http', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-io', version: versions.jetty
   implementation group: 'org.eclipse.jetty.http2', name: 'http2-server', version: versions.jetty
-  implementation group: 'org.eclipse.jetty.http2', name: 'http2-common', version: versions.jetty
-  implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version: versions.jetty
-  implementation group: 'org.eclipse.jetty', name: 'jetty-servlets', version: versions.jetty
-  implementation group: 'org.eclipse.jetty', name: 'jetty-webapp', version: versions.jetty
+  //implementation group: 'org.eclipse.jetty.http2', name: 'http2-common', version: versions.jetty
+  //implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version: versions.jetty
+  //implementation group: 'org.eclipse.jetty', name: 'jetty-servlets', version: versions.jetty
+  //implementation group: 'org.eclipse.jetty', name: 'jetty-webapp', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-proxy', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-server', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-server', version: versions.jetty
   implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-client', version: versions.jetty
+
+  implementation 'org.eclipse.jetty:jetty-servlet:11.0.25'
+  implementation 'org.eclipse.jetty:jetty-servlets:11.0.25'
+  implementation 'org.eclipse.jetty:jetty-webapp:11.0.25'
+  implementation 'org.eclipse.jetty:jetty-server:11.0.25'
+  //implementation 'org.eclipse.jetty.http2:http2-server:11.0.24'
+  implementation 'org.eclipse.jetty.http2:http2-common:11.0.24'
 
   // Explicitly set versions of io.netty components to resolve CVE-2021-37136 and CVE-2021-37137
   implementation group: 'io.projectreactor.netty', name: 'reactor-netty-core', version: '1.1.15'
