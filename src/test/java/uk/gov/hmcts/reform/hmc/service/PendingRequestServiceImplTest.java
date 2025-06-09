@@ -347,16 +347,4 @@ class PendingRequestServiceImplTest {
         return errorDetails;
     }
 
-    private void assertDynatraceLogMessage(ListAppender<ILoggingEvent> listAppender, String hearingID,  String caseRef,
-                                           String serviceCode, String errorDescription) {
-        List<ILoggingEvent> logsList = listAppender.list;
-        int finalErrorIndex = logsList.size() - 1;
-        assertEquals(Level.ERROR, logsList.get(finalErrorIndex).getLevel());
-        assertEquals("Hearing id: " + hearingID + " with Case reference: "
-                         + caseRef + " , Service Code: " + serviceCode + " and Error Description: "
-                         + errorDescription + " updated to status "
-                         + EXCEPTION.name(), logsList.get(finalErrorIndex).getFormattedMessage());
-    }
-
-
 }

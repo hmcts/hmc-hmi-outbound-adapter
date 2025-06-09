@@ -16,8 +16,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -53,7 +51,6 @@ public class HearingResponseEntity extends BaseEntity implements Serializable {
     private HearingEntity hearing;
 
     @OneToMany(mappedBy = "hearingResponse", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.FALSE)
     @JsonSerialize
     private List<HearingDayDetailsEntity> hearingDayDetails;
 
@@ -67,9 +64,6 @@ public class HearingResponseEntity extends BaseEntity implements Serializable {
     @Convert(converter = JsonDataConverter.class)
     @SuppressWarnings("java:S2789")
     private JsonNode serviceData;
-
-    /*@OneToOne(mappedBy = "hearingResponse", fetch = FetchType.EAGER, orphanRemoval = true)
-    private ActualHearingEntity actualHearingEntity;*/
 
     @Column(name = "cancellation_reason_type")
     private String cancellationReasonType;

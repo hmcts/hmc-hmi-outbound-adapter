@@ -13,8 +13,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -53,7 +51,6 @@ public class HearingDayDetailsEntity extends BaseEntity implements Serializable 
     private HearingResponseEntity hearingResponse;
 
     @OneToMany(mappedBy = "hearingDayDetails", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.FALSE)
     private List<HearingDayPanelEntity> hearingDayPanel;
 
     public List<HearingDayPanelEntity> getHearingDayPanel() {

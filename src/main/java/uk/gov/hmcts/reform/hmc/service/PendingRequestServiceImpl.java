@@ -176,11 +176,11 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         }
         hearingRepository.save(hearingEntity);
         HmcHearingResponse hmcHearingResponse = getHmcHearingResponse(hearingEntity);
+        log.debug("Sending hearing id {} to topic with Hearing response  {} is", hearingId, hmcHearingResponse);
         messageSenderToTopicConfiguration
             .sendMessage(objectMapper.convertValue(hmcHearingResponse, JsonNode.class).toString(),
                          hmcHearingResponse.getHmctsServiceCode(),hearingId.toString(),
                          hearingEntity.getDeploymentId());
-
         logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                   hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
                                   hearingEntity.getErrorDescription());
