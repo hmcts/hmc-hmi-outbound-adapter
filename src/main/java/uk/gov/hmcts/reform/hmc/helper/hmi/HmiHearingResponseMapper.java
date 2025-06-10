@@ -25,7 +25,6 @@ public class HmiHearingResponseMapper {
         hmcHearingResponse.setCaseRef(matchingCaseHearingRequestEntity.getCaseReference());
         hmcHearingResponse.setHmctsServiceCode(matchingCaseHearingRequestEntity.getHmctsServiceCode());
 
-        //There is currently only support for one hearingDayDetail to be provided in HearingResponse From ListAssist
         HmcHearingUpdate hmcHearingUpdate = new HmcHearingUpdate();
         hmcHearingUpdate.setHmcStatus(hearing.getStatus());
         if (hearing.getStatus() != EXCEPTION) {
