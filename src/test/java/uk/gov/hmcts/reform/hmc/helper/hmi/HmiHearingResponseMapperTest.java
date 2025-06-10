@@ -29,7 +29,7 @@ class HmiHearingResponseMapperTest {
     private static HmiHearingResponseMapper hmiHearingResponseMapper;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         hmiHearingResponseMapper = new HmiHearingResponseMapper();
     }
