@@ -16,8 +16,6 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Table(name = "hearing_day_details")
@@ -53,10 +51,4 @@ public class HearingDayDetailsEntity extends BaseEntity implements Serializable 
     @OneToMany(mappedBy = "hearingDayDetails", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<HearingDayPanelEntity> hearingDayPanel;
 
-    public List<HearingDayPanelEntity> getHearingDayPanel() {
-        List<HearingDayPanelEntity> mutableHearingDayPanelEntities =
-            null == hearingDayPanel ? new ArrayList<>() : new ArrayList<>(hearingDayPanel);
-        mutableHearingDayPanelEntities.sort(Comparator.comparing(HearingDayPanelEntity::getPanelUserId));
-        return mutableHearingDayPanelEntities;
-    }
 }

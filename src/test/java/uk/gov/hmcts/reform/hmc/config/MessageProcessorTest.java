@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -175,6 +176,26 @@ class MessageProcessorTest {
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+    }
+
+    @Test
+    void shouldLogDebugWhenNotInPendingStateWhileProcessing() {
+
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+        pendingRequest.setStatus(PendingStatusType.PROCESSING.name());
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService, times(0)).markRequestWithGivenStatus(
+            pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository, times(0)).createHearingRequest(any());
+        verify(pendingRequestService, times(0)).markRequestAsPending(eq(pendingRequest.getId()),
+                                                                     eq(pendingRequest.getRetryCount()), any());
     }
 
     @ParameterizedTest

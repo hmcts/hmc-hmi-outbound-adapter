@@ -288,6 +288,20 @@ class PendingRequestServiceImplTest {
                     .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
     }
 
+    @Test
+    void findByIdShouldReturnPendingRequestWhenIdExists() {
+        Long pendingRequestId = 1L;
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(pendingRequestId);
+        when(pendingRequestRepository.findById(pendingRequestId)).thenReturn(Optional.of(pendingRequest));
+
+        Optional<PendingRequestEntity> result = pendingRequestService.findById(pendingRequestId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualTo(pendingRequest);
+        verify(pendingRequestRepository, times(1)).findById(pendingRequestId);
+    }
+
     private void testUpdateHearingStatusThrowsException(HearingEntity hearingEntity, Exception exception,
                                                         String expectedErrorDescription) {
         JsonNode data = OBJECT_MAPPER.convertValue(
