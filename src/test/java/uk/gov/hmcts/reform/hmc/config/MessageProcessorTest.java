@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -153,6 +154,7 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
 
         messageProcessor.processPendingRequest(pendingRequest);
 
@@ -162,6 +164,40 @@ class MessageProcessorTest {
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
     }
 
+    @Test
+    void shouldProcessPendingRequestNotInPendingState() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+        pendingRequest.setStatus("PROCESSING");
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+    }
+
+    @Test
+    void shouldLogDebugWhenNotInPendingStateWhileProcessing() {
+
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+        pendingRequest.setStatus(PendingStatusType.PROCESSING.name());
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService, times(0)).markRequestWithGivenStatus(
+            pendingRequest.getId(), "PROCESSING");
+        verify(futureHearingRepository, times(0)).createHearingRequest(any());
+        verify(pendingRequestService, times(0)).markRequestAsPending(eq(pendingRequest.getId()),
+                                                                     eq(pendingRequest.getRetryCount()), any());
+    }
+
     @ParameterizedTest
     @MethodSource("provideNonRetryableExceptions")
     void shouldThrowNonRetryableExceptionWhileProcessPendingRequest(Exception exception) {
@@ -169,6 +205,7 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
 
         messageProcessor.processPendingRequest(pendingRequest);
@@ -187,6 +224,7 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
 
         messageProcessor.processPendingRequest(pendingRequest);

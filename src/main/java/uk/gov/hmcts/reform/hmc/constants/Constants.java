@@ -35,4 +35,10 @@ public final class Constants {
     public static final String  MESSAGE_PROCESSOR = "<MessageProcessor>";
     public static final String ESCALATE_PENDING_REQUEST = "escalatePendingRequest";
     public static final String PENDING_REQUEST = "pendingRequest";
+    public static final String ERROR_SENDING_MESSAGE = "Error occurred during service bus sending message. "
+        + "Service:{} . Entity: {}. Method: {}. Hearing ID: {}.";
+    public static final String TOPIC_HMC_TO_CFT = "hmc-to-cft";
+    public static final String HMCTS_SERVICE_ID = "hmctsServiceId";
+    public static final String HMCTS_DEPLOYMENT_ID = "hmctsDeploymentId";
+    public static final String EXCEPTION = "EXCEPTION";
 }
