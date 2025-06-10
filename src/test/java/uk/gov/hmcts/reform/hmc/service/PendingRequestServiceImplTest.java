@@ -296,9 +296,9 @@ class PendingRequestServiceImplTest {
         when(pendingRequestRepository.findById(pendingRequestId)).thenReturn(Optional.of(pendingRequest));
 
         Optional<PendingRequestEntity> result = pendingRequestService.findById(pendingRequestId);
-
-        assertThat(result).isPresent();
-        assertThat(result).contains(pendingRequest);
+        assertThat(result)
+            .isPresent()
+            .contains(pendingRequest);
         verify(pendingRequestRepository, times(1)).findById(pendingRequestId);
     }
 
