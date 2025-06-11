@@ -2,7 +2,7 @@ ARG PLATFORM=""
 ARG APP_INSIGHTS_AGENT_VERSION=3.6.2
 FROM eclipse-temurin${PLATFORM}:21 as builder
 
-ARG JAR_FILE=build/libs/*.jar
+ARG JAR_FILE=build/libs/hmc-hmi-outbound-adapter.jar
 COPY ${JAR_FILE} application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 
@@ -25,4 +25,4 @@ COPY --from=builder ${DIR_LAYER_SPRING_BOOT_LOADER} /opt/app/
 COPY --from=builder ${DIR_LAYER_SNAPSHOT_DEPENDENCIES} /opt/app/
 
 EXPOSE 4458
-ENTRYPOINT ["/usr/bin/java", "org.springframework.boot.loader.JarLauncher"]
+ENTRYPOINT ["/usr/bin/java", "org.springframework.boot.loader.launch.JarLauncher"]

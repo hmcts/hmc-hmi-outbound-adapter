@@ -1,10 +1,9 @@
 package uk.gov.hmcts.reform.hmc;
 
+import jakarta.inject.Named;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-
-import javax.inject.Named;
 
 @Getter
 @Named

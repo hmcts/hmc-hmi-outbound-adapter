@@ -24,8 +24,7 @@ public class PendingRequestEntity implements Serializable {
     private static final long serialVersionUID = -5832580267716907071L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY,
-        generator = "pending_requests_id_seq")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, updatable = false)
     private Long id;
 
