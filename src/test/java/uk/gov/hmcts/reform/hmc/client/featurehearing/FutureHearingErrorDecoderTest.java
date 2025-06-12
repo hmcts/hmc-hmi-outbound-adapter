@@ -192,7 +192,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    returnsEmptyOptionalWhenIOExceptionOccurs() {
+    void returnsEmptyOptionalWhenIOExceptionOccurs() {
         Response response = mock(Response.class);
         InputStream inputStream = mock(InputStream.class);
 
@@ -207,7 +207,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    logsErrorMessageWhenIOExceptionOccurs() {
+    void logsErrorMessageWhenIOExceptionOccurs() {
         Response response = mock(Response.class);
         InputStream inputStream = mock(InputStream.class);
 
@@ -224,7 +224,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    logsErrorWhenIOExceptionOccursWhileReadingPayload() {
+    void logsErrorWhenIOExceptionOccursWhileReadingPayload() {
         Response response = mock(Response.class);
         InputStream inputStream = mock(InputStream.class);
 
@@ -239,7 +239,7 @@ class FutureHearingErrorDecoderTest {
         Logger.error(contains("Unable to read payload from FH"), any(IOException.class));
     }
 
-    returnsFirstAuthErrorCodeWhenAuthErrorCodesAreNotEmpty() {
+    void returnsFirstAuthErrorCodeWhenAuthErrorCodesAreNotEmpty() {
         ErrorDetails errorDetails = mock(ErrorDetails.class);
         when(errorDetails.getAuthErrorCodes()).thenReturn(List.of("AUTH_CODE_1", "AUTH_CODE_2"));
 
@@ -250,7 +250,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    returnsNullWhenAuthErrorCodesAreNull() {
+    void returnsNullWhenAuthErrorCodesAreNull() {
         ErrorDetails errorDetails = mock(ErrorDetails.class);
         when(errorDetails.getAuthErrorCodes()).thenReturn(null);
 
@@ -261,7 +261,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    returnsNullWhenAuthErrorCodesAreEmpty() {
+    void returnsNullWhenAuthErrorCodesAreEmpty() {
         ErrorDetails errorDetails = mock(ErrorDetails.class);
         when(errorDetails.getAuthErrorCodes()).thenReturn(Collections.emptyList());
 
