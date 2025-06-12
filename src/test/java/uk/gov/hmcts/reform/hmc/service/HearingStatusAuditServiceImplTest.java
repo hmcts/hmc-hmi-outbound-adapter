@@ -112,7 +112,7 @@ class HearingStatusAuditServiceImplTest {
         }
 
         @Test
-        setsStatusUpdateDateTimeToUpdatedDateTimeWhenUpdatedDateTimeIsNotNull() {
+        void setsStatusUpdateDateTimeToUpdatedDateTimeWhenUpdatedDateTimeIsNotNull() {
             HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
             hearingEntity.setUpdatedDateTime(LocalDateTime.of(2023, 10, 1, 12, 0));
             HearingStatusAuditEntity auditEntity = new HearingStatusAuditEntity();
@@ -125,7 +125,7 @@ class HearingStatusAuditServiceImplTest {
         }
 
         @Test
-        setsStatusUpdateDateTimeToCurrentDateTimeWhenUpdatedDateTimeIsNull() {
+        void setsStatusUpdateDateTimeToCurrentDateTimeWhenUpdatedDateTimeIsNull() {
             HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
             hearingEntity.setUpdatedDateTime(null);
             HearingStatusAuditEntity auditEntity = new HearingStatusAuditEntity();
