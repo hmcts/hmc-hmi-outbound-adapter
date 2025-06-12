@@ -223,7 +223,7 @@ def versions = [
   junitPlatform   : '1.9.3',
   lombok          : '1.18.30',
   mapstruct       : '1.4.2.Final',
-  reformLogging   : '6.1.4',
+  reformLogging   : '6.1.9',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.16.3',
   jetty           : '11.0.18'
@@ -280,7 +280,7 @@ repositories {
   mavenLocal()
   mavenCentral()
   maven {
-    url "https://jitpack.io"
+    url = 'https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1'
   }
 }
 
@@ -390,10 +390,10 @@ dependencies {
   integrationTestImplementation sourceSets.test.runtimeClasspath
 
   functionalTestImplementation sourceSets.main.runtimeClasspath
-  functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '9.2.0'
+  functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '9.2.4'
   functionalTestImplementation libraries.junit5
 
-  testImplementation 'com.github.hmcts:fortify-client:1.3.0:all', {
+  testImplementation 'com.github.hmcts:fortify-client:1.4.9:all', {
     exclude group: 'org.slf4j', module: 'slf4j-api'
   }
 }
