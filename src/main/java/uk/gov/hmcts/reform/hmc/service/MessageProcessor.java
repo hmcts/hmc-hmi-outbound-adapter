@@ -29,6 +29,7 @@ import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
@@ -99,11 +100,21 @@ public class MessageProcessor {
 
             pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
             log.debug("Locked record Id {} , {}", pendingRequest.getId(), pendingRequest.getStatus());
-            if (pendingRequest.getStatus().equals(PendingStatusType.PENDING.name())) {
+            Optional<PendingRequestEntity> pendingRequestEntity = pendingRequestService
+                .findById(pendingRequest.getId());
+
+            if (pendingRequestEntity.isPresent() && pendingRequestEntity.get().getStatus()
+                .equals(PendingStatusType.PENDING.name())) {
+                log.debug(
+                    "Processing pending request with Id: {} status : {} hearingId: {}",
+                    pendingRequestEntity.get().getId(), pendingRequestEntity.get().getStatus(),
+                    pendingRequestEntity.get().getHearingId()
+                );
                 pendingRequestService.markRequestWithGivenStatus(
                     pendingRequest.getId(),
                     PendingStatusType.PROCESSING.name()
                 );
+
                 try {
                     processPendingMessage(
                         convertMessage(pendingRequest.getMessage()),
@@ -133,8 +144,11 @@ public class MessageProcessor {
                 );
                 log.debug("processPendingRequest(pendingRequest) completed");
             } else {
-                log.debug("Pending request with id {}, status {}  is skipping processing",
-                          pendingRequest.getId(), pendingRequest.getStatus());
+                log.debug(
+                    "Pending request with Id: {} is not in PENDING status. Status: {} hearingId: {}",
+                    pendingRequestEntity.get().getId(),
+                    pendingRequestEntity.get().getStatus(), pendingRequestEntity.get().getHearingId()
+                );
             }
         }
     }
@@ -175,7 +189,7 @@ public class MessageProcessor {
                     log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                               caseListingID, message);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
-                        .createHearingRequest(message), caseListingID);
+                        .createHearingRequest(message, caseListingID), caseListingID);
                     break;
                 case AMEND_HEARING:
                     log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
@@ -217,7 +231,7 @@ public class MessageProcessor {
                 log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                           caseListingID, message);
                 processSyncFutureHearingResponse(() -> futureHearingRepository
-                    .createHearingRequest(message), caseListingID);
+                    .createHearingRequest(message, caseListingID), caseListingID);
                 break;
             case AMEND_HEARING:
                 log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",

@@ -30,9 +30,10 @@ public final class Constants {
     public static final String LA_RESPONSE = "list-assist-response";
     public static final String LA_FAILURE_STATUS = "400";
     public static final String CREATE_HEARING_REQUEST = "create-hearing-request";
-    public static final String ERROR_PROCESSING_UPDATE_HEARING_MESSAGE = "Error processing message with Hearing id {} "
-        + "exception was {}";
     public static final String  MESSAGE_PROCESSOR = "<MessageProcessor>";
     public static final String ESCALATE_PENDING_REQUEST = "escalatePendingRequest";
     public static final String PENDING_REQUEST = "pendingRequest";
+    public static final String HMC_TO_HMI_AUTH_REQUEST = "HMC to HMI auth request";
+    public static final String HMI_TO_HMC_AUTH_SUCCESS = "HMI to HMC auth success";
+    public static final String HMI_TO_HMC_AUTH_FAIL = "HMI to HMC auth fail";
 }

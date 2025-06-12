@@ -80,7 +80,8 @@ public class HearingStatusAuditServiceImpl implements HearingStatusAuditService 
                                                                                              hearingEvent, httpStatus,
                                                                                              source, target,
                                                                                              errorDetails, otherInfo);
-        hearingStatusAuditEntity.setStatusUpdateDateTime(hearingEntity.getUpdatedDateTime());
+        hearingStatusAuditEntity.setStatusUpdateDateTime(
+            hearingEntity.getUpdatedDateTime() != null ? hearingEntity.getUpdatedDateTime() : LocalDateTime.now());
         return hearingStatusAuditEntity;
     }
 
