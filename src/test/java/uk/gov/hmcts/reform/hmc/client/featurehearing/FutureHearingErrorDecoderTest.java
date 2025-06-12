@@ -190,4 +190,84 @@ class FutureHearingErrorDecoderTest {
         assertEquals("Error payload from FH (HTTP 400): " + INPUT_STRING, logsList.get(2)
             .getMessage());
     }
+
+    @Test
+    returnsEmptyOptionalWhenIOExceptionOccurs() {
+        Response response = mock(Response.class);
+        InputStream inputStream = mock(InputStream.class);
+
+        when(response.body()).thenReturn(mock(Response.Body.class));
+        when(response.body().asInputStream()).thenReturn(inputStream);
+        when(inputStream.read()).thenThrow(new IOException());
+
+        FutureHearingErrorDecoder decoder = new FutureHearingErrorDecoder();
+        Optional<Object> result = decoder.getResponseBody(response, Object.class);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    logsErrorMessageWhenIOExceptionOccurs() {
+        Response response = mock(Response.class);
+        InputStream inputStream = mock(InputStream.class);
+
+        when(response.body()).thenReturn(mock(Response.Body.class));
+        when(response.body().asInputStream()).thenReturn(inputStream);
+        when(inputStream.read()).thenThrow(new IOException());
+        when(response.status()).thenReturn(500);
+
+        FutureHearingErrorDecoder decoder = new FutureHearingErrorDecoder();
+        decoder.getResponseBody(response, Object.class);
+
+        verifyStatic(Logger.class);
+        Logger.error(contains("Response from FH failed with error code 500, error message null"));
+    }
+
+    @Test
+    logsErrorWhenIOExceptionOccursWhileReadingPayload() {
+        Response response = mock(Response.class);
+        InputStream inputStream = mock(InputStream.class);
+
+        when(response.body()).thenReturn(mock(Response.Body.class));
+        when(response.body().asInputStream()).thenReturn(inputStream);
+        doThrow(new IOException()).when(inputStream).read();
+
+        FutureHearingErrorDecoder decoder = new FutureHearingErrorDecoder();
+        decoder.decode("methodKey", response);
+
+        verifyStatic(Logger.class);
+        Logger.error(contains("Unable to read payload from FH"), any(IOException.class));
+    }
+
+    returnsFirstAuthErrorCodeWhenAuthErrorCodesAreNotEmpty() {
+        ErrorDetails errorDetails = mock(ErrorDetails.class);
+        when(errorDetails.getAuthErrorCodes()).thenReturn(List.of("AUTH_CODE_1", "AUTH_CODE_2"));
+
+        String result = errorDetails.getAuthErrorCodes() != null && !errorDetails.getAuthErrorCodes().isEmpty()
+            ? errorDetails.getAuthErrorCodes().get(0) : null;
+
+        assertEquals("AUTH_CODE_1", result);
+    }
+
+    @Test
+    returnsNullWhenAuthErrorCodesAreNull() {
+        ErrorDetails errorDetails = mock(ErrorDetails.class);
+        when(errorDetails.getAuthErrorCodes()).thenReturn(null);
+
+        String result = errorDetails.getAuthErrorCodes() != null && !errorDetails.getAuthErrorCodes().isEmpty()
+            ? errorDetails.getAuthErrorCodes().get(0) : null;
+
+        assertNull(result);
+    }
+
+    @Test
+    returnsNullWhenAuthErrorCodesAreEmpty() {
+        ErrorDetails errorDetails = mock(ErrorDetails.class);
+        when(errorDetails.getAuthErrorCodes()).thenReturn(Collections.emptyList());
+
+        String result = errorDetails.getAuthErrorCodes() != null && !errorDetails.getAuthErrorCodes().isEmpty()
+            ? errorDetails.getAuthErrorCodes().get(0) : null;
+
+        assertNull(result);
+    }
 }

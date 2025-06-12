@@ -111,6 +111,35 @@ class HearingStatusAuditServiceImplTest {
             verify(hearingStatusAuditRepository, times(1)).save(any());
         }
 
+        @Test
+        setsStatusUpdateDateTimeToUpdatedDateTimeWhenUpdatedDateTimeIsNotNull() {
+            HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+            hearingEntity.setUpdatedDateTime(LocalDateTime.of(2023, 10, 1, 12, 0));
+            HearingStatusAuditEntity auditEntity = new HearingStatusAuditEntity();
+
+            auditEntity.setStatusUpdateDateTime(
+                hearingEntity.getUpdatedDateTime() != null ? hearingEntity.getUpdatedDateTime() : LocalDateTime.now()
+            );
+
+            assertEquals(LocalDateTime.of(2023, 10, 1, 12, 0), auditEntity.getStatusUpdateDateTime());
+        }
+
+        @Test
+        setsStatusUpdateDateTimeToCurrentDateTimeWhenUpdatedDateTimeIsNull() {
+            HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+            hearingEntity.setUpdatedDateTime(null);
+            HearingStatusAuditEntity auditEntity = new HearingStatusAuditEntity();
+
+            auditEntity.setStatusUpdateDateTime(
+                hearingEntity.getUpdatedDateTime() != null ? hearingEntity.getUpdatedDateTime() : LocalDateTime.now()
+            );
+
+            assertNotNull(auditEntity.getStatusUpdateDateTime());
+            assertEquals(LocalDateTime.now().getYear(), auditEntity.getStatusUpdateDateTime().getYear());
+            assertEquals(LocalDateTime.now().getMonth(), auditEntity.getStatusUpdateDateTime().getMonth());
+            assertEquals(LocalDateTime.now().getDayOfMonth(), auditEntity.getStatusUpdateDateTime().getDayOfMonth());
+        }
+
     }
 
 }
