@@ -110,8 +110,8 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
             JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
             saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED_401),
                              HMI, HMC, errorDescription);
-            throw new RuntimeException("Failed to retrieve authorization token for operation: " + operation
-                                              + " hearingId: " + caseListingRequestId, ex);
+            throw new IllegalArgumentException("Failed to retrieve authorization token for operation: " + operation
+                                                   + " hearingId: " + caseListingRequestId, ex);
         }
         return authorization;
     }
