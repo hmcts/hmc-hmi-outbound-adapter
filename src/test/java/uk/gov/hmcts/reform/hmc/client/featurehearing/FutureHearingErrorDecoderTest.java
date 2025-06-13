@@ -200,7 +200,9 @@ class FutureHearingErrorDecoderTest {
     void shouldReturnEmptyOptionalWhenIoExceptionOccurs() {
         Response.Body body = new Response.Body() {
             @Override
-            public void close() throws IOException {}
+            public void close() throws IOException {
+
+            }
 
             @Override
             public Integer length() {
@@ -249,7 +251,9 @@ class FutureHearingErrorDecoderTest {
 
         Response.Body body = new Response.Body() {
             @Override
-            public void close() throws IOException {}
+            public void close() throws IOException {
+
+            }
 
             @Override
             public Integer length() {
