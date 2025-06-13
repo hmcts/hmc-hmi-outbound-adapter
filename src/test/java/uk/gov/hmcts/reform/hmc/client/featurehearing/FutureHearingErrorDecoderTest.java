@@ -19,8 +19,13 @@ import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -189,5 +194,151 @@ class FutureHearingErrorDecoderTest {
             .getLevel());
         assertEquals("Error payload from FH (HTTP 400): " + INPUT_STRING, logsList.get(2)
             .getMessage());
+    }
+
+    @Test
+    void shouldLogErrorWhenIOExceptionOccursWhileReadingPayload() throws IOException {
+        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
+        logger.setLevel(Level.DEBUG);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        Response.Body body = new Response.Body() {
+            @Override
+            public void close() throws IOException {
+
+            }
+
+            @Override
+            public Integer length() {
+                return null;
+            }
+            @Override
+            public boolean isRepeatable() {
+                return false;
+            }
+            @Override
+            public InputStream asInputStream() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+            @Override
+            public Reader asReader() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader(Charset charset) throws IOException {
+                return null;
+            }
+        };
+
+        Response response = Response.builder()
+            .body(body)
+            .status(400)
+            .request(Request.create(Request.HttpMethod.POST, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
+            .build();
+
+        Exception exception = new FutureHearingErrorDecoder().decode(null, response);
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertThat(logsList.stream().anyMatch(
+            log -> log.getLevel() == Level.ERROR && log.getMessage().contains("Unable to read payload from FH")
+        )).isTrue();
+    }
+
+    @Test
+    void shouldReturnEmptyOptionalWhenIOExceptionOccurs() {
+        Response.Body body = new Response.Body() {
+            @Override
+            public void close() throws IOException {}
+
+            @Override
+            public Integer length() {
+                return null;
+            }
+
+            @Override
+            public boolean isRepeatable() {
+                return false;
+            }
+
+            @Override
+            public InputStream asInputStream() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader(Charset charset) throws IOException {
+                return null;
+            }
+        };
+
+        Response response = Response.builder()
+            .body(body)
+            .status(500)
+            .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
+            .build();
+
+        Optional<Object> result = new FutureHearingErrorDecoder().getResponseBody(response, Object.class);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldLogErrorWhenIOExceptionOccursWhileReadingResponseBody() {
+        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
+        logger.setLevel(Level.ERROR);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        Response.Body body = new Response.Body() {
+            @Override
+            public void close() throws IOException {}
+
+            @Override
+            public Integer length() {
+                return null;
+            }
+
+            @Override
+            public boolean isRepeatable() {
+                return false;
+            }
+
+            @Override
+            public InputStream asInputStream() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader(Charset charset) throws IOException {
+                return null;
+            }
+        };
+
+        Response response = Response.builder()
+            .body(body)
+            .status(500)
+            .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
+            .build();
+
+        new FutureHearingErrorDecoder().getResponseBody(response, Object.class);
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertThat(logsList.stream().anyMatch(
+            log -> log.getLevel() == Level.ERROR && log.getMessage().contains("Response from FH failed with error code")
+        )).isTrue();
     }
 }
