@@ -65,7 +65,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
         }
     }
 
-    private <T> Optional<T> getResponseBody(Response response, Class<T> klass) {
+    public <T> Optional<T> getResponseBody(Response response, Class<T> klass) {
         String bodyJson = null;
         try {
             bodyJson = new BufferedReader(new InputStreamReader(response.body().asInputStream()))

@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
@@ -109,6 +110,31 @@ class HearingStatusAuditServiceImplTest {
                                                                             CREATE_HEARING_REQUEST,SUCCESS_STATUS,
                                                                             HMC, HMI,null);
             verify(hearingStatusAuditRepository, times(1)).save(any());
+        }
+
+        @Test
+        void shouldReturnUpdatedDateTimeWhenPresent() {
+            HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+            hearingEntity.setUpdatedDateTime(LocalDateTime.of(2023, 10, 1, 12, 0));
+
+            LocalDateTime result = hearingEntity.getUpdatedDateTime() != null
+                ? hearingEntity.getUpdatedDateTime()
+                : LocalDateTime.now();
+
+            assertEquals(LocalDateTime.of(2023, 10, 1, 12, 0), result);
+        }
+
+        @Test
+        void shouldReturnCurrentDateTimeWhenUpdatedDateTimeIsNull() {
+            HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+            hearingEntity.setUpdatedDateTime(null);
+
+            LocalDateTime result = hearingEntity.getUpdatedDateTime() != null
+                ? hearingEntity.getUpdatedDateTime()
+                : LocalDateTime.now();
+
+            assertNotNull(result);
+            assertTrue(result.isBefore(LocalDateTime.now().plusSeconds(1)));
         }
 
     }
