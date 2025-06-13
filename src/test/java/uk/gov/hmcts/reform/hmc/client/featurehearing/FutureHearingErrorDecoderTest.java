@@ -197,58 +197,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    void shouldLogErrorWhenIOExceptionOccursWhileReadingPayload() throws IOException {
-        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
-        logger.setLevel(Level.DEBUG);
-        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-        listAppender.start();
-        logger.addAppender(listAppender);
-
-        Response.Body body = new Response.Body() {
-            @Override
-            public void close() throws IOException {
-
-            }
-
-            @Override
-            public Integer length() {
-                return null;
-            }
-            @Override
-            public boolean isRepeatable() {
-                return false;
-            }
-            @Override
-            public InputStream asInputStream() throws IOException {
-                throw new IOException("Simulated IO error");
-            }
-            @Override
-            public Reader asReader() throws IOException {
-                throw new IOException("Simulated IO error");
-            }
-
-            @Override
-            public Reader asReader(Charset charset) throws IOException {
-                return null;
-            }
-        };
-
-        Response response = Response.builder()
-            .body(body)
-            .status(400)
-            .request(Request.create(Request.HttpMethod.POST, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
-            .build();
-
-        Exception exception = new FutureHearingErrorDecoder().decode(null, response);
-
-        List<ILoggingEvent> logsList = listAppender.list;
-        assertThat(logsList.stream().anyMatch(
-            log -> log.getLevel() == Level.ERROR && log.getMessage().contains("Unable to read payload from FH")
-        )).isTrue();
-    }
-
-    @Test
-    void shouldReturnEmptyOptionalWhenIOExceptionOccurs() {
+    void shouldReturnEmptyOptionalWhenIoExceptionOccurs() {
         Response.Body body = new Response.Body() {
             @Override
             public void close() throws IOException {}
@@ -291,7 +240,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    void shouldLogErrorWhenIOExceptionOccursWhileReadingResponseBody() {
+    void shouldLogErrorWhenIoExceptionOccursWhileReadingResponseBody() {
         Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         logger.setLevel(Level.ERROR);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
