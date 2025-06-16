@@ -21,6 +21,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubDeleteMethodThrowingError;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnToken;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPostMethodThrowingAuthenticationError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPutMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyAmendHearing;
@@ -211,6 +212,15 @@ public class FutureHearingRepositoryIT extends BaseTest {
             assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(REQUEST_NOT_FOUND);
+        }
+
+        @Test
+        void shouldThrowAuthExceptionWhenAuthTokenFails() {
+            stubFailToReturnToken(TOKEN);
+            assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
+                .isInstanceOf(AuthenticationException.class)
+                .hasMessageContaining("Failed to retrieve authorization token for operation: "
+                                          + "deleteHearingRequest hearingId: 2000000000");
         }
     }
 }

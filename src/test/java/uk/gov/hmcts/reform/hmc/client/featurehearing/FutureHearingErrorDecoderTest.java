@@ -56,7 +56,7 @@ class FutureHearingErrorDecoderTest {
     private FutureHearingErrorDecoder futureHearingErrorDecoder;
 
     @BeforeEach
-    public void setUp() {
+     void setUp() {
         MockitoAnnotations.openMocks(this);
         byteArrray = INPUT_STRING.getBytes();
         logger.setLevel(Level.INFO);
@@ -201,7 +201,7 @@ class FutureHearingErrorDecoderTest {
         Response.Body body = new Response.Body() {
             @Override
             public void close() throws IOException {
-
+                // This method is intentionally left empty as no resources need to be closed.
             }
 
             @Override
@@ -230,7 +230,7 @@ class FutureHearingErrorDecoderTest {
             }
         };
 
-        Response response = Response.builder()
+        response = Response.builder()
             .body(body)
             .status(500)
             .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
@@ -243,7 +243,6 @@ class FutureHearingErrorDecoderTest {
 
     @Test
     void shouldLogErrorWhenIoExceptionOccursWhileReadingResponseBody() {
-        Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
         logger.setLevel(Level.ERROR);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
@@ -252,7 +251,7 @@ class FutureHearingErrorDecoderTest {
         Response.Body body = new Response.Body() {
             @Override
             public void close() throws IOException {
-
+                // This method is intentionally left empty as no resources need to be closed.
             }
 
             @Override
@@ -281,7 +280,7 @@ class FutureHearingErrorDecoderTest {
             }
         };
 
-        Response response = Response.builder()
+        response = Response.builder()
             .body(body)
             .status(500)
             .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))

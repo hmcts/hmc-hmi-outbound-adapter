@@ -13,6 +13,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
 import java.util.Optional;
@@ -110,8 +111,8 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
             JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
             saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED_401),
                              HMI, HMC, errorDescription);
-            throw new RuntimeException("Failed to retrieve authorization token for operation: " + operation
-                                              + " hearingId: " + caseListingRequestId, ex);
+            throw new AuthenticationException("Failed to retrieve authorization token for operation: " + operation
+                                              + " hearingId: " + caseListingRequestId);
         }
         return authorization;
     }
