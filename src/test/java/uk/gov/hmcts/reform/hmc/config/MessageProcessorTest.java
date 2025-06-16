@@ -165,20 +165,6 @@ class MessageProcessorTest {
     }
 
     @Test
-    void shouldProcessPendingRequestNotInPendingState() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setStatus("PROCESSING");
-
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
-
-        messageProcessor.processPendingRequest(pendingRequest);
-
-        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-    }
-
-    @Test
     void shouldLogDebugWhenNotInPendingStateWhileProcessing() {
 
         PendingRequestEntity pendingRequest = generatePendingRequest();
@@ -193,7 +179,7 @@ class MessageProcessorTest {
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
         verify(pendingRequestService, times(0)).markRequestWithGivenStatus(
             pendingRequest.getId(), "PROCESSING");
-        verify(futureHearingRepository, times(0)).createHearingRequest(any());
+        verify(futureHearingRepository, times(0)).createHearingRequest(any(), any());
         verify(pendingRequestService, times(0)).markRequestAsPending(eq(pendingRequest.getId()),
                                                                      eq(pendingRequest.getRetryCount()), any());
     }
@@ -206,7 +192,7 @@ class MessageProcessorTest {
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
         when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
-        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
@@ -225,7 +211,7 @@ class MessageProcessorTest {
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
         when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
-        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
