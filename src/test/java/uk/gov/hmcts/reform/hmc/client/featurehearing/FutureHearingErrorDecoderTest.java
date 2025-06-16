@@ -19,8 +19,13 @@ import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,7 +56,7 @@ class FutureHearingErrorDecoderTest {
     private FutureHearingErrorDecoder futureHearingErrorDecoder;
 
     @BeforeEach
-    public void setUp() {
+     void setUp() {
         MockitoAnnotations.openMocks(this);
         byteArrray = INPUT_STRING.getBytes();
         logger.setLevel(Level.INFO);
@@ -189,5 +194,103 @@ class FutureHearingErrorDecoderTest {
             .getLevel());
         assertEquals("Error payload from FH (HTTP 400): " + INPUT_STRING, logsList.get(2)
             .getMessage());
+    }
+
+    @Test
+    void shouldReturnEmptyOptionalWhenIoExceptionOccurs() {
+        Response.Body body = new Response.Body() {
+            @Override
+            public void close() throws IOException {
+                // This method is intentionally left empty as no resources need to be closed.
+            }
+
+            @Override
+            public Integer length() {
+                return null;
+            }
+
+            @Override
+            public boolean isRepeatable() {
+                return false;
+            }
+
+            @Override
+            public InputStream asInputStream() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader(Charset charset) throws IOException {
+                return null;
+            }
+        };
+
+        response = Response.builder()
+            .body(body)
+            .status(500)
+            .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
+            .build();
+
+        Optional<Object> result = new FutureHearingErrorDecoder().getResponseBody(response, Object.class);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldLogErrorWhenIoExceptionOccursWhileReadingResponseBody() {
+        logger.setLevel(Level.ERROR);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        Response.Body body = new Response.Body() {
+            @Override
+            public void close() throws IOException {
+                // This method is intentionally left empty as no resources need to be closed.
+            }
+
+            @Override
+            public Integer length() {
+                return null;
+            }
+
+            @Override
+            public boolean isRepeatable() {
+                return false;
+            }
+
+            @Override
+            public InputStream asInputStream() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader() throws IOException {
+                throw new IOException("Simulated IO error");
+            }
+
+            @Override
+            public Reader asReader(Charset charset) throws IOException {
+                return null;
+            }
+        };
+
+        response = Response.builder()
+            .body(body)
+            .status(500)
+            .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
+            .build();
+
+        new FutureHearingErrorDecoder().getResponseBody(response, Object.class);
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertThat(logsList.stream().anyMatch(
+            log -> log.getLevel() == Level.ERROR && log.getMessage().contains("Response from FH failed with error code")
+        )).isTrue();
     }
 }
