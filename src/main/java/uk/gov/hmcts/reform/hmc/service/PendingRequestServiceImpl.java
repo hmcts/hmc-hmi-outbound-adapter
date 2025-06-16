@@ -96,11 +96,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return result;
     }
 
-
-    public Optional<PendingRequestEntity> findById(Long pendingRequestId) {
-        return pendingRequestRepository.findById(pendingRequestId);
-    }
-
     public boolean lastTriedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
         LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime();
         if (lastTriedDateTime == null) {
