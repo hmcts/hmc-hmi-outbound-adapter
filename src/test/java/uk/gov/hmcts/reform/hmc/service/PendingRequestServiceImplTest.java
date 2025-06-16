@@ -50,7 +50,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_UPDATE_HEARING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 
 @DisplayName("PendingRequestServiceImpl")
@@ -333,10 +332,9 @@ class PendingRequestServiceImplTest {
 
     private static void verifyLogErrors(ListAppender<ILoggingEvent> listAppender) {
         List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals(2, logsList.size());
+        assertEquals(1, logsList.size());
         assertEquals(Level.ERROR, logsList.get(0).getLevel());
-        assertEquals(String.format(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE),logsList.get(0).getMessage());
-        assertEquals(String.format(EXCEPTION_MESSAGE), logsList.get(1).getMessage());
+        assertEquals(String.format(EXCEPTION_MESSAGE), logsList.get(0).getMessage());
     }
 
     private @NotNull ListAppender<ILoggingEvent> getILoggingEventListAppender() {
