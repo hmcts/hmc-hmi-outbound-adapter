@@ -215,7 +215,7 @@ class MessageProcessorTest {
     }
 
     @Test
-    void shouldNotProcessAlreadyClaimedRequest() {
+    void shouldNotProcessClaimedRequest() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
