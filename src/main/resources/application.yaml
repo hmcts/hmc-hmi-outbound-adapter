@@ -64,6 +64,8 @@ azure:
       max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}
       inbound-connection-string: ${HMC_SERVICE_BUS_INBOUND_CONNECTION_STRING}
       inbound-queue-name: ${HMC_SERVICE_BUS_INBOUND_QUEUE}
+      external-connection-string: ${HMC_SERVICE_BUS_CONNECTION_STRING}
+      external-topic-name: ${HMC_SERVICE_BUS_TOPIC}
 
 fh:
   ad:
