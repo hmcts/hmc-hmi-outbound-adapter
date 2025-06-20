@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -87,6 +88,7 @@ class MessageProcessorTest {
         when(applicationParams.getScope()).thenReturn("SCOPE");
         when(applicationParams.getClientSecret()).thenReturn("CLIENT_SECRET");
         when(activeDirectoryApiClient.authenticate(requestString)).thenReturn(new AuthenticationResponse());
+        when(pendingRequestService.claimRequest(any())).thenReturn(1);
     }
 
     @ParameterizedTest
@@ -153,12 +155,11 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
 
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
         verify(futureHearingRepository).createHearingRequest(any(), any());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
     }
@@ -170,13 +171,12 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
         verify(futureHearingRepository).createHearingRequest(any(), any());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(),
                                                            PendingStatusType.EXCEPTION.name());
@@ -189,13 +189,12 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
         verify(futureHearingRepository).createHearingRequest(any(), any());
         verify(pendingRequestService).markRequestAsPending(eq(pendingRequest.getId()),
                                                            eq(pendingRequest.getRetryCount()),
@@ -209,11 +208,26 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
 
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+    }
+
+    @Test
+    void shouldNotProcessAlreadyClaimedRequest() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(0);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
+        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
     }
 
     private static Stream<Arguments> provideRetryableExceptions() {
