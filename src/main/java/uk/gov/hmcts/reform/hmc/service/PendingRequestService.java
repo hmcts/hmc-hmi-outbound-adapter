@@ -18,6 +18,8 @@ public interface PendingRequestService {
 
     void markRequestWithGivenStatus(Long id, String status);
 
+    int claimRequest(Long id);
+
     void markRequestAsPending(Long hearingId, Integer retryCount, LocalDateTime lastTriedDateTimeIn);
 
     void deleteCompletedPendingRequests();
