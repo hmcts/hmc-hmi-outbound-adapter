@@ -101,20 +101,6 @@ public class MessageProcessor {
         }
 
         pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
-        Optional<PendingRequestEntity> pendingRequestEntityOpt = pendingRequestService.findById(pendingRequest.getId());
-        if (pendingRequestEntityOpt.isEmpty()) {
-            log.debug("Pending request with Id: {} not found", pendingRequest.getId());
-            return;
-        }
-
-        PendingRequestEntity entity = pendingRequestEntityOpt.get();
-        if (!entity.getStatus().equals(PendingStatusType.PENDING.name())) {
-            log.debug(
-                "Pending request with Id: {} is not in PENDING status. Status: {} hearingId: {}",
-                entity.getId(), entity.getStatus(), entity.getHearingId()
-            );
-            return;
-        }
 
         int claimed = pendingRequestService.claimRequest(pendingRequest.getId());
         if (claimed == 0) {
