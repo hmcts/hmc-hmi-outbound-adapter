@@ -29,7 +29,6 @@ import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
