@@ -139,6 +139,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
     }
 
+    public int claimRequest(Long id) {
+        return pendingRequestRepository.claimRequest(id);
+    }
+
     public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
         log.debug("catchExceptionAndUpdateHearing ({}, {})", hearingId, exception.getMessage());
         JsonNode errorDetails = null;
