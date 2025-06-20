@@ -38,6 +38,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -163,6 +164,70 @@ class MessageProcessorTest {
         verify(futureHearingRepository).createHearingRequest(any(), any());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
     }
+
+    @Test
+    void shouldNotProcessPendingRequest_BothTimePeriods_True() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService, times(0))
+            .findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService, times(0)).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
+        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
+    @Test
+    void shouldNotProcessPendingRequest_OnlySubmittedDateTimePeriodElapsedIsTrue() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService, times(0))
+            .findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService, times(0)).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
+        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
+    @Test
+    void shouldNotProcessPendingRequest_SubmittedDateTimePeriodElapsedIsFalse() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository).createHearingRequest(any(), any());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
+    @Test
+    void shouldNotProcessPendingRequest_BothTimePeriodsFalse() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService, times(0))
+            .findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService, times(0)).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
+        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
 
     @ParameterizedTest
     @MethodSource("provideNonRetryableExceptions")

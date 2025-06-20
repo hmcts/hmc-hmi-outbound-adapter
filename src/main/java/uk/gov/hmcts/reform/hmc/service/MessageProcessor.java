@@ -92,10 +92,12 @@ public class MessageProcessor {
 
     @Transactional
     public void processPendingRequest(PendingRequestEntity pendingRequest) {
-        log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest);
+        log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest.getHearingId());
 
         if (pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
             || !pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
+            log.debug("Pending request with Id: {}, hearingId: {} is not ready for processing.",
+                      pendingRequest.getId(), pendingRequest.getHearingId());
             return;
         }
 
@@ -103,7 +105,8 @@ public class MessageProcessor {
 
         int claimed = pendingRequestService.claimRequest(pendingRequest.getId());
         if (claimed == 0) {
-            log.debug("Pending request with Id: {} already claimed.", pendingRequest.getId());
+            log.debug("Pending request with Id: {}, hearingId: {} already claimed.", pendingRequest.getId(),
+                      pendingRequest.getHearingId());
             return;
         }
 
