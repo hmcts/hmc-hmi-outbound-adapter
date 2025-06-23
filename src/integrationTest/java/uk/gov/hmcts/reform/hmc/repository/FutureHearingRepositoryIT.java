@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
@@ -20,6 +21,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubDeleteMethodThrowingError;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnToken;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPostMethodThrowingAuthenticationError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPutMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyAmendHearing;
@@ -36,12 +38,14 @@ public class FutureHearingRepositoryIT extends BaseTest {
     private static final String TOKEN = "example-token";
     private static final String GET_TOKEN_URL = "/FH_GET_TOKEN_URL";
     private static final String HMI_REQUEST_URL = "/hearings";
-    private static final String CASE_LISTING_REQUEST_ID = "testCaseListingRequestId";
+    private static final String CASE_LISTING_REQUEST_ID = "2000000000";
     private static final String HMI_REQUEST_URL_WITH_ID = "/hearings/" + CASE_LISTING_REQUEST_ID;
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
     private static final JsonNode data = OBJECT_MAPPER.convertValue("Test data", JsonNode.class);
+    private static final String DELETE_HEARING_DATA_SCRIPT = "classpath:sql/delete-hearing-tables.sql";
+    private static final String INSERT_HEARINGS_DATA_SCRIPT = "classpath:sql/insert-case_hearing_request.sql";
 
     @MockBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
@@ -87,13 +91,15 @@ public class FutureHearingRepositoryIT extends BaseTest {
 
     @Nested
     @DisplayName("Create Hearing Request")
+    @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_HEARINGS_DATA_SCRIPT})
     class CreateHearingRequest {
 
         @Test
         void shouldSuccessfullyRequestAHearing() {
             stubSuccessfullyReturnToken(TOKEN);
             stubSuccessfullyRequestHearing(TOKEN);
-            HearingManagementInterfaceResponse response = defaultFutureHearingRepository.createHearingRequest(data);
+            HearingManagementInterfaceResponse response = defaultFutureHearingRepository.createHearingRequest(data,
+                                                                              CASE_LISTING_REQUEST_ID);
             assertEquals(202, response.getResponseCode());
         }
 
@@ -101,7 +107,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         void shouldThrow400BadFutureHearingRequestException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(400, HMI_REQUEST_URL);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(BadFutureHearingRequestException.class)
                 .hasMessageContaining(INVALID_REQUEST);
         }
@@ -110,7 +116,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         void shouldThrow401AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(401, HMI_REQUEST_URL);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(INVALID_SECRET);
         }
@@ -119,7 +125,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
         void shouldThrow500AuthenticationException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(500, HMI_REQUEST_URL);
-            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data))
+            assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(AuthenticationException.class)
                 .hasMessageContaining(SERVER_ERROR);
         }
@@ -127,6 +133,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
 
     @Nested
     @DisplayName("Amend Hearing Request")
+    @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_HEARINGS_DATA_SCRIPT})
     class AmendHearingRequest {
 
         @Test
@@ -168,6 +175,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
 
     @Nested
     @DisplayName("Delete Hearing Request")
+    @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_HEARINGS_DATA_SCRIPT})
     class DeleteHearingRequest {
 
         @Test
@@ -204,6 +212,15 @@ public class FutureHearingRepositoryIT extends BaseTest {
             assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(REQUEST_NOT_FOUND);
+        }
+
+        @Test
+        void shouldThrowAuthExceptionWhenAuthTokenFails() {
+            stubFailToReturnToken(TOKEN);
+            assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
+                .isInstanceOf(AuthenticationException.class)
+                .hasMessageContaining("Failed to retrieve authorization token for operation: "
+                                          + "deleteHearingRequest hearingId: 2000000000");
         }
     }
 }
