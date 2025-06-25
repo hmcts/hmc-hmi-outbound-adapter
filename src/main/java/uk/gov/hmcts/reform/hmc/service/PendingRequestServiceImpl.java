@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+import static org.eclipse.jetty.http.HttpStatus.UNAUTHORIZED_401;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_UPDATE_HEARING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ESCALATE_PENDING_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
@@ -140,6 +140,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
+        log.debug("catchExceptionAndUpdateHearing ({}, {})", hearingId, exception.getMessage());
         JsonNode errorDetails = null;
         Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
         if (hearingResult.isEmpty()) {
@@ -166,6 +167,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
                           LA_RESPONSE, LA_FAILURE_STATUS,
                           FH, HMC, objectMapper.convertValue(errorDetails, JsonNode.class));
+    }
+
+    public Optional<PendingRequestEntity> findById(Long pendingRequestId) {
+        return pendingRequestRepository.findById(pendingRequestId);
     }
 
     private static final Map<Class<? extends Exception>, BiConsumer<Exception, HearingEntity>> EXCEPTION_HANDLERS =
@@ -220,31 +225,25 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return envVarInterval.split(",")[1];
     }
 
-    private void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
+    private static void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
                                            String errorDescription) {
         log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, EXCEPTION.name());
     }
 
     private static void handleResourceNotFoundException(ResourceNotFoundException ex, HearingEntity entity) {
-        log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(), ex.getMessage());
-        entity.setErrorCode(HttpStatus.NOT_FOUND_404);
-        entity.setErrorDescription(ex.getMessage());
+        handleException(entity, HttpStatus.NOT_FOUND_404, ex.getMessage());
     }
 
     private static void handleAuthenticationException(AuthenticationException ex, HearingEntity entity) {
-        log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(),
-                  ex.getErrorDetails().getAuthErrorDescription());
-        if (ex.getErrorDetails().getAuthErrorCodes() != null && !ex.getErrorDetails().getAuthErrorCodes().isEmpty()) {
-            entity.setErrorCode(ex.getErrorDetails().getAuthErrorCodes().get(0));
-        }
-        entity.setErrorDescription(ex.getErrorDetails().getAuthErrorDescription());
+        Integer errorCode = (ex.getErrorDetails().getAuthErrorCodes() != null
+            && !ex.getErrorDetails().getAuthErrorCodes().isEmpty())
+            ? ex.getErrorDetails().getAuthErrorCodes().get(0) : UNAUTHORIZED_401;
+        handleException(entity, errorCode, ex.getErrorDetails().getAuthErrorDescription());
     }
 
     private static void handleBadFutureHearingRequestException(BadFutureHearingRequestException ex,
                                                                HearingEntity entity) {
-        log.error(ERROR_PROCESSING_UPDATE_HEARING_MESSAGE, entity.getId(), ex.getErrorDetails().getErrorDescription());
-        entity.setErrorCode(ex.getErrorDetails().getErrorCode());
-        entity.setErrorDescription(ex.getErrorDetails().getErrorDescription());
+        handleException(entity, ex.getErrorDetails().getErrorCode(), ex.getErrorDetails().getErrorDescription());
     }
 
     private JsonNode extractErrorDetails(Exception exception) {
@@ -256,6 +255,12 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             return objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
         }
         return objectMapper.convertValue(exception.getMessage(), JsonNode.class);
+    }
+
+    private static void handleException(HearingEntity entity, Integer errorCode,
+                                        String errorDescription) {
+        entity.setErrorCode(errorCode);
+        entity.setErrorDescription(errorDescription);
     }
 
 }
