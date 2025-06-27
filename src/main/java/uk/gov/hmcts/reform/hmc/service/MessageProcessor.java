@@ -93,7 +93,7 @@ public class MessageProcessor {
 
     @Transactional
     public void processPendingRequest(PendingRequestEntity pendingRequest) {
-        log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest);
+        log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest.getHearingId());
 
         if (!pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
             && pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
