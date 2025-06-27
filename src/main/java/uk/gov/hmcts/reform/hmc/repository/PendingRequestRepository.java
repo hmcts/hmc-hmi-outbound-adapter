@@ -44,6 +44,10 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     @Query("UPDATE PendingRequestEntity pr SET pr.status = :status WHERE pr.id = :id")
     void markRequestWithGivenStatus(Long id, String status);
 
+    @Modifying
+    @Query("UPDATE PendingRequestEntity pr SET pr.status = 'PROCESSING' WHERE pr.id = :id and pr.status = 'PENDING'")
+    int claimRequest(Long id);
+
     @Query(value = "SELECT * FROM public.pending_requests WHERE submitted_date_time < NOW() - "
         + "CAST(:escalationWaitValue || ' ' || :escalationWaitInterval AS INTERVAL) "
         + "AND incident_flag = false AND status != 'COMPLETED' ",
