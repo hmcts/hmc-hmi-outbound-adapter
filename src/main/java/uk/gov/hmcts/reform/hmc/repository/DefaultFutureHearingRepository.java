@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jetty.http.HttpStatus;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
@@ -103,13 +103,13 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
             authorization = retrieveAuthToken().getAccessToken();
             log.debug("Authorization token retrieved successfully for operation: {} hearingId: {}", operation,
                       caseListingRequestId);
-            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_SUCCESS, String.valueOf(HttpStatus.OK_200),
+            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_SUCCESS, String.valueOf(HttpStatus.OK.value()),
                                 HMI, HMC, null);
         } catch (Exception ex) {
             log.error("Failed to retrieve authorization token for hearingId: {} with exception {}",
                       caseListingRequestId, ex.getMessage());
             JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
-            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED_401),
+            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED.value()),
                              HMI, HMC, errorDescription);
             throw new AuthenticationException("Failed to retrieve authorization token for operation: " + operation
                                               + " hearingId: " + caseListingRequestId);
