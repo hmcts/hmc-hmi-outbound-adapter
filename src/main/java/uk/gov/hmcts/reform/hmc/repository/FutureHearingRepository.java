@@ -8,7 +8,7 @@ public interface FutureHearingRepository {
 
     AuthenticationResponse retrieveAuthToken();
 
-    HearingManagementInterfaceResponse createHearingRequest(JsonNode data);
+    HearingManagementInterfaceResponse createHearingRequest(JsonNode data, String caseListingRequestId);
 
     HearingManagementInterfaceResponse amendHearingRequest(JsonNode data, String caseListingRequestId);
 
