@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import static org.eclipse.jetty.http.HttpStatus.UNAUTHORIZED_401;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.ESCALATE_PENDING_REQUEST;
@@ -231,13 +230,13 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     private static void handleResourceNotFoundException(ResourceNotFoundException ex, HearingEntity entity) {
-        handleException(entity, HttpStatus.NOT_FOUND_404, ex.getMessage());
+        handleException(entity, HttpStatus.NOT_FOUND.value(), ex.getMessage());
     }
 
     private static void handleAuthenticationException(AuthenticationException ex, HearingEntity entity) {
         Integer errorCode = (ex.getErrorDetails().getAuthErrorCodes() != null
             && !ex.getErrorDetails().getAuthErrorCodes().isEmpty())
-            ? ex.getErrorDetails().getAuthErrorCodes().get(0) : UNAUTHORIZED_401;
+            ? ex.getErrorDetails().getAuthErrorCodes().get(0) : HttpStatus.UNAUTHORIZED.value();
         handleException(entity, errorCode, ex.getErrorDetails().getAuthErrorDescription());
     }
 
