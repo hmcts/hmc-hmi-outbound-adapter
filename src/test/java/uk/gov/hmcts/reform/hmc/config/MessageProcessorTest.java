@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,7 +74,7 @@ class MessageProcessorTest {
     private JsonNode anyData;
 
     @BeforeEach
-    public void setUp() {
+     void setUp() {
         MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
@@ -87,6 +88,7 @@ class MessageProcessorTest {
         when(applicationParams.getScope()).thenReturn("SCOPE");
         when(applicationParams.getClientSecret()).thenReturn("CLIENT_SECRET");
         when(activeDirectoryApiClient.authenticate(requestString)).thenReturn(new AuthenticationResponse());
+        when(pendingRequestService.claimRequest(any())).thenReturn(1);
     }
 
     @ParameterizedTest
@@ -148,7 +150,7 @@ class MessageProcessorTest {
     }
 
     @Test
-    void shouldProcessPendingRequest() {
+    void shouldNotProcessPendingRequest_SubmittedDateTimePeriodElapsedIsFalse() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
@@ -157,9 +159,33 @@ class MessageProcessorTest {
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
-        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository).createHearingRequest(any(), any());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
+    @ParameterizedTest
+    @MethodSource("providePendingRequestTestCases")
+    void shouldNotProcessPendingRequest(PendingRequestEntity pendingRequest, boolean submittedElapsed,
+                                        boolean lastTriedElapsed) {
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(submittedElapsed);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(lastTriedElapsed);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService, never()).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService, never()).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
+        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+    }
+
+    private static Stream<Arguments> providePendingRequestTestCases() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+        return Stream.of(
+            Arguments.of(pendingRequest, true, true),  // Both time periods true
+            Arguments.of(pendingRequest, true, false), // Only submitted elapsed is true
+            Arguments.of(pendingRequest, false, false) // Both time periods false
+        );
     }
 
     @ParameterizedTest
@@ -169,13 +195,13 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
-        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository).createHearingRequest(any(), any());
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(),
                                                            PendingStatusType.EXCEPTION.name());
     }
@@ -187,16 +213,45 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        doThrow(exception).when(futureHearingRepository).createHearingRequest(any());
+        doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "PROCESSING");
-        verify(futureHearingRepository).createHearingRequest(any());
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository).createHearingRequest(any(), any());
         verify(pendingRequestService).markRequestAsPending(eq(pendingRequest.getId()),
                                                            eq(pendingRequest.getRetryCount()),
                                                            any());
+    }
+
+    @Test
+    void shouldProcessPendingRequestNotInPendingState() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+        pendingRequest.setStatus("PROCESSING");
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+    }
+
+    @Test
+    void shouldNotProcessClaimedRequest() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
+        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(0);
+
+        messageProcessor.processPendingRequest(pendingRequest);
+
+        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService).claimRequest(pendingRequest.getId());
+        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
+        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
     }
 
     private static Stream<Arguments> provideRetryableExceptions() {
@@ -209,15 +264,15 @@ class MessageProcessorTest {
     private static Stream<Arguments> provideNonRetryableExceptions() {
         return Stream.of(
             Arguments.of(new BadFutureHearingRequestException("N/A", null)),
-            Arguments.of(new AuthenticationException("N/A")),
-            Arguments.of(new ResourceNotFoundException("N/A"))
+            Arguments.of(new AuthenticationException("N/A", null)),
+            Arguments.of(new ResourceNotFoundException("N/A , null"))
         );
     }
 
     private static Stream<Arguments> provideMessageTypes() {
         return Stream.of(
             Arguments.of(MessageType.REQUEST_HEARING.name(),
-                         (Runnable) () -> verify(futureHearingRepository).createHearingRequest(any())),
+                         (Runnable) () -> verify(futureHearingRepository).createHearingRequest(any(), any())),
             Arguments.of(MessageType.AMEND_HEARING.name(),
                          (Runnable) () -> verify(futureHearingRepository).amendHearingRequest(any(), any())),
             Arguments.of(MessageType.DELETE_HEARING.name(),
@@ -225,13 +280,14 @@ class MessageProcessorTest {
         );
     }
 
-    private PendingRequestEntity generatePendingRequest() {
+    private static PendingRequestEntity generatePendingRequest() {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
         pendingRequest.setId(1L);
         pendingRequest.setHearingId(2000000001L);
         pendingRequest.setMessageType("REQUEST_HEARING");
         pendingRequest.setMessage("{\"test\": \"name\"}");
         pendingRequest.setRetryCount(0);
+        pendingRequest.setStatus(PendingStatusType.PENDING.name());
         return pendingRequest;
     }
 

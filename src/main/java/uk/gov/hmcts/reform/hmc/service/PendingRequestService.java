@@ -4,6 +4,7 @@ import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface PendingRequestService {
 
@@ -17,6 +18,8 @@ public interface PendingRequestService {
 
     void markRequestWithGivenStatus(Long id, String status);
 
+    int claimRequest(Long id);
+
     void markRequestAsPending(Long hearingId, Integer retryCount, LocalDateTime lastTriedDateTimeIn);
 
     void deleteCompletedPendingRequests();
@@ -24,4 +27,6 @@ public interface PendingRequestService {
     void escalatePendingRequests();
 
     void catchExceptionAndUpdateHearing(Long hearingId, Exception exception);
+
+    Optional<PendingRequestEntity> findById(Long pendingRequestId);
 }

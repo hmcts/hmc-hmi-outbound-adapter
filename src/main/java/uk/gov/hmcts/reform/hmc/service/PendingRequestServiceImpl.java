@@ -4,23 +4,33 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
+import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.ESCALATE_PENDING_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_FAILURE_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_RESPONSE;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_PROCESSOR;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.PENDING_REQUEST;
 
 @Slf4j
 @Service
@@ -66,7 +76,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         if (hoursElapsed >= exceptionLimitInHours) {
             log.debug("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
                       pendingRequest.getHearingId());
-            markRequestWithGivenStatus(pendingRequest.getId(), PendingStatusType.EXCEPTION.name());
+            markRequestWithGivenStatus(pendingRequest.getId(), EXCEPTION.name());
             log.error("Submitted time of request with ID {} is {} hours later than before.",
                       pendingRequest.getHearingId(), exceptionLimitInHours);
             result = true;
@@ -128,27 +138,53 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
     }
 
-    public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
-        log.error("Error processing message with Hearing id {} exception was {}",
-                  hearingId, exception.getMessage());
-        Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
-        if (hearingResult.isPresent()) {
-            HearingEntity hearingEntity = hearingResult.get();
-            hearingEntity.setStatus("EXCEPTION");
-            hearingEntity.setErrorDescription(exception.getMessage());
-            hearingRepository.save(hearingEntity);
-            logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
-                                      hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
-                                      hearingEntity.getErrorDescription());
-
-            JsonNode errorDescription = objectMapper.convertValue(exception.getMessage(), JsonNode.class);
-            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
-                                                                            LA_RESPONSE, LA_FAILURE_STATUS,
-                                                                            FH, HMC, errorDescription);
-        } else {
-            log.error("Hearing id {} not found", hearingId);
-        }
+    public int claimRequest(Long id) {
+        return pendingRequestRepository.claimRequest(id);
     }
+
+    public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
+        log.debug("catchExceptionAndUpdateHearing ({}, {})", hearingId, exception.getMessage());
+        JsonNode errorDetails = null;
+        Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
+        if (hearingResult.isEmpty()) {
+            log.error("Hearing id {} not found", hearingId);
+            return;
+        }
+        HearingEntity hearingEntity = hearingResult.get();
+        hearingEntity.setStatus(EXCEPTION.name());
+        hearingEntity.setUpdatedDateTime(LocalDateTime.now());
+
+        BiConsumer<Exception, HearingEntity> handler = EXCEPTION_HANDLERS.get(exception.getClass());
+        if (handler != null) {
+            handler.accept(exception, hearingEntity);
+            errorDetails = extractErrorDetails(exception);
+        } else {
+            log.error("Unhandled exception type for hearing id {}, exception {}, errorMessage {} ", hearingId,
+                      exception.getClass(), exception.getMessage());
+        }
+        hearingRepository.save(hearingEntity);
+        logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
+                                  hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
+                                  hearingEntity.getErrorDescription());
+
+        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
+                          LA_RESPONSE, LA_FAILURE_STATUS,
+                          FH, HMC, objectMapper.convertValue(errorDetails, JsonNode.class));
+    }
+
+    public Optional<PendingRequestEntity> findById(Long pendingRequestId) {
+        return pendingRequestRepository.findById(pendingRequestId);
+    }
+
+    private static final Map<Class<? extends Exception>, BiConsumer<Exception, HearingEntity>> EXCEPTION_HANDLERS =
+        Map.of(
+        ResourceNotFoundException.class, (ex, entity) ->
+            handleResourceNotFoundException((ResourceNotFoundException) ex, entity),
+        AuthenticationException.class, (ex, entity) ->
+            handleAuthenticationException((AuthenticationException) ex, entity),
+        BadFutureHearingRequestException.class, (ex, entity) ->
+            handleBadFutureHearingRequestException((BadFutureHearingRequestException) ex, entity)
+    );
 
     public void escalatePendingRequests() {
         log.debug("escalatePendingRequests()");
@@ -179,8 +215,9 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         log.debug("escalatePendingRequests");
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
 
-        log.error("Error occurred during service bus processing. Service:{}. Entity:{}. Method:{}. Hearing ID:{}.",
-                  "MessageProcessor", pendingRequest, "escalatePendingRequest", pendingRequest.getHearingId());
+        log.error(ERROR_PROCESSING_MESSAGE, MESSAGE_PROCESSOR, PENDING_REQUEST,
+                  ESCALATE_PENDING_REQUEST, pendingRequest.getHearingId());
+
     }
 
     protected Long getIntervalUnits(String envVarInterval) {
@@ -191,9 +228,42 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return envVarInterval.split(",")[1];
     }
 
-    private void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
+    private static void logErrorStatusToException(Long hearingId, String caseRef, String serviceCode,
                                            String errorDescription) {
-        log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, "EXCEPTION");
+        log.error(EXCEPTION_MESSAGE, hearingId, caseRef, serviceCode, errorDescription, EXCEPTION.name());
+    }
+
+    private static void handleResourceNotFoundException(ResourceNotFoundException ex, HearingEntity entity) {
+        handleException(entity, HttpStatus.NOT_FOUND.value(), ex.getMessage());
+    }
+
+    private static void handleAuthenticationException(AuthenticationException ex, HearingEntity entity) {
+        Integer errorCode = (ex.getErrorDetails().getAuthErrorCodes() != null
+            && !ex.getErrorDetails().getAuthErrorCodes().isEmpty())
+            ? ex.getErrorDetails().getAuthErrorCodes().get(0) : HttpStatus.UNAUTHORIZED.value();
+        handleException(entity, errorCode, ex.getErrorDetails().getAuthErrorDescription());
+    }
+
+    private static void handleBadFutureHearingRequestException(BadFutureHearingRequestException ex,
+                                                               HearingEntity entity) {
+        handleException(entity, ex.getErrorDetails().getErrorCode(), ex.getErrorDetails().getErrorDescription());
+    }
+
+    private JsonNode extractErrorDetails(Exception exception) {
+        if (exception instanceof ResourceNotFoundException resourceNotFoundException) {
+            return objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
+        } else if (exception instanceof AuthenticationException authException) {
+            return objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
+        } else if (exception instanceof BadFutureHearingRequestException badRequestException) {
+            return objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
+        }
+        return objectMapper.convertValue(exception.getMessage(), JsonNode.class);
+    }
+
+    private static void handleException(HearingEntity entity, Integer errorCode,
+                                        String errorDescription) {
+        entity.setErrorCode(errorCode);
+        entity.setErrorDescription(errorDescription);
     }
 
 }

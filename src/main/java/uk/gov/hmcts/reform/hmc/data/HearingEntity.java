@@ -8,8 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,16 +23,12 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
-@SecondaryTable(name = "CASE_HEARING_REQUEST",
-    pkJoinColumns = {
-        @PrimaryKeyJoinColumn(name = "CASE_HEARING_ID")})
 public class HearingEntity extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 5837513924648640249L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY,
-        generator = "hearing_id_seq")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "hearing_id")
     private Long id;
 

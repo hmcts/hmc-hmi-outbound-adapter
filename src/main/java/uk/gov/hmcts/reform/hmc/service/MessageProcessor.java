@@ -92,47 +92,51 @@ public class MessageProcessor {
 
     @Transactional
     public void processPendingRequest(PendingRequestEntity pendingRequest) {
-        log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest);
+        log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest.getHearingId());
 
-        if (!pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
-            && pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
-
-
-            pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
-
-            pendingRequestService.markRequestWithGivenStatus(
-                pendingRequest.getId(),
-                PendingStatusType.PROCESSING.name()
-            );
-
-            try {
-                processPendingMessage(convertMessage(pendingRequest.getMessage()),
-                                      pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
-                );
-            } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException exception) {
-                log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
-                pendingRequestService.markRequestWithGivenStatus(
-                    pendingRequest.getId(),
-                    PendingStatusType.EXCEPTION.name()
-                );
-                pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
-                return;
-            } catch (Exception ex) {
-                log.debug("Exception {}", ex.getMessage());
-                pendingRequestService.markRequestAsPending(
-                    pendingRequest.getId(),
-                    pendingRequest.getRetryCount(),
-                    pendingRequest.getLastTriedDateTime()
-                );
-                return;
-            }
-            pendingRequestService.markRequestWithGivenStatus(
-                pendingRequest.getId(),
-                PendingStatusType.COMPLETED.name()
-            );
-
+        if (pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
+            || !pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
+            log.debug("Pending request with Id: {}, hearingId: {} is not ready for processing.",
+                      pendingRequest.getId(), pendingRequest.getHearingId());
+            return;
         }
 
+        pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
+
+        int claimed = pendingRequestService.claimRequest(pendingRequest.getId());
+        if (claimed == 0) {
+            log.debug("Pending request with Id: {}, hearingId: {} already claimed.", pendingRequest.getId(),
+                      pendingRequest.getHearingId());
+            return;
+        }
+
+        try {
+            processPendingMessage(
+                convertMessage(pendingRequest.getMessage()),
+                pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
+            );
+        } catch (AuthenticationException | BadFutureHearingRequestException
+                 | ResourceNotFoundException exception) {
+            log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
+            pendingRequestService.markRequestWithGivenStatus(
+                pendingRequest.getId(),
+                PendingStatusType.EXCEPTION.name()
+            );
+            pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
+            return;
+        } catch (Exception ex) {
+            log.debug("Exception {}", ex.getMessage());
+            pendingRequestService.markRequestAsPending(
+                pendingRequest.getId(),
+                pendingRequest.getRetryCount(),
+                pendingRequest.getLastTriedDateTime()
+            );
+            return;
+        }
+        pendingRequestService.markRequestWithGivenStatus(
+            pendingRequest.getId(),
+            PendingStatusType.COMPLETED.name()
+        );
         log.debug("processPendingRequest(pendingRequest) completed");
     }
 
@@ -172,7 +176,7 @@ public class MessageProcessor {
                     log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                               caseListingID, message);
                     processSyncFutureHearingResponse(() -> futureHearingRepository
-                        .createHearingRequest(message), caseListingID);
+                        .createHearingRequest(message, caseListingID), caseListingID);
                     break;
                 case AMEND_HEARING:
                     log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
@@ -214,7 +218,7 @@ public class MessageProcessor {
                 log.debug("Message of type REQUEST_HEARING received for caseListingID: {} ,{}",
                           caseListingID, message);
                 processSyncFutureHearingResponse(() -> futureHearingRepository
-                    .createHearingRequest(message), caseListingID);
+                    .createHearingRequest(message, caseListingID), caseListingID);
                 break;
             case AMEND_HEARING:
                 log.debug("Message of type AMEND_HEARING received for caseListingID: {} ,{}",
