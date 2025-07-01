@@ -168,6 +168,14 @@ class PendingRequestServiceImplTest {
     }
 
     @Test
+    void shouldClaim() {
+        long id = 1L;
+        pendingRequestService.claimRequest(id);
+
+        verify(pendingRequestRepository, times(1)).claimRequest(id);
+    }
+
+    @Test
     void shouldMarkRequestAsPending() {
         long id = 1L;
         int retryCount = 1;

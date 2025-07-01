@@ -228,7 +228,7 @@ def versions = [
   junitPlatform   : '1.10.5',
   lombok          : '1.18.30',
   mapstruct       : '1.4.2.Final',
-  reformLogging   : '6.1.4',
+  reformLogging   : '6.1.9',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.21.1'
 ]
@@ -261,11 +261,16 @@ dependencyManagement {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.5"
   }
   dependencies {
+      // CVE-2018-10237 - Unbounded memory allocation
+      dependencySet(group: 'com.google.guava', version: '33.0.0-jre') {
+        entry 'guava'
+      }
 
-    // CVE-2018-10237 - Unbounded memory allocation
-    dependencySet(group: 'com.google.guava', version: '33.0.0-jre') {
-      entry 'guava'
-    }
+      dependencySet(group: 'org.apache.tomcat.embed', version: '10.1.42') {
+        entry 'tomcat-embed-core'
+        entry 'tomcat-embed-el'
+        entry 'tomcat-embed-websocket'
+      }
   }
 }
 
@@ -279,7 +284,7 @@ repositories {
   mavenLocal()
   mavenCentral()
   maven {
-    url = "https://jitpack.io"
+    url = 'https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1'
   }
 }
 
@@ -352,10 +357,11 @@ dependencies {
   integrationTestImplementation sourceSets.test.runtimeClasspath
 
   functionalTestImplementation sourceSets.main.runtimeClasspath
-  functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '9.2.3'
+
+  functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '9.2.4'
   functionalTestImplementation libraries.junit5
 
-  testImplementation 'com.github.hmcts:fortify-client:1.4.8:all', {
+  testImplementation 'com.github.hmcts:fortify-client:1.4.9:all', {
     exclude group: 'org.slf4j', module: 'slf4j-api'
   }
 }
