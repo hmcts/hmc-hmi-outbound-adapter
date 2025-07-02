@@ -88,7 +88,7 @@ LOGGING:
       gov:
         hmcts:
           reform:
-            hmc: DEBUG
+            hmc: INFO
 
 logging:
   level:
