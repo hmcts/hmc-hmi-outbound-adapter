@@ -22,10 +22,10 @@ class GetWelcomeTest {
     @Autowired
     private transient MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
 
-    @MockBean
+    @MockitoBean
     private ApplicationParams applicationParams;
 
     @BeforeEach
