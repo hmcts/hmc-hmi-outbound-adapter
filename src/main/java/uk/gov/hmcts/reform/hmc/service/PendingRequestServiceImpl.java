@@ -3,8 +3,8 @@ package uk.gov.hmcts.reform.hmc.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jetty.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import static org.eclipse.jetty.http.HttpStatus.UNAUTHORIZED_401;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
@@ -146,6 +145,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         log.debug("markRequestWithGivenStatus({}, {} completed)", id, status);
     }
 
+    public int claimRequest(Long id) {
+        return pendingRequestRepository.claimRequest(id);
+    }
+
     public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
         log.debug("catchExceptionAndUpdateHearing ({}, {})", hearingId, exception.getMessage());
         JsonNode errorDetails = null;
@@ -244,13 +247,13 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     private static void handleResourceNotFoundException(ResourceNotFoundException ex, HearingEntity entity) {
-        handleException(entity, HttpStatus.NOT_FOUND_404, ex.getMessage());
+        handleException(entity, HttpStatus.NOT_FOUND.value(), ex.getMessage());
     }
 
     private static void handleAuthenticationException(AuthenticationException ex, HearingEntity entity) {
         Integer errorCode = (ex.getErrorDetails().getAuthErrorCodes() != null
             && !ex.getErrorDetails().getAuthErrorCodes().isEmpty())
-            ? ex.getErrorDetails().getAuthErrorCodes().get(0) : UNAUTHORIZED_401;
+            ? ex.getErrorDetails().getAuthErrorCodes().get(0) : HttpStatus.UNAUTHORIZED.value();
         handleException(entity, errorCode, ex.getErrorDetails().getAuthErrorDescription());
     }
 

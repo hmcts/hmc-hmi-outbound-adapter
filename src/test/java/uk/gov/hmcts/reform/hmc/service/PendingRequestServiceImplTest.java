@@ -8,9 +8,9 @@ import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.eclipse.jetty.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -190,6 +190,14 @@ class PendingRequestServiceImplTest {
 
         verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
                                                                               PendingStatusType.PROCESSING.name());
+    }
+
+    @Test
+    void shouldClaim() {
+        long id = 1L;
+        pendingRequestService.claimRequest(id);
+
+        verify(pendingRequestRepository, times(1)).claimRequest(id);
     }
 
     @Test
