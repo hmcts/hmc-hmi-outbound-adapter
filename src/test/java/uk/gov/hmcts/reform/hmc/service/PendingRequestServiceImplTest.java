@@ -197,6 +197,30 @@ class PendingRequestServiceImplTest {
     }
 
     @Test
+    void shouldEscalatePendingRequests() {
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+        pendingRequest.setStatus(PendingStatusType.PENDING.name());
+        pendingRequest.setIncidentFlag(false);
+        pendingRequest.setSubmittedDateTime(LocalDateTime.now().minusHours(5));
+        pendingRequestService.escalationWaitInterval = "1,DAY";
+        Optional<HearingEntity> hearingEntity = TestingUtil.hearingEntity();
+        hearingEntity.get().setErrorDescription("TEST ERROR DESCRIPTION");
+
+        when(pendingRequestRepository.findRequestsForEscalation(1L, "DAY"))
+            .thenReturn(List.of(pendingRequest));
+        when(hearingRepository.findById(anyLong())).thenReturn(hearingEntity);
+
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+        pendingRequestService.escalatePendingRequests();
+
+        verifyLogErrors(listAppender);
+        verify(pendingRequestRepository, times(1))
+            .findRequestsForEscalation(1L, "DAY");
+        verify(pendingRequestRepository, times(1))
+            .markRequestForEscalation(any(), any());
+    }
+
+    @Test
     void shouldMarkRequestAsException() {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, EXCEPTION.name());
@@ -311,7 +335,7 @@ class PendingRequestServiceImplTest {
     private PendingRequestEntity generatePendingRequest() {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
         pendingRequest.setId(1L);
-        pendingRequest.setHearingId(2000000001L);
+        pendingRequest.setHearingId(2000000000L);
         return pendingRequest;
     }
 

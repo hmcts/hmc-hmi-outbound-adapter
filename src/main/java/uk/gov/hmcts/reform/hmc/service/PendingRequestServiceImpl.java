@@ -22,15 +22,11 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.ESCALATE_PENDING_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_FAILURE_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_RESPONSE;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_PROCESSOR;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.PENDING_REQUEST;
 
 @Slf4j
 @Service
@@ -214,9 +210,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
         log.debug("escalatePendingRequests");
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
-
-        log.error(ERROR_PROCESSING_MESSAGE, MESSAGE_PROCESSOR, PENDING_REQUEST,
-                  ESCALATE_PENDING_REQUEST, pendingRequest.getHearingId());
+        HearingEntity hearingEntity = hearingRepository.findById(pendingRequest.getHearingId()).get();
+        logErrorStatusToException(hearingEntity.getId(), hearingEntity.getLatestCaseReferenceNumber(),
+                                  hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
+                                  hearingEntity.getErrorDescription());
 
     }
 
