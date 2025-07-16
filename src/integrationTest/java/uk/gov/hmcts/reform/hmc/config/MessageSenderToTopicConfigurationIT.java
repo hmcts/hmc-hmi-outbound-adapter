@@ -10,6 +10,7 @@ class MessageSenderToTopicConfigurationIT extends BaseTest  {
         messageSenderToTopicConfiguration.sendMessage("Test Message",
                                                       "Test service code","hearingID",
                                                       null);
+
     }
 
     @Test

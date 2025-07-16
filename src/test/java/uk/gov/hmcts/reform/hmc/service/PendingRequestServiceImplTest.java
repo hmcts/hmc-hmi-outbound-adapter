@@ -8,9 +8,8 @@ import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.eclipse.jetty.http.HttpStatus;
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
@@ -257,26 +257,27 @@ class PendingRequestServiceImplTest {
     @Test
     void shouldUpdateHearingStatusThrowsBadRequestException() {
         HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                HttpStatus.BAD_REQUEST_400, "version is invalid");
+                                                                         HttpStatus.BAD_REQUEST.value(),
+                                                                         "version is invalid");
         Exception exception = new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE,
                                             TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE,
-                                                                             HttpStatus.BAD_REQUEST_400));
+                                                                             HttpStatus.BAD_REQUEST.value()));
         testUpdateHearingStatusThrowsException(hearingEntity, exception, TEST_EXCEPTION_MESSAGE);
     }
 
     @Test
     void shouldUpdateHearingStatusThrowsAuthenticationException() {
         HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                             HttpStatus.INTERNAL_SERVER_ERROR_500, "invalid credentials");
+                                             HttpStatus.INTERNAL_SERVER_ERROR.value(), "invalid credentials");
         Exception exception = new AuthenticationException("Test Auth Exception", TestingUtil.generateAuthErrorDetails(
-            "Test Auth Exception", HttpStatus.INTERNAL_SERVER_ERROR_500));
+            "Test Auth Exception", HttpStatus.INTERNAL_SERVER_ERROR.value()));
         testUpdateHearingStatusThrowsException(hearingEntity, exception, "Test Auth Exception");
     }
 
     @Test
     void shouldUpdateHearingStatusThrowsResourceNotFoundException() {
         HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                 HttpStatus.NOT_FOUND_404, "invalid credentials");
+                                                 HttpStatus.NOT_FOUND.value(), "invalid credentials");
         Exception exception = new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE);
         testUpdateHearingStatusThrowsException(hearingEntity, exception, TEST_EXCEPTION_MESSAGE);
     }
@@ -312,7 +313,7 @@ class PendingRequestServiceImplTest {
     private void testUpdateHearingStatusThrowsException(HearingEntity hearingEntity, Exception exception,
                                                         String expectedErrorDescription) {
         JsonNode data = OBJECT_MAPPER.convertValue(
-            generateErrorDetails(expectedErrorDescription, HttpStatus.BAD_REQUEST_400),
+            generateErrorDetails(expectedErrorDescription, HttpStatus.BAD_REQUEST.value()),
             JsonNode.class);
         when(hearingRepository.findById(hearingEntity.getId())).thenReturn(Optional.of(hearingEntity));
         when(hearingRepository.save(any())).thenReturn(hearingEntity);

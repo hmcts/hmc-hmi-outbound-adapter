@@ -24,6 +24,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.AWAITING_LISTING;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION;
 
 class HmiHearingResponseMapperTest {
 
@@ -45,7 +47,7 @@ class HmiHearingResponseMapperTest {
                 of(2019, 1, 10, 11, 20, 00),
                 "12", true, "11", HearingCode.LISTED.name()
             ),
-            generateHearingEntity("AWAITING_LISTING", 1, 1L)
+            generateHearingEntity(AWAITING_LISTING, 1, 1L)
         );
         assertAll(
             () -> assertThat(response.getHearingID(), is("1")),
@@ -53,7 +55,7 @@ class HmiHearingResponseMapperTest {
                 response.getHearingUpdate().getHearingResponseReceivedDateTime(),
                 is(parse("2019-01-10T11:20"))
             ),
-            () -> assertThat(response.getHearingUpdate().getHmcStatus(), is("AWAITING_LISTING")),
+            () -> assertThat(response.getHearingUpdate().getHmcStatus(), is(AWAITING_LISTING)),
             () -> assertThat(response.getHearingUpdate().getHearingListingStatus(), is("Draft")),
             () -> assertThat(
                 response.getHearingUpdate().getNextHearingDate(),
@@ -93,14 +95,14 @@ class HmiHearingResponseMapperTest {
     @Test
     void mapHmiHearingToEntityToHmcModelForHearingEntity() {
         HmcHearingResponse response = hmiHearingResponseMapper.mapEntityToHmcModel(
-            generateHearingEntity("AWAITING_LISTING", 1, 1L)
+            generateHearingEntity(AWAITING_LISTING, 1, 1L)
         );
         assertAll(
             () -> assertThat(response.getHearingID(), is("1")),
             () -> assertThat(response.getCaseRef(), is("1111222233334444")),
             () -> assertThat(response.getHmctsServiceCode(), is("Test")),
             () -> assertThat(response.getHearingUpdate().getHearingResponseReceivedDateTime(), is(nullValue())),
-            () -> assertThat(response.getHearingUpdate().getHmcStatus(), is("AWAITING_LISTING")),
+            () -> assertThat(response.getHearingUpdate().getHmcStatus(), is(AWAITING_LISTING)),
             () -> assertThat(response.getHearingUpdate().getHearingEventBroadcastDateTime(), is(notNullValue()))
         );
     }
@@ -108,7 +110,7 @@ class HmiHearingResponseMapperTest {
     @Test
     void mapHmiHearingToEntityToHmcModelForHearingEntityWhenStatusIsException() {
         HmcHearingResponse response = hmiHearingResponseMapper.mapEntityToHmcModel(
-            generateHearingEntity("EXCEPTION", 1, 1L)
+            generateHearingEntity(EXCEPTION, 1, 1L)
         );
         assertAll(
             () -> assertThat(response.getHearingID(), is("1")),

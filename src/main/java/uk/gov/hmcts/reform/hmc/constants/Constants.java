@@ -39,4 +39,5 @@ public final class Constants {
     public static final String HMCTS_SERVICE_ID = "hmctsServiceId";
     public static final String HMCTS_DEPLOYMENT_ID = "hmctsDeploymentId";
     public static final String EXCEPTION = "EXCEPTION";
+    public static final String AWAITING_LISTING = "AWAITING_LISTING";
 }

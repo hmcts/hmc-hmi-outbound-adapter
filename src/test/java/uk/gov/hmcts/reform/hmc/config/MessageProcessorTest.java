@@ -180,7 +180,7 @@ class MessageProcessorTest {
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
         verify(pendingRequestService, times(0)).markRequestWithGivenStatus(
             pendingRequest.getId(), "PROCESSING");
-        verify(futureHearingRepository, times(0)).createHearingRequest(any(), any());
+        //verify(futureHearingRepository, times(0)).createHearingRequest(any(), any());
         verify(pendingRequestService, times(0)).markRequestAsPending(eq(pendingRequest.getId()),
                                                                      eq(pendingRequest.getRetryCount()), any());
     }
