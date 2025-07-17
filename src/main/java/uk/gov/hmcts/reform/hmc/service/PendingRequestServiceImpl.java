@@ -6,11 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.data.HearingResponseEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
+import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
@@ -22,15 +26,11 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.ERROR_PROCESSING_MESSAGE;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.ESCALATE_PENDING_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FH;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_FAILURE_STATUS;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_RESPONSE;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.MESSAGE_PROCESSOR;
-import static uk.gov.hmcts.reform.hmc.constants.Constants.PENDING_REQUEST;
 
 @Slf4j
 @Service
@@ -55,15 +55,21 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     private final HearingStatusAuditService hearingStatusAuditService;
     private final ObjectMapper objectMapper;
     private final PendingRequestRepository pendingRequestRepository;
+    private final MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
+    private final HmiHearingResponseMapper hmiHearingResponseMapper;
 
     public PendingRequestServiceImpl(ObjectMapper objectMapper,
                                      PendingRequestRepository pendingRequestRepository,
                                      HearingRepository hearingRepository,
-                                     HearingStatusAuditService hearingStatusAuditService) {
+                                     HearingStatusAuditService hearingStatusAuditService,
+                                     MessageSenderToTopicConfiguration messageSenderToTopicConfiguration,
+                                     HmiHearingResponseMapper hmiHearingResponseMapper) {
         this.objectMapper = objectMapper;
         this.pendingRequestRepository = pendingRequestRepository;
         this.hearingRepository = hearingRepository;
         this.hearingStatusAuditService = hearingStatusAuditService;
+        this.messageSenderToTopicConfiguration = messageSenderToTopicConfiguration;
+        this.hmiHearingResponseMapper = hmiHearingResponseMapper;
     }
 
     public boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
@@ -136,6 +142,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     public void markRequestWithGivenStatus(Long id, String status) {
         log.debug("markRequestWithGivenStatus({}, {})", id, status);
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
+        log.debug("markRequestWithGivenStatus({}, {} completed)", id, status);
     }
 
     public int claimRequest(Long id) {
@@ -163,6 +170,12 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                       exception.getClass(), exception.getMessage());
         }
         hearingRepository.save(hearingEntity);
+        HmcHearingResponse hmcHearingResponse = getHmcHearingResponse(hearingEntity);
+        log.debug("Sending hearing id {} to topic with Hearing response  {} is", hearingId, hmcHearingResponse);
+        messageSenderToTopicConfiguration
+            .sendMessage(objectMapper.convertValue(hmcHearingResponse, JsonNode.class).toString(),
+                         hmcHearingResponse.getHmctsServiceCode(),hearingId.toString(),
+                         hearingEntity.getDeploymentId());
         logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                   hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
                                   hearingEntity.getErrorDescription());
@@ -214,10 +227,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
         log.debug("escalatePendingRequests");
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
-
-        log.error(ERROR_PROCESSING_MESSAGE, MESSAGE_PROCESSOR, PENDING_REQUEST,
-                  ESCALATE_PENDING_REQUEST, pendingRequest.getHearingId());
-
+        HearingEntity hearingEntity = hearingRepository.findById(pendingRequest.getHearingId()).get();
+        logErrorStatusToException(hearingEntity.getId(), hearingEntity.getLatestCaseReferenceNumber(),
+                                 hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
+                                 hearingEntity.getErrorDescription());
     }
 
     protected Long getIntervalUnits(String envVarInterval) {
@@ -264,6 +277,13 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                                         String errorDescription) {
         entity.setErrorCode(errorCode);
         entity.setErrorDescription(errorDescription);
+    }
+
+    private HmcHearingResponse getHmcHearingResponse(HearingEntity hearingEntity) {
+        Optional<HearingResponseEntity> hearingResponseEntity = hearingEntity.getLatestHearingResponse();
+        return hearingResponseEntity.isPresent()
+            ? hmiHearingResponseMapper.mapEntityToHmcModel(hearingResponseEntity.get(), hearingEntity)
+            : hmiHearingResponseMapper.mapEntityToHmcModel(hearingEntity);
     }
 
 }

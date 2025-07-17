@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,6 +19,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.TreeMap;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 @Table(name = "hearing")
 @EqualsAndHashCode(callSuper = true)
@@ -28,7 +34,10 @@ public class HearingEntity extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 5837513924648640249L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+        generator = "hearing_id_seq_generator")
+    @SequenceGenerator(name = "hearing_id_seq_generator",
+        sequenceName = "hearing_id_seq", allocationSize = 1)
     @Column(name = "hearing_id")
     private Long id;
 
@@ -46,6 +55,9 @@ public class HearingEntity extends BaseEntity implements Serializable {
 
     @OneToMany(mappedBy = "hearing", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<CaseHearingRequestEntity> caseHearingRequests = new ArrayList<>();
+
+    @OneToMany(mappedBy = "hearing", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<HearingResponseEntity> hearingResponses;
 
     @Column(name = "linked_order")
     private Long linkedOrder;
@@ -67,4 +79,28 @@ public class HearingEntity extends BaseEntity implements Serializable {
         return getLatestCaseHearingRequest().getCaseReference();
     }
 
+    /**
+     * Gets the *latest* hearing response - note that this will not necessarily be associated with the latest request.
+     */
+    public Optional<HearingResponseEntity> getLatestHearingResponse() {
+        return hasHearingResponses() ? getHearingResponses().stream()
+            .collect(groupingBy(HearingResponseEntity::getRequestVersion, TreeMap::new, toList()))
+            .lastEntry()
+            .getValue()
+            .stream()
+            .max(Comparator.comparing(HearingResponseEntity::getRequestTimeStamp))
+            : Optional.empty();
+    }
+
+    public boolean hasHearingResponses() {
+        return getHearingResponses() != null && !getHearingResponses().isEmpty();
+    }
+
+    public CaseHearingRequestEntity getCaseHearingRequest(int version) {
+        return getCaseHearingRequests().stream()
+            .filter(caseHearingRequestEntity -> version == caseHearingRequestEntity.getVersionNumber())
+            .findFirst()
+            .orElseThrow(() -> new ResourceNotFoundException("Cannot find request version " + version
+                                                                 + " for hearing " + id));
+    }
 }
