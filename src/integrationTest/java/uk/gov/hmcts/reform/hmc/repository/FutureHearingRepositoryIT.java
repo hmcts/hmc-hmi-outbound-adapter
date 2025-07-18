@@ -7,8 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
@@ -47,7 +47,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     private static final String DELETE_HEARING_DATA_SCRIPT = "classpath:sql/delete-hearing-tables.sql";
     private static final String INSERT_HEARINGS_DATA_SCRIPT = "classpath:sql/insert-case_hearing_request.sql";
 
-    @MockBean
+    @MockitoBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
 
     @Autowired
