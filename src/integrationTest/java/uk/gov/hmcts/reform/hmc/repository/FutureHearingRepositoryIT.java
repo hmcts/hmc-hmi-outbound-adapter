@@ -12,7 +12,6 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
