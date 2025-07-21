@@ -1,14 +1,15 @@
 package uk.gov.hmcts.reform.hmc.repository;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.reform.hmc.config.MessageType.AMEND_HEARING;
@@ -249,7 +250,6 @@ class PendingRequestRepositoryIT extends BaseTest {
                                                             String message, LocalDateTime localDateTime,
                                                             String deploymentId) {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(0L);
         pendingRequest.setHearingId(hearingId);
         pendingRequest.setMessage(message);
         pendingRequest.setMessageType(messageType);
