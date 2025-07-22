@@ -59,7 +59,7 @@ class MessageProcessorIT extends BaseTest {
                  defaultFutureHearingRepository, errorHandler, messageSenderConfiguration,
                                                                          OBJECT_MAPPER, pendingRequestService);
         messageProcessor.processMessage(data, applicationProperties);
-        verify(defaultFutureHearingRepository).createHearingRequest(any());
+        verify(defaultFutureHearingRepository).createHearingRequest(any(), any());
     }
 
     @Test

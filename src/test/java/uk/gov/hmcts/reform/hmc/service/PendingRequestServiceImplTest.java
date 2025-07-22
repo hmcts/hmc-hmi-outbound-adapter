@@ -1,16 +1,34 @@
 package uk.gov.hmcts.reform.hmc.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
+import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
-import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
+import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
+import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
+import uk.gov.hmcts.reform.hmc.model.HmcHearingUpdate;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
@@ -20,15 +38,19 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.EXCEPTION_MESSAGE;
 
 @DisplayName("PendingRequestServiceImpl")
 @ExtendWith(MockitoExtension.class)
@@ -49,7 +71,23 @@ class PendingRequestServiceImplTest {
     @InjectMocks
     private PendingRequestServiceImpl pendingRequestService;
 
-    private static final String EXCEPTION_MESSAGE = "Test Exception";
+    @Mock
+    private HmiHearingResponseMapper hmiHearingResponseMapper;
+
+    @Mock
+    private MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
+
+    @Mock
+    private ServiceBusReceivedMessageContext messageContext = mock(ServiceBusReceivedMessageContext.class);
+
+    @Mock
+    private ServiceBusReceivedMessage message;
+
+    private static final String TEST_EXCEPTION_MESSAGE = "Test Exception";
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    private final Logger logger = (Logger) LoggerFactory.getLogger(PendingRequestServiceImpl.class);
 
     @Test
     void shouldReturnTrueWhenExceptionLimitExceeded() {
@@ -155,6 +193,14 @@ class PendingRequestServiceImplTest {
     }
 
     @Test
+    void shouldClaim() {
+        long id = 1L;
+        pendingRequestService.claimRequest(id);
+
+        verify(pendingRequestRepository, times(1)).claimRequest(id);
+    }
+
+    @Test
     void shouldMarkRequestAsPending() {
         long id = 1L;
         int retryCount = 1;
@@ -209,21 +255,31 @@ class PendingRequestServiceImplTest {
     }
 
     @Test
-    void shouldUpdateHearingStatusToExceptionWhenHearingExists() {
-        HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
-        CaseHearingRequestEntity caseHearingRequest = new CaseHearingRequestEntity();
-        caseHearingRequest.setCaseReference("12345");
-        caseHearingRequest.setHmctsServiceCode("serviceCode");
-        hearingEntity.setCaseHearingRequests(List.of(caseHearingRequest));
-        Optional<HearingEntity> optionalHearingEntity = Optional.of(hearingEntity);
-        Exception exception = new Exception(EXCEPTION_MESSAGE);
-        when(hearingRepository.findById(anyLong())).thenReturn(optionalHearingEntity);
+    void shouldUpdateHearingStatusThrowsBadRequestException() {
+        HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                                                         HttpStatus.BAD_REQUEST.value(),
+                                                                         "version is invalid");
+        Exception exception = new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE,
+                                            TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE,
+                                                                             HttpStatus.BAD_REQUEST.value()));
+        testUpdateHearingStatusThrowsException(hearingEntity, exception, TEST_EXCEPTION_MESSAGE);
+    }
 
-        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
+    @Test
+    void shouldUpdateHearingStatusThrowsAuthenticationException() {
+        HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                             HttpStatus.INTERNAL_SERVER_ERROR.value(), "invalid credentials");
+        Exception exception = new AuthenticationException("Test Auth Exception", TestingUtil.generateAuthErrorDetails(
+            "Test Auth Exception", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        testUpdateHearingStatusThrowsException(hearingEntity, exception, "Test Auth Exception");
+    }
 
-        verify(hearingRepository, times(1)).save(any());
-        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
-        assertThat(hearingEntity.getErrorDescription()).isEqualTo(EXCEPTION_MESSAGE);
+    @Test
+    void shouldUpdateHearingStatusThrowsResourceNotFoundException() {
+        HearingEntity hearingEntity = TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
+                                                 HttpStatus.NOT_FOUND.value(), "invalid credentials");
+        Exception exception = new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE);
+        testUpdateHearingStatusThrowsException(hearingEntity, exception, TEST_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -240,11 +296,76 @@ class PendingRequestServiceImplTest {
                     .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
     }
 
+    @Test
+    void findByIdShouldReturnPendingRequestWhenIdExists() {
+        Long pendingRequestId = 1L;
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setId(pendingRequestId);
+        when(pendingRequestRepository.findById(pendingRequestId)).thenReturn(Optional.of(pendingRequest));
+
+        Optional<PendingRequestEntity> result = pendingRequestService.findById(pendingRequestId);
+        assertThat(result)
+            .isPresent()
+            .contains(pendingRequest);
+        verify(pendingRequestRepository, times(1)).findById(pendingRequestId);
+    }
+
+    private void testUpdateHearingStatusThrowsException(HearingEntity hearingEntity, Exception exception,
+                                                        String expectedErrorDescription) {
+        JsonNode data = OBJECT_MAPPER.convertValue(
+            generateErrorDetails(expectedErrorDescription, HttpStatus.BAD_REQUEST.value()),
+            JsonNode.class);
+        when(hearingRepository.findById(hearingEntity.getId())).thenReturn(Optional.of(hearingEntity));
+        when(hearingRepository.save(any())).thenReturn(hearingEntity);
+
+        when(hmiHearingResponseMapper.mapEntityToHmcModel(any(), any()))
+            .thenReturn(generateHmcResponse(EXCEPTION.name()));
+        when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
+        doNothing().when(messageSenderToTopicConfiguration).sendMessage(any(), any(), any(), any());
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+        pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
+        verifyLogErrors(listAppender);
+        verify(hearingRepository, times(1)).save(any());
+        verify(hearingStatusAuditService, times(1))
+            .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
+        assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(hearingEntity.getErrorDescription()).isEqualTo(expectedErrorDescription);
+    }
+
     private PendingRequestEntity generatePendingRequest() {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
         pendingRequest.setId(1L);
         pendingRequest.setHearingId(2000000001L);
         return pendingRequest;
+    }
+
+    private static void verifyLogErrors(ListAppender<ILoggingEvent> listAppender) {
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(1, logsList.size());
+        assertEquals(Level.ERROR, logsList.get(0).getLevel());
+        assertEquals(String.format(EXCEPTION_MESSAGE), logsList.get(0).getMessage());
+    }
+
+    private @NotNull ListAppender<ILoggingEvent> getILoggingEventListAppender() {
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+        return listAppender;
+    }
+
+    private HmcHearingResponse generateHmcResponse(String status) {
+        HmcHearingResponse hmcHearingResponse = new HmcHearingResponse();
+        HmcHearingUpdate hmcHearingUpdate = new HmcHearingUpdate();
+        hmcHearingUpdate.setHmcStatus(status);
+        hmcHearingResponse.setHearingUpdate(hmcHearingUpdate);
+        return hmcHearingResponse;
+    }
+
+    private ErrorDetails generateErrorDetails(String description, int code) {
+        ErrorDetails errorDetails = new ErrorDetails();
+        errorDetails.setErrorDescription(description);
+        errorDetails.setErrorCode(code);
+        return errorDetails;
     }
 
 }

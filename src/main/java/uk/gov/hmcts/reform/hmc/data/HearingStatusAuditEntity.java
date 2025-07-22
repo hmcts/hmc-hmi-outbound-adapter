@@ -7,21 +7,25 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Table(name = "hearing_status_audit")
 @EqualsAndHashCode()
 @Entity
 @Data
-public class HearingStatusAuditEntity {
+public class HearingStatusAuditEntity implements Serializable  {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY,
-        generator = "hearing_status_audit_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+        generator = "hearing_status_audit_id_seq_generator")
+    @SequenceGenerator(name = "hearing_status_audit_id_seq_generator",
+        sequenceName = "hearing_status_audit_id_seq", allocationSize = 1)
     @Column(name = "id")
     private Long id;
 

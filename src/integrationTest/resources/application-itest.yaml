@@ -18,7 +18,7 @@ spring:
       name: HMC Outbound Adapter
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:postgresql:11:///databasename?stringtype=unspecified
+    url: jdbc:tc:postgresql:15:///databasename?stringtype=unspecified
   jpa:
     hibernate:
       ddl-auto: create
@@ -28,8 +28,10 @@ azure:
     servicebus:
       outbound-connection-string: Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]
       inbound-connection-string: Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]
+      external-connection-string: ${HMC_SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://destination1.servicebus.windows.net;SharedAccessKeyName=[KEYNAME];SharedAccessKey=[KEY]}
       # should be an integer that is interpreted as seconds
       exponential-multiplier: ${SERVICE_BUS_EXPONENTIAL_MULTIPLIER:2}
       outbound-queue-name: hmc-to-hmi
       inbound-queue-name: hmc-from-hmi
       max-retry-attempts: ${SERVICE_BUS_MAX_RETRIES:5}
+      external-topic-name: ${HMC_SERVICE_BUS_TOPIC:hmc-to-cft}

@@ -81,6 +81,20 @@ public class WiremockFixtures {
                     ));
     }
 
+    public static void stubFailToReturnToken(String token) {
+        AuthenticationResponse authenticationResponse = new AuthenticationResponse();
+        authenticationResponse.setAccessToken(token);
+        stubFor(post(urlEqualTo(GET_TOKEN_URL))
+                    .withHeader("Content-Type", equalTo(APPLICATION_FORM_URLENCODED_VALUE))
+                    .withRequestBody(matching("grant_type=" + GRANT_TYPE + "&client_id=" + CLIENT_ID + "&scope="
+                                                  + SCOPE + "&client_secret=" + CLIENT_SECRET))
+                    .willReturn(aResponse()
+                                    .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                                    .withBody(getJsonString(authenticationResponse))
+                                    .withStatus(401)
+                    ));
+    }
+
     public static void stubPostMethodThrowingAuthenticationError(int status, String url) {
         stubFor(post(urlEqualTo(url))
                     .willReturn(jsonResponse(TEST_BODY,status)));

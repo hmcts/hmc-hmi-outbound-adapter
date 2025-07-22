@@ -8,8 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.SecondaryTable;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,16 +23,15 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @NoArgsConstructor
-@SecondaryTable(name = "hearing",
-    pkJoinColumns = {
-        @PrimaryKeyJoinColumn(name = "hearing_id")})
 public class CaseHearingRequestEntity extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 3931265105942318969L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY,
-        generator = "case_hearing_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+        generator = "case_hearing_id_seq_generator")
+    @SequenceGenerator(name = "case_hearing_id_seq_generator",
+        sequenceName = "case_hearing_id_seq", allocationSize = 1)
     @Column(name = "case_hearing_id")
     private Long caseHearingID;
 
