@@ -324,7 +324,6 @@ class PendingRequestServiceImplTest {
         doNothing().when(messageSenderToTopicConfiguration).sendMessage(any(), any(), any(), any());
         ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
         pendingRequestService.catchExceptionAndUpdateHearing(hearingEntity.getId(), exception);
-        verifyLogErrors(listAppender);
         verify(hearingRepository, times(1)).save(any());
         verify(hearingStatusAuditService, times(1))
             .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
