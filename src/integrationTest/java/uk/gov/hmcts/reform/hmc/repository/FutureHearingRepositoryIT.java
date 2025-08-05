@@ -6,10 +6,12 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
@@ -33,6 +35,7 @@ import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDec
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.REQUEST_NOT_FOUND;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.SERVER_ERROR;
 
+@ExtendWith(SpringExtension.class)
 public class FutureHearingRepositoryIT extends BaseTest {
 
     private static final String TOKEN = "example-token";
@@ -47,7 +50,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     private static final String DELETE_HEARING_DATA_SCRIPT = "classpath:sql/delete-hearing-tables.sql";
     private static final String INSERT_HEARINGS_DATA_SCRIPT = "classpath:sql/insert-case_hearing_request.sql";
 
-    @MockBean
+    @MockitoBean
     private MessageReceiverConfiguration messageReceiverConfiguration;
 
     @Autowired
