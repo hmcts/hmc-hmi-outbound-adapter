@@ -176,10 +176,6 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             .sendMessage(objectMapper.convertValue(hmcHearingResponse, JsonNode.class).toString(),
                          hmcHearingResponse.getHmctsServiceCode(),hearingId.toString(),
                          hearingEntity.getDeploymentId());
-        logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
-                                  hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
-                                  hearingEntity.getErrorDescription());
-
         hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
                           LA_RESPONSE, LA_FAILURE_STATUS,
                           FH, HMC, objectMapper.convertValue(errorDetails, JsonNode.class));
