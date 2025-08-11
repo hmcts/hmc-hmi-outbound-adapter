@@ -28,14 +28,17 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
     public Exception decode(String methodKey, Response response) {
         ErrorDetails errorDetails = getResponseBody(response, ErrorDetails.class)
             .orElseThrow(() -> new AuthenticationException(SERVER_ERROR));
-        log.error(String.format("Response from FH failed with HTTP code %s, error code %s, error message '%s', "
-                                    +  "AuthErrorCode %s, AuthErrorMessage '%s'",
+        log.error("Response from FH failed with HTTP code {}, error code {}, error message '{}', "
+                      + "AuthErrorCode {}, AuthErrorMessage '{}', "
+                      + "ApiStatusCode {}, ApiErrorMessage '{}'",
                   response.status(),
                   errorDetails.getErrorCode(),
                   errorDetails.getErrorDescription(),
                   errorDetails.getAuthErrorCodes() != null && !errorDetails.getAuthErrorCodes().isEmpty()
                                     ? errorDetails.getAuthErrorCodes().get(0) : null,
-                  errorDetails.getAuthErrorDescription()));
+                  errorDetails.getAuthErrorDescription(),
+                  errorDetails.getApiStatusCode(),
+                  errorDetails.getApiErrorMessage());
 
         if (log.isDebugEnabled()) {
             try (InputStream is = response.body().asInputStream()) {
@@ -43,11 +46,11 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                 String responsePayload = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                 String requestPayload = request.body() == null ? "n/a" :
                     new String(request.body(), StandardCharsets.UTF_8);
-                log.debug(String.format("Request to FH - URL: %s, Method: %s, Payload: %s",
+                log.debug("Request to FH - URL: {}, Method: {}, Payload: {}",
                           request.url(),
                           request.httpMethod().toString(),
-                          requestPayload));
-                log.debug(String.format("Error payload from FH (HTTP %s): %s", response.status(), responsePayload));
+                          requestPayload);
+                log.debug("Error payload from FH (HTTP {}): {}", response.status(), responsePayload);
             } catch (IOException e) {
                 log.error("Unable to read payload from FH", e);
             }
@@ -72,8 +75,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                 .lines().parallel().collect(Collectors.joining("\n"));
             return Optional.ofNullable(new ObjectMapper().readValue(bodyJson, klass));
         } catch (IOException e) {
-            log.error(String.format("Response from FH failed with error code %s, error message %s",
-                                    response.status(), bodyJson));
+            log.error("Response from FH failed with error code {}, error message {}", response.status(), bodyJson);
             return Optional.empty();
         }
     }
