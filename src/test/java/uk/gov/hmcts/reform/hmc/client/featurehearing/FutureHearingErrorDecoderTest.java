@@ -11,8 +11,8 @@ import feign.Response;
 import feign.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder;
@@ -32,11 +32,14 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_REQUEST;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_SECRET;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.REQUEST_NOT_FOUND;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.SERVER_ERROR;
 
+@ExtendWith(MockitoExtension.class)
 class FutureHearingErrorDecoderTest {
 
     private String methodKey = null;
@@ -59,19 +62,17 @@ class FutureHearingErrorDecoderTest {
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
 
-    @InjectMocks
     private FutureHearingErrorDecoder futureHearingErrorDecoder;
 
     @BeforeEach
      void setUp() {
-        MockitoAnnotations.openMocks(this);
+        futureHearingErrorDecoder = new FutureHearingErrorDecoder();
         byteArray = INPUT_STRING.getBytes();
         logger.setLevel(Level.INFO);
     }
 
     @Test
     void shouldThrowAuthenticationExceptionWith400Error() {
-
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -84,14 +85,13 @@ class FutureHearingErrorDecoderTest {
         assertEquals(INVALID_REQUEST, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
-        ILoggingEvent logEvent = logsList.getFirst();
-        assertEquals(Level.ERROR, logEvent.getLevel());
-        assertEquals(String.format(EXPECTED_ERROR, 400), logEvent.getFormattedMessage());
+        assertLogEntry(logsList.getFirst(), Level.ERROR, String.format(EXPECTED_ERROR, 400));
+
+        logger.detachAndStopAllAppenders();
     }
 
     @Test
     void shouldThrowAuthenticationExceptionWith401Error() {
-
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -104,14 +104,13 @@ class FutureHearingErrorDecoderTest {
         assertEquals(INVALID_SECRET, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
-        ILoggingEvent logEvent = logsList.getFirst();
-        assertEquals(Level.ERROR, logEvent.getLevel());
-        assertEquals(String.format(EXPECTED_ERROR, 401), logEvent.getFormattedMessage());
+        assertLogEntry(logsList.getFirst(), Level.ERROR, String.format(EXPECTED_ERROR, 401));
+
+        logger.detachAndStopAllAppenders();
     }
 
     @Test
     void shouldThrowResourceNotFoundExceptionWith404Error() {
-
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -124,14 +123,13 @@ class FutureHearingErrorDecoderTest {
         assertEquals(REQUEST_NOT_FOUND, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
-        ILoggingEvent logEvent = logsList.getFirst();
-        assertEquals(Level.ERROR, logEvent.getLevel());
-        assertEquals(String.format(EXPECTED_ERROR, 404), logEvent.getFormattedMessage());
+        assertLogEntry(logsList.getFirst(), Level.ERROR, String.format(EXPECTED_ERROR, 404));
+
+        logger.detachAndStopAllAppenders();
     }
 
     @Test
     void shouldThrowAuthenticationExceptionWith500Error() {
-
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -144,14 +142,13 @@ class FutureHearingErrorDecoderTest {
         assertEquals(SERVER_ERROR, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
-        ILoggingEvent logEvent = logsList.getFirst();
-        assertEquals(Level.ERROR, logEvent.getLevel());
-        assertEquals(String.format(EXPECTED_ERROR, 500), logEvent.getFormattedMessage());
+        assertLogEntry(logsList.getFirst(), Level.ERROR, String.format(EXPECTED_ERROR, 500));
+
+        logger.detachAndStopAllAppenders();
     }
 
     @Test
     void shouldPopulateApiErrorFields() {
-
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -185,20 +182,17 @@ class FutureHearingErrorDecoderTest {
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
 
-        ILoggingEvent logEvent = logsList.getFirst();
-        assertEquals(Level.ERROR, logEvent.getLevel(), "Log event has unexpected level");
-        assertEquals("Response from FH failed with HTTP code 400, error code null, error message 'null', "
-                         + "AuthErrorCode null, AuthErrorMessage 'null', "
-                         + "ApiStatusCode 400, ApiErrorMessage 'Missing/Invalid Header Source-System'",
-                     logEvent.getFormattedMessage(),
-                     "Log event has unexpected message");
+        assertLogEntry(logsList.getFirst(),
+                       Level.ERROR,
+                       "Response from FH failed with HTTP code 400, error code null, error message 'null', "
+                           + "AuthErrorCode null, AuthErrorMessage 'null', "
+                           + "ApiStatusCode 400, ApiErrorMessage 'Missing/Invalid Header Source-System'");
 
         logger.detachAndStopAllAppenders();
     }
 
     @Test
     void shouldLogPayloadsInDebug() {
-
         logger.setLevel(Level.DEBUG);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
@@ -212,18 +206,74 @@ class FutureHearingErrorDecoderTest {
         assertEquals(INVALID_REQUEST, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(3, logsList.size());
-        assertEquals(Level.ERROR, logsList.get(0)
-            .getLevel());
-        assertEquals(String.format(EXPECTED_ERROR, 400), logsList.get(0)
-            .getFormattedMessage());
-        assertEquals(Level.DEBUG, logsList.get(1)
-            .getLevel());
-        assertEquals("Request to FH - URL: /api, Method: POST, Payload: n/a", logsList.get(1)
-            .getFormattedMessage());
-        assertEquals(Level.DEBUG, logsList.get(2)
-            .getLevel());
-        assertEquals("Error payload from FH (HTTP 400): " + INPUT_STRING, logsList.get(2)
-            .getFormattedMessage());
+        assertLogEntry(logsList.get(0), Level.ERROR, String.format(EXPECTED_ERROR, 400));
+        assertLogEntry(logsList.get(1), Level.DEBUG, "Request to FH - URL: /api, Method: POST, Payload: n/a");
+        assertLogEntry(logsList.get(2), Level.DEBUG, "Error payload from FH (HTTP 400): " + INPUT_STRING);
+
+        logger.detachAndStopAllAppenders();
+    }
+
+    @Test
+    void shouldLogNonNullRequestPayloadInDebug() {
+        logger.setLevel(Level.DEBUG);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        String responseBody = """
+            {
+                "statusCode": 401,
+                "message": "Unauthorised"
+            }""";
+
+        byte[] requestBody = "RequestBody".getBytes(StandardCharsets.UTF_8);
+
+        response = Response.builder()
+            .body(responseBody.getBytes(StandardCharsets.UTF_8))
+            .status(401)
+            .request(Request.create(HttpMethod.POST, "/api", Collections.emptyMap(), requestBody, Util.UTF_8, null))
+            .build();
+
+        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+
+        assertThat(exception).isInstanceOf(AuthenticationException.class);
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(3, logsList.size());
+        assertLogEntry(logsList.get(0),
+                       Level.ERROR,
+                       "Response from FH failed with HTTP code 401, error code null, "
+                           + "error message 'null', AuthErrorCode null, AuthErrorMessage 'null', "
+                           + "ApiStatusCode 401, ApiErrorMessage 'Unauthorised'");
+        assertLogEntry(logsList.get(1), Level.DEBUG, "Request to FH - URL: /api, Method: POST, Payload: RequestBody");
+        assertLogEntry(logsList.get(2), Level.DEBUG, "Error payload from FH (HTTP 401): " + responseBody);
+
+        logger.detachAndStopAllAppenders();
+    }
+
+    @Test
+    void shouldLogNullResponsePayloadInDebug() {
+        logger.setLevel(Level.DEBUG);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        response = createResponse(null, 404, HttpMethod.POST);
+
+        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+
+        assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(3, logsList.size());
+        assertLogEntry(logsList.get(0),
+                       Level.ERROR,
+                       "Response from FH failed with HTTP code 404, error code null, error message 'null', "
+                           + "AuthErrorCode null, AuthErrorMessage 'null', ApiStatusCode null, ApiErrorMessage 'null'");
+        assertLogEntry(logsList.get(1), Level.DEBUG, "Request to FH - URL: /api, Method: POST, Payload: n/a");
+        assertLogEntry(logsList.get(2), Level.DEBUG, "Error payload from FH (HTTP 404): n/a");
+
+        logger.detachAndStopAllAppenders();
     }
 
     @Test
@@ -263,10 +313,10 @@ class FutureHearingErrorDecoderTest {
         response = Response.builder()
             .body(body)
             .status(500)
-            .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
+            .request(Request.create(HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
             .build();
 
-        Optional<Object> result = new FutureHearingErrorDecoder().getResponseBody(response, Object.class);
+        Optional<Object> result = futureHearingErrorDecoder.getResponseBody(response, Object.class);
 
         assertThat(result).isEmpty();
     }
@@ -313,15 +363,72 @@ class FutureHearingErrorDecoderTest {
         response = Response.builder()
             .body(body)
             .status(500)
-            .request(Request.create(Request.HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
+            .request(Request.create(HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
             .build();
 
-        new FutureHearingErrorDecoder().getResponseBody(response, Object.class);
+        futureHearingErrorDecoder.getResponseBody(response, Object.class);
 
         List<ILoggingEvent> logsList = listAppender.list;
         assertThat(logsList.stream().anyMatch(
-            log -> log.getLevel() == Level.ERROR && log.getMessage().contains("Response from FH failed with error code")
+            log -> log.getLevel() == Level.ERROR
+                && log.getMessage().contains("Response from FH failed with error code")
         )).isTrue();
+
+        logger.detachAndStopAllAppenders();
+    }
+
+    @Test
+    void shouldReturnPresentOptionalWhenResponseBodyNotNull() {
+        byte[] body = """
+            {
+                "error_codes": [100, 200],
+                "error_description": "Auth error"
+            }""".getBytes(StandardCharsets.UTF_8);
+
+        response = createResponse(body, 401, HttpMethod.POST);
+
+        Optional<ErrorDetails> responseBody = futureHearingErrorDecoder.getResponseBody(response, ErrorDetails.class);
+
+        assertTrue(responseBody.isPresent(), "Optional should contain a value");
+
+        ErrorDetails errorDetails = responseBody.get();
+
+        assertNull(errorDetails.getErrorCode(), "Error code should be null");
+        assertNull(errorDetails.getErrorDescription(), "Error description should be null");
+
+        List<Integer> authErrorCodes = errorDetails.getAuthErrorCodes();
+        assertNotNull(authErrorCodes, "Auth error codes should not be null");
+        assertEquals(2, authErrorCodes.size(), "Auth error codes contains an unexpected number of entries");
+        for (Integer expectedAuthErrorCode : List.of(100, 200)) {
+            assertTrue(authErrorCodes.contains(expectedAuthErrorCode),
+                       "Auth error codes should contain " + expectedAuthErrorCode);
+        }
+        assertEquals("Auth error", errorDetails.getAuthErrorDescription(), "Unexpected Auth error value");
+
+        assertNull(errorDetails.getApiStatusCode(), "API Status code should be null");
+        assertNull(errorDetails.getApiErrorMessage(), "API error message should be null");
+    }
+
+    @Test
+    void shouldReturnPresentOptionalWhenResponseBodyNull() {
+        response = createResponse(null, 404, HttpMethod.GET);
+
+        Optional<ErrorDetails> responseBody = futureHearingErrorDecoder.getResponseBody(response, ErrorDetails.class);
+
+        assertTrue(responseBody.isPresent(), "Optional should contain a value");
+
+        ErrorDetails errorDetails = responseBody.get();
+        assertNull(errorDetails.getErrorCode(), "Error code should be null");
+        assertNull(errorDetails.getErrorDescription(), "Error description should be null");
+        assertNull(errorDetails.getAuthErrorCodes(), "Auth error codes should be null");
+        assertNull(errorDetails.getAuthErrorDescription(), "Auth error description should be null");
+        assertNull(errorDetails.getApiStatusCode(), "API Status code should be null");
+        assertNull(errorDetails.getApiErrorMessage(), "API error message should be null");
+    }
+
+    private void assertLogEntry(ILoggingEvent logEvent, Level expectedLevel, String expectedMessage) {
+        assertEquals(expectedLevel, logEvent.getLevel(), "Log entry has unexpected level");
+        assertEquals(expectedMessage, logEvent.getFormattedMessage(), "Log entry has unexpected message");
     }
 
     private Response createResponse(byte[] body, int status, HttpMethod httpMethod) {

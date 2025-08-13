@@ -41,19 +41,23 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                   errorDetails.getApiErrorMessage());
 
         if (log.isDebugEnabled()) {
-            try (InputStream is = response.body().asInputStream()) {
-                Request request = response.request();
-                String responsePayload = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                String requestPayload = request.body() == null ? "n/a" :
-                    new String(request.body(), StandardCharsets.UTF_8);
-                log.debug("Request to FH - URL: {}, Method: {}, Payload: {}",
-                          request.url(),
-                          request.httpMethod().toString(),
-                          requestPayload);
-                log.debug("Error payload from FH (HTTP {}): {}", response.status(), responsePayload);
-            } catch (IOException e) {
-                log.error("Unable to read payload from FH", e);
+            Request request = response.request();
+            String requestPayload = request.body() == null ? "n/a" :
+                new String(request.body(), StandardCharsets.UTF_8);
+            log.debug("Request to FH - URL: {}, Method: {}, Payload: {}",
+                      request.url(),
+                      request.httpMethod().toString(),
+                      requestPayload);
+
+            String responsePayload = "n/a";
+            if (response.body() != null) {
+                try (InputStream is = response.body().asInputStream()) {
+                    responsePayload = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    log.error("Unable to read payload from FH", e);
+                }
             }
+            log.debug("Error payload from FH (HTTP {}): {}", response.status(), responsePayload);
         }
 
         switch (response.status()) {
@@ -69,10 +73,12 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
     }
 
     public <T> Optional<T> getResponseBody(Response response, Class<T> klass) {
-        String bodyJson = null;
+        String bodyJson = "{}";
         try {
-            bodyJson = new BufferedReader(new InputStreamReader(response.body().asInputStream()))
-                .lines().parallel().collect(Collectors.joining("\n"));
+            if (response.body() != null) {
+                bodyJson = new BufferedReader(new InputStreamReader(response.body().asInputStream()))
+                    .lines().parallel().collect(Collectors.joining("\n"));
+            }
             return Optional.ofNullable(new ObjectMapper().readValue(bodyJson, klass));
         } catch (IOException e) {
             log.error("Response from FH failed with error code {}, error message {}", response.status(), bodyJson);
