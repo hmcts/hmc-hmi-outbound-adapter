@@ -96,6 +96,7 @@ To enable publishing to an Azure Service Bus destination:
 
 1. Set the Azure Service Bus connection string in the `HMC_SERVICE_BUS_CONNECTION_STRING` environment variable
 1. Set the Azure Service Bus queue name in the `HMC_SERVICE_BUS_QUEUE` environment variable
+2. Set the Azure Service Bus topic name in the `HMC_SERVICE_BUS_TOPIC` environment variable
 1. Restart the application
 
 ## Developing

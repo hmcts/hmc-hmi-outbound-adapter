@@ -5,6 +5,7 @@ import org.apache.http.HttpStatus;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.data.CaseHearingRequestEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.data.HearingResponseEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
 
 import java.time.LocalDate;
@@ -92,6 +93,19 @@ public class TestingUtil {
         errorDetails.setAuthErrorCodes(List.of(code));
         errorDetails.setAuthErrorDescription(description);
         return errorDetails;
+    }
+
+    public static HearingEntity generateHearingEntityWithHearingResponse(Long hearingId,
+                                                                   Integer errorCode, String errorDescription) {
+        HearingEntity entity = new HearingEntity();
+        entity.setId(hearingId);
+        entity.setErrorCode(errorCode);
+        entity.setErrorDescription(errorDescription);
+        HearingResponseEntity hearingResponseEntity = new HearingResponseEntity();
+        hearingResponseEntity.setRequestVersion(1);
+        entity.setHearingResponses(List.of(hearingResponseEntity));
+        entity.setCaseHearingRequests(List.of(TestingUtil.caseHearingRequestEntity()));
+        return entity;
     }
 
 }
