@@ -293,12 +293,30 @@ class FutureHearingRepositoryTest {
             Request.create(POST, "/get/token/url", Collections.emptyMap(), requestBody, StandardCharsets.UTF_8, null);
 
         return Stream.of(
-            arguments(named("BadFutureHearingRequestException: no error details",
+            arguments(named("BadFutureHearingRequestException: null error details",
                             new BadFutureHearingRequestException(EXCEPTION_MESSAGE_BAD_REQUEST, null)
                       ),
                       EXCEPTION_MESSAGE_BAD_REQUEST,
                       null,
                       null),
+            arguments(named("BadFutureHearingRequestException: error details with null error codes",
+                            new BadFutureHearingRequestException(
+                                EXCEPTION_MESSAGE_BAD_REQUEST,
+                                createErrorDetailsAuthError(null, ERROR_DESCRIPTION_BAD_REQUEST)
+                            )
+                      ),
+                      EXCEPTION_MESSAGE_BAD_REQUEST,
+                      null,
+                      ERROR_DESCRIPTION_BAD_REQUEST),
+            arguments(named("BadFutureHearingRequestException: error details with no error codes",
+                            new BadFutureHearingRequestException(
+                                EXCEPTION_MESSAGE_BAD_REQUEST,
+                                createErrorDetailsAuthError(Collections.emptyList(), ERROR_DESCRIPTION_BAD_REQUEST)
+                            )
+                      ),
+                      EXCEPTION_MESSAGE_BAD_REQUEST,
+                      null,
+                      ERROR_DESCRIPTION_BAD_REQUEST),
             arguments(named("BadFutureHearingRequestException: error details with one error code",
                             new BadFutureHearingRequestException(
                                 EXCEPTION_MESSAGE_BAD_REQUEST,
@@ -317,12 +335,30 @@ class FutureHearingRepositoryTest {
                       EXCEPTION_MESSAGE_BAD_REQUEST,
                       2000,
                       ERROR_DESCRIPTION_BAD_REQUEST),
-            arguments(named("AuthenticationException: no error details",
+            arguments(named("AuthenticationException: null error details",
                             new AuthenticationException(EXCEPTION_MESSAGE_AUTH)
                       ),
                       EXCEPTION_MESSAGE_AUTH,
                       null,
                       null),
+            arguments(named("AuthenticationException: error details with null error codes",
+                            new AuthenticationException(
+                                EXCEPTION_MESSAGE_AUTH,
+                                createErrorDetailsAuthError(null, ERROR_DESCRIPTION_AUTH)
+                            )
+                      ),
+                      EXCEPTION_MESSAGE_AUTH,
+                      null,
+                      ERROR_DESCRIPTION_AUTH),
+            arguments(named("AuthenticationException: error details with no error codes",
+                            new AuthenticationException(
+                                EXCEPTION_MESSAGE_AUTH,
+                                createErrorDetailsAuthError(Collections.emptyList(), ERROR_DESCRIPTION_AUTH)
+                            )
+                      ),
+                      EXCEPTION_MESSAGE_AUTH,
+                      null,
+                      ERROR_DESCRIPTION_AUTH),
             arguments(named("AuthenticationException: error details with one error code",
                             new AuthenticationException(
                                 EXCEPTION_MESSAGE_AUTH,
@@ -358,7 +394,7 @@ class FutureHearingRepositoryTest {
 
     private static Stream<Arguments> hmiExceptions() {
         return Stream.of(
-            arguments(named("BadFutureHearingRequestException: no error details",
+            arguments(named("BadFutureHearingRequestException: null error details",
                             new BadFutureHearingRequestException(EXCEPTION_MESSAGE_BAD_REQUEST, null)
                       ),
                       EXCEPTION_MESSAGE_BAD_REQUEST,
@@ -372,7 +408,7 @@ class FutureHearingRepositoryTest {
                       EXCEPTION_MESSAGE_BAD_REQUEST,
                       100,
                       ERROR_DESCRIPTION_BAD_REQUEST),
-            arguments(named("AuthenticationException: no error details",
+            arguments(named("AuthenticationException: null error details",
                             new AuthenticationException(EXCEPTION_MESSAGE_AUTH)
                       ),
                       EXCEPTION_MESSAGE_AUTH,
