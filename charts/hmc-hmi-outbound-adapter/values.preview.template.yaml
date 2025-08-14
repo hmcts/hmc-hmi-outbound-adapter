@@ -32,6 +32,8 @@ java:
         - name: AppInsightsInstrumentationKey
         - name: app-insights-connection-string
           alias: app-insights-connection-string
+        - name: fh-get-token-url
+          alias: FH_GET_TOKEN_URL
 
 servicebus:
   enabled: true
