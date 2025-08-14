@@ -11,6 +11,28 @@ def branchesToSync = ['demo', 'ithc', 'perftest']
 
 GradleBuilder builder = new GradleBuilder(this, product)
 
+def vaultOverrides = [
+  'preview': 'aat'
+]
+
+def secrets = [
+  'hmc-${env}': [
+    secret('fh-get-token-url', 'FH_GET_TOKEN_URL'),
+    secret('ClientId', 'CLIENT_ID'),
+    secret('ClientSecret', 'CLIENT_SECRET'),
+    secret('Scope', 'SCOPE')
+  ]
+]
+
+static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
+  [ $class: 'AzureKeyVaultSecret',
+    secretType: 'Secret',
+    name: secretName,
+    version: '',
+    envVariable: envVar
+  ]
+}
+
 // env variables needed for BEFTA.
 env.CCD_API_GATEWAY_OAUTH2_CLIENT_ID = "ccd_gateway"
 env.IDAM_API_URL_BASE = "https://idam-api.aat.platform.hmcts.net"
@@ -22,6 +44,8 @@ env.OAUTH2_REDIRECT_URI = "https://www-ccd.aat.platform.hmcts.net/oauth2redirect
 
 withPipeline(type, product, component) {
   syncBranchesWithMaster(branchesToSync)
+  overrideVaultEnvironments(vaultOverrides)
+  loadVaultSecrets(secrets)
   enableAksStagingDeployment()
   disableLegacyDeployment()
 
