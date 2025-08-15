@@ -74,9 +74,9 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         String authorization;
 
         try {
-            log.debug("Retrieving authorization token for health check");
+            log.debug("Retrieving authorization token for HMI private health check");
             authorization = retrieveAuthToken().getAccessToken();
-            log.debug("Authorization token retrieved successfully for health check");
+            log.debug("Authorization token retrieved successfully for HMI private health check");
         } catch (BadFutureHearingRequestException e) {
             logDebugHealthCheckActiveDirectoryException(e.getClass().getSimpleName());
             throw createHealthCheckActiveDirectoryException(e);
@@ -171,7 +171,7 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
 
     private HealthCheckResponse getPrivateHealthCheck(String authorization) {
         try {
-            log.debug("Calling health check");
+            log.debug("Calling HMI private health check");
             return hmiClient.privateHealthCheck(BEARER + authorization);
         } catch (BadFutureHearingRequestException e) {
             logDebugHealthCheckHmiException(e);

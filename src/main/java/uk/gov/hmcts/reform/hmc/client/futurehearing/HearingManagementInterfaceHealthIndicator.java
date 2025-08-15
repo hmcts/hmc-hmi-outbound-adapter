@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -9,6 +10,7 @@ import uk.gov.hmcts.reform.hmc.repository.FutureHearingRepository;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class HearingManagementInterfaceHealthIndicator implements HealthIndicator {
 
     private final FutureHearingRepository futureHearingRepository;
@@ -21,12 +23,18 @@ public class HearingManagementInterfaceHealthIndicator implements HealthIndicato
     @Override
     public Health health() {
         try {
+            log.debug("Checking HMI health");
             HealthCheckResponse response = futureHearingRepository.privateHealthCheck();
-            return new Health.Builder(response.getStatus())
-                .build();
+            log.debug("HMI health check completed successfully");
+
+            return new Health.Builder(response.getStatus()).build();
         } catch (HealthCheckException e) {
+            log.error("HMI health check failed");
             return healthDown(e);
         } catch (Exception e) {
+            log.error("HMI health check failed, exception: {}, message: {}",
+                      e.getClass().getSimpleName(),
+                      e.getMessage());
             return healthDown(e);
         }
     }
