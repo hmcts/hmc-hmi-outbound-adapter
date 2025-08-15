@@ -44,8 +44,8 @@ env.OAUTH2_REDIRECT_URI = "https://www-ccd.aat.platform.hmcts.net/oauth2redirect
 
 withPipeline(type, product, component) {
   syncBranchesWithMaster(branchesToSync)
-  overrideVaultEnvironments(vaultOverrides)
-  loadVaultSecrets(secrets)
+  //overrideVaultEnvironments(vaultOverrides)
+  //loadVaultSecrets(secrets)
   enableAksStagingDeployment()
   disableLegacyDeployment()
 
