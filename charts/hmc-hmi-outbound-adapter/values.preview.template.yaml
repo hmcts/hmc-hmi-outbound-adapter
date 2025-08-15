@@ -34,6 +34,12 @@ java:
           alias: app-insights-connection-string
         - name: fh-get-token-url
           alias: FH_GET_TOKEN_URL
+        - name: ClientId
+          alias: CLIENT_ID
+        - name: ClientSecret
+          alias: CLIENT_SECRET
+        - name: Scope
+          alias: SCOPE
 
 servicebus:
   enabled: true
