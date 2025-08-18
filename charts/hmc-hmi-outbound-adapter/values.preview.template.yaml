@@ -37,7 +37,7 @@ servicebus:
   enabled: true
   teamName: CCD
   resourceGroup: hmc-aso-preview-rg
-  sbNamespace: hmc-sb-preview
+  sbNamespace: hmc-servicebus-preview
   setup:
     queues:
       - name: hmc-to-hmi
