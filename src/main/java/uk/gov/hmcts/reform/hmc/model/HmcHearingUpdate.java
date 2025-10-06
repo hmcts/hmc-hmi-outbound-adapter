@@ -1,6 +1,8 @@
 package uk.gov.hmcts.reform.hmc.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
+@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 public class HmcHearingUpdate {
 
     @NotNull(message = ValidationError.HEARING_RESPONSE_DATETIME_NULL)
