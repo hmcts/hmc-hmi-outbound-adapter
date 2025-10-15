@@ -229,8 +229,8 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
         HearingEntity hearingEntity = hearingRepository.findById(pendingRequest.getHearingId()).get();
         logErrorStatusToException(hearingEntity.getId(), hearingEntity.getLatestCaseReferenceNumber(),
-                                 hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
-                                 hearingEntity.getErrorDescription());
+                                  hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
+                                  hearingEntity.getErrorDescription());
     }
 
     protected Long getIntervalUnits(String envVarInterval) {
