@@ -6,11 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.data.HearingResponseEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
+import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
@@ -51,26 +55,32 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     private final HearingStatusAuditService hearingStatusAuditService;
     private final ObjectMapper objectMapper;
     private final PendingRequestRepository pendingRequestRepository;
+    private final MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
+    private final HmiHearingResponseMapper hmiHearingResponseMapper;
 
     public PendingRequestServiceImpl(ObjectMapper objectMapper,
                                      PendingRequestRepository pendingRequestRepository,
                                      HearingRepository hearingRepository,
-                                     HearingStatusAuditService hearingStatusAuditService) {
+                                     HearingStatusAuditService hearingStatusAuditService,
+                                     MessageSenderToTopicConfiguration messageSenderToTopicConfiguration,
+                                     HmiHearingResponseMapper hmiHearingResponseMapper) {
         this.objectMapper = objectMapper;
         this.pendingRequestRepository = pendingRequestRepository;
         this.hearingRepository = hearingRepository;
         this.hearingStatusAuditService = hearingStatusAuditService;
+        this.messageSenderToTopicConfiguration = messageSenderToTopicConfiguration;
+        this.hmiHearingResponseMapper = hmiHearingResponseMapper;
     }
 
     public boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
         LocalDateTime currentDateTime = LocalDateTime.now();
         LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime();
         long hoursElapsed = ChronoUnit.HOURS.between(submittedDateTime, currentDateTime);
-        log.debug("Hours elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
+        log.info("Hours elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
                   hoursElapsed, submittedDateTime, currentDateTime);
         boolean result = false;
         if (hoursElapsed >= exceptionLimitInHours) {
-            log.debug("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
+            log.info("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
                       pendingRequest.getHearingId());
             markRequestWithGivenStatus(pendingRequest.getId(), EXCEPTION.name());
             log.error("Submitted time of request with ID {} is {} hours later than before.",
@@ -89,7 +99,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
         long minutesElapsed = ChronoUnit.MINUTES.between(lastTriedDateTime, LocalDateTime.now());
         boolean result = retryLimitInMinutes < minutesElapsed;
-        log.debug("lastTriedDateTimePeriodNotElapsed()={}  retryLimitInMinutes<{}> hearingId<{}> Minutes elapsed<{}> "
+        log.info("lastTriedDateTimePeriodNotElapsed()={}  retryLimitInMinutes<{}> hearingId<{}> Minutes elapsed<{}> "
                       + "submittedDateTime<{}> currentDateTime<{}>",
                   result, retryLimitInMinutes, pendingRequest.getHearingId(), minutesElapsed, lastTriedDateTime,
                   LocalDateTime.now());
@@ -99,7 +109,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
         List<PendingRequestEntity> lockedRequests =
             pendingRequestRepository.findAndLockByHearingId(hearingId);
-        log.debug(
+        log.info(
             "{} locked records = findAndLockByHearingId({})",
             null == lockedRequests ? 0 : lockedRequests.size(),
             hearingId
@@ -113,7 +123,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                 getIntervalUnits(pendingWaitInterval), getIntervalMeasure(pendingWaitInterval));
         if (!pendingRequests.isEmpty()) {
             pendingRequests.forEach(e ->
-                log.debug("findQueuedPendingRequestsForProcessing(): id<{}> hearingId<{}> ",
+                log.info("findQueuedPendingRequestsForProcessing(): id<{}> hearingId<{}> ",
                       e.getId(), e.getHearingId()));
         } else {
             log.debug("findQueuedPendingRequestsForProcessing(): empty");
@@ -130,8 +140,9 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void markRequestWithGivenStatus(Long id, String status) {
-        log.debug("markRequestWithGivenStatus({}, {})", id, status);
+        log.info("markRequestWithGivenStatus({}, {})", id, status);
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
+        log.debug("markRequestWithGivenStatus({}, {} completed)", id, status);
     }
 
     public int claimRequest(Long id) {
@@ -159,6 +170,12 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                       exception.getClass(), exception.getMessage());
         }
         hearingRepository.save(hearingEntity);
+        HmcHearingResponse hmcHearingResponse = getHmcHearingResponse(hearingEntity);
+        log.debug("Sending hearing id {} to topic with Hearing response  {} is", hearingId, hmcHearingResponse);
+        messageSenderToTopicConfiguration
+            .sendMessage(objectMapper.convertValue(hmcHearingResponse, JsonNode.class).toString(),
+                         hmcHearingResponse.getHmctsServiceCode(),hearingId.toString(),
+                         hearingEntity.getDeploymentId());
         logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                   hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
                                   hearingEntity.getErrorDescription());
@@ -183,7 +200,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     );
 
     public void escalatePendingRequests() {
-        log.debug("escalatePendingRequests()");
+        log.info("escalatePendingRequests()");
 
         try {
             List<PendingRequestEntity> pendingRequests =
@@ -197,7 +214,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void deleteCompletedPendingRequests() {
-        log.debug("deleteCompletedPendingRequests({})", deletionWaitInterval);
+        log.info("deleteCompletedPendingRequests({})", deletionWaitInterval);
         try {
             int countOfDeletedRecords = pendingRequestRepository.deleteCompletedRecords(
                 getIntervalUnits(deletionWaitInterval), getIntervalMeasure(deletionWaitInterval));
@@ -208,13 +225,12 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
-        log.debug("escalatePendingRequests");
+        log.info("escalatePendingRequests");
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
         HearingEntity hearingEntity = hearingRepository.findById(pendingRequest.getHearingId()).get();
         logErrorStatusToException(hearingEntity.getId(), hearingEntity.getLatestCaseReferenceNumber(),
-                                  hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
-                                  hearingEntity.getErrorDescription());
-
+                                 hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
+                                 hearingEntity.getErrorDescription());
     }
 
     protected Long getIntervalUnits(String envVarInterval) {
@@ -261,6 +277,13 @@ public class PendingRequestServiceImpl implements PendingRequestService {
                                         String errorDescription) {
         entity.setErrorCode(errorCode);
         entity.setErrorDescription(errorDescription);
+    }
+
+    private HmcHearingResponse getHmcHearingResponse(HearingEntity hearingEntity) {
+        Optional<HearingResponseEntity> hearingResponseEntity = hearingEntity.getLatestHearingResponse();
+        return hearingResponseEntity.isPresent()
+            ? hmiHearingResponseMapper.mapEntityToHmcModel(hearingResponseEntity.get(), hearingEntity)
+            : hmiHearingResponseMapper.mapEntityToHmcModel(hearingEntity);
     }
 
 }

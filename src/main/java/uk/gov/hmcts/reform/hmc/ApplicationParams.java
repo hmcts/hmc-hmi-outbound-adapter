@@ -45,4 +45,10 @@ public class ApplicationParams {
 
     @Value("${azure.jms.servicebus.max-retry-attempts}")
     private int maxRetryAttempts;
+
+    @Value("${azure.jms.servicebus.external-connection-string}")
+    private String externalConnectionString;
+
+    @Value("${azure.jms.servicebus.external-topic-name}")
+    private String externalTopicName;
 }
