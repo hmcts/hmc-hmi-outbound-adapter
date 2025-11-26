@@ -66,7 +66,7 @@ class HearingManagementInterfaceHealthIndicatorTest {
     }
 
     @ParameterizedTest
-    @MethodSource("healthCheckStatuses")
+    @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#healthStatuses")
     void healthShouldMatchHealthCheckStatus(Status healthStatus) {
         HealthCheckResponse response = new HealthCheckResponse();
         response.setStatus(healthStatus);
@@ -121,15 +121,6 @@ class HearingManagementInterfaceHealthIndicatorTest {
         }
 
         verify(futureHearingRepository).privateHealthCheck();
-    }
-
-    private static Stream<Arguments> healthCheckStatuses() {
-        return Stream.of(
-            arguments(Status.UP),
-            arguments(Status.DOWN),
-            arguments(Status.UNKNOWN),
-            arguments(Status.OUT_OF_SERVICE)
-        );
     }
 
     private static Stream<Arguments> healthCheckActiveDirectoryExceptions() {

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Status;
@@ -27,14 +26,11 @@ import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckHmiException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Named.named;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubDeleteMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnToken;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubHealthCheck;
@@ -115,7 +111,7 @@ public class FutureHearingRepositoryIT extends BaseTest {
     class PrivateHealthCheck {
 
         @ParameterizedTest
-        @MethodSource("healthCheckStatuses")
+        @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#healthStatuses")
         void shouldSuccessfullyGetHealth(Status healthStatus) {
             stubSuccessfullyReturnToken(TOKEN);
             stubHealthCheck(TOKEN, healthStatus);
@@ -126,10 +122,11 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @ParameterizedTest(name = "{index}: {0}")
-        @MethodSource("activeDirectoryErrors")
+        @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#adApiErrorsAndExpectedHealthCheckValues")
         void shouldThrowHealthCheckActiveDirectoryExceptionForActiveDirectoryErrors(int status,
                                                                                     String errorDescription,
                                                                                     List<Integer> errorCodes,
+                                                                                    String expectedApiName,
                                                                                     String expectedExceptionMessage,
                                                                                     Integer expectedErrorCode,
                                                                                     String expectedErrorDescription) {
@@ -141,16 +138,17 @@ public class FutureHearingRepositoryIT extends BaseTest {
                              "HealthCheckActiveDirectoryException should be thrown");
 
             assertHealthCheckException(exception,
+                                       expectedApiName,
                                        expectedExceptionMessage,
-                                       "ActiveDirectory",
                                        expectedErrorCode,
                                        expectedErrorDescription);
         }
 
         @ParameterizedTest(name = "{index}: {0}")
-        @MethodSource("hmiErrors")
+        @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#hmiApiErrorsAndExpectedHealthCheckValues")
         void shouldThrowHealthCheckHmiExceptionForHmiErrors(int errorStatus,
                                                             String errorMessage,
+                                                            String expectedApiName,
                                                             String expectedExceptionMessage,
                                                             Integer expectedErrorCode,
                                                             String expectedErrorDescription) {
@@ -163,80 +161,21 @@ public class FutureHearingRepositoryIT extends BaseTest {
                              "HealthCheckHmiException should be thrown");
 
             assertHealthCheckException(exception,
+                                       expectedApiName,
                                        expectedExceptionMessage,
-                                       "HearingManagementInterface",
                                        expectedErrorCode,
                                        expectedErrorDescription);
         }
 
-        private static Stream<Arguments> healthCheckStatuses() {
-            return Stream.of(
-                arguments(Status.UP),
-                arguments(Status.DOWN),
-                arguments(Status.UNKNOWN),
-                arguments(Status.OUT_OF_SERVICE)
-            );
-        }
-
-        private static Stream<Arguments> activeDirectoryErrors() {
-            return Stream.of(
-                arguments(named("400 - BadFutureHearingRequestException", 400),
-                          "AADSTS1002012: The provided value for scope scope is not valid.",
-                          List.of(1002012),
-                          INVALID_REQUEST,
-                          1002012,
-                          "AADSTS1002012: The provided value for scope scope is not valid."),
-                arguments(named("401 - AuthenticationException", 401),
-                          "AADSTS7000215: Invalid client secret provided.",
-                          List.of(7000215),
-                          INVALID_SECRET,
-                          7000215,
-                          "AADSTS7000215: Invalid client secret provided."),
-                arguments(named("404 - Resource not found", 404),
-                          "ActiveDirectory resource not found",
-                          List.of(1000, 2000),
-                          "Resource not found",
-                          null,
-                          null),
-                arguments(named("500 - AuthenticationException", 500),
-                          "Internal server error",
-                          List.of(3000, 4000),
-                          SERVER_ERROR,
-                          3000,
-                          "Internal server error")
-            );
-        }
-
-        private static Stream<Arguments> hmiErrors() {
-            return Stream.of(
-                arguments(named("400 - BadFutureHearingRequestException", 400),
-                          "Missing/Invalid Header Source-System",
-                          INVALID_REQUEST,
-                          400,
-                          "Missing/Invalid Header Source-System"),
-                arguments(named("401 - AuthenticationException", 401),
-                          "Access denied due to invalid OAuth information",
-                          INVALID_SECRET,
-                          401,
-                          "Access denied due to invalid OAuth information"),
-                arguments(named("404 - ResourceNotFoundException", 404),
-                          "HMI Resource not found",
-                          "Resource not found",
-                          null,
-                          null),
-                arguments(named("500 - AuthenticationException", 500),
-                          "Internal server error",
-                          SERVER_ERROR,
-                          500,
-                          "Internal server error")
-            );
-        }
-
         private void assertHealthCheckException(HealthCheckException healthCheckException,
-                                                String expectedExceptionMessage,
                                                 String expectedApiName,
+                                                String expectedExceptionMessage,
                                                 Integer expectedErrorCode,
                                                 String expectedErrorDescription) {
+            assertEquals(expectedApiName,
+                         healthCheckException.getApiName(),
+                         "Health Check exception has unexpected API name");
+
             assertEquals(expectedExceptionMessage,
                          healthCheckException.getMessage(),
                          "Health Check exception has unexpected message");
@@ -248,10 +187,6 @@ public class FutureHearingRepositoryIT extends BaseTest {
                              healthCheckException.getErrorCode(),
                              "Health Check exception has unexpected error code");
             }
-
-            assertEquals(expectedApiName,
-                         healthCheckException.getApiName(),
-                         "Health Check exception has unexpected API name");
 
             if (expectedErrorDescription == null) {
                 assertNull(healthCheckException.getErrorDescription(),
