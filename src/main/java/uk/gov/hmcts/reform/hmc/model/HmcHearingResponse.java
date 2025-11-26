@@ -1,5 +1,7 @@
 package uk.gov.hmcts.reform.hmc.model;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
@@ -9,6 +11,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ValidationError;
 
 @Data
 @NoArgsConstructor
+@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 public class HmcHearingResponse {
     @NotEmpty(message = ValidationError.HMCTS_SERVICE_CODE_EMPTY_INVALID)
     @Pattern(regexp = "^\\w{4}$", message = ValidationError.HMCTS_SERVICE_CODE_EMPTY_INVALID)
