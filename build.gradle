@@ -227,7 +227,7 @@ sonarqube {
 def versions = [
   junit           : '5.10.5',
   junitPlatform   : '1.10.5',
-  lombok          : '1.18.38',
+  lombok          : '1.18.42',
   mapstruct       : '1.4.2.Final',
   reformLogging   : '6.1.9',
   springBoot      : springBoot.class.package.implementationVersion,
