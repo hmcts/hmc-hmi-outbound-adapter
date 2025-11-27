@@ -44,7 +44,7 @@ configurations.all {
 }
 
 jacoco {
-  toolVersion = "0.8.13"
+  toolVersion = "0.8.14"
 }
 
 
@@ -339,7 +339,7 @@ dependencies {
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
 
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.8'
 
   testImplementation libraries.junit5
   testImplementation 'org.apiguardian:apiguardian-api:1.1.2' // Temporary fix see https://github.com/junit-team/junit5/issues/1065
@@ -368,7 +368,7 @@ dependencies {
   functionalTestImplementation group: 'com.github.hmcts', name: 'befta-fw', version: '9.2.4'
   functionalTestImplementation libraries.junit5
 
-  testImplementation 'com.github.hmcts:fortify-client:1.4.9:all', {
+  testImplementation 'com.github.hmcts:fortify-client:1.4.10:all', {
     exclude group: 'org.slf4j', module: 'slf4j-api'
   }
 }
