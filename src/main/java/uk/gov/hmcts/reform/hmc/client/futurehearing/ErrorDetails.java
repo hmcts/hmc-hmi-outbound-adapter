@@ -4,19 +4,19 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
 @Data
-@Getter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ErrorDetails implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1440867514864615134L;
 
     @JsonProperty("errCode")
@@ -34,4 +34,9 @@ public class ErrorDetails implements Serializable {
     @JsonProperty("error_description")
     private String authErrorDescription;
 
+    @JsonProperty("statusCode")
+    private Integer apiStatusCode;
+
+    @JsonProperty("message")
+    private String apiErrorMessage;
 }
