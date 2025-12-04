@@ -231,7 +231,7 @@ def versions = [
   mapstruct       : '1.4.2.Final',
   reformLogging   : '6.1.9',
   springBoot      : springBoot.class.package.implementationVersion,
-  testcontainers  : '1.21.1'
+  testcontainers  : '1.21.3'
 ]
 
 ext {
@@ -265,15 +265,15 @@ tasks.register("printSuppressionFile") {
 
 dependencyManagement {
   imports {
-    mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.5"
+    mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.6"
   }
   dependencies {
       // CVE-2018-10237 - Unbounded memory allocation
-      dependencySet(group: 'com.google.guava', version: '33.4.8-jre') {
+      dependencySet(group: 'com.google.guava', version: '33.5.0-jre') {
         entry 'guava'
       }
 
-      dependencySet(group: 'org.apache.tomcat.embed', version: '10.1.43') {
+      dependencySet(group: 'org.apache.tomcat.embed', version: '10.1.49') {
         entry 'tomcat-embed-core'
         entry 'tomcat-embed-el'
         entry 'tomcat-embed-websocket'
@@ -322,16 +322,16 @@ dependencies {
 
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
   implementation group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '8.1'
-  implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
-  implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.5.18'
+  implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.21'
+  implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.5.21'
   implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
   implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.17'
   implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
 
   implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.1'
-  implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.17.12'
-  implementation group: 'com.azure', name: 'azure-core', version: '1.55.5'
-  implementation group: 'com.azure', name: 'azure-core-amqp', version: '2.10.1'
+  implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.17.16'
+  implementation group: 'com.azure', name: 'azure-core', version: '1.57.0'
+  implementation group: 'com.azure', name: 'azure-core-amqp', version: '2.11.2'
 
   implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.6.0'
   implementation group: 'commons-io', name: 'commons-io', version: '2.19.0'
