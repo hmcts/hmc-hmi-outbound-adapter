@@ -334,7 +334,7 @@ dependencies {
   implementation group: 'com.azure', name: 'azure-core-amqp', version: '2.11.2'
 
   implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.6.0'
-  implementation group: 'commons-io', name: 'commons-io', version: '2.19.0'
+  implementation group: 'commons-io', name: 'commons-io', version: '2.21.0'
 
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
