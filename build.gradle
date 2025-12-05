@@ -295,6 +295,7 @@ dependencies {
 
   // HMCTS dependencies
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
+  implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
 
 
   implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.21'
