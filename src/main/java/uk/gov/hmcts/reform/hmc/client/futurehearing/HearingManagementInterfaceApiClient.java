@@ -3,6 +3,7 @@ package uk.gov.hmcts.reform.hmc.client.futurehearing;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,6 +23,10 @@ public interface HearingManagementInterfaceApiClient {
 
     String HEARINGS_URL = "/hearings";
     String CASE_LISTING_URL = HEARINGS_URL + "/{cid}";
+    String PRIVATE_HEALTH_URL = "/health";
+
+    @GetMapping(value = PRIVATE_HEALTH_URL, produces = APPLICATION_JSON_VALUE)
+    HealthCheckResponse privateHealthCheck(@RequestHeader(AUTHORIZATION) String token);
 
     @PostMapping(value = HEARINGS_URL, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     HearingManagementInterfaceResponse requestHearing(@RequestHeader(AUTHORIZATION) String token,
