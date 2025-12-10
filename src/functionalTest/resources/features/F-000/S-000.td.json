@@ -44,6 +44,9 @@
             "exists" : true
           }
         },
+        "hearingManagementInterface" : {
+          "status" : "Up"
+        },
         "livenessState" : {
           "status" : "UP"
         },
