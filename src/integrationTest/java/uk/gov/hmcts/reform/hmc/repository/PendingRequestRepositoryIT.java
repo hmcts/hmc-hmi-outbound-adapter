@@ -249,7 +249,6 @@ class PendingRequestRepositoryIT extends BaseTest {
                                                             String message, LocalDateTime localDateTime,
                                                             String deploymentId) {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
-        pendingRequest.setId(0L);
         pendingRequest.setHearingId(hearingId);
         pendingRequest.setMessage(message);
         pendingRequest.setMessageType(messageType);
