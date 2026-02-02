@@ -14,6 +14,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
+import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
@@ -179,10 +180,17 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                   hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
                                   hearingEntity.getErrorDescription());
-
-        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity,
-                          LA_RESPONSE, LA_FAILURE_STATUS,
-                          FH, HMC, objectMapper.convertValue(errorDetails, JsonNode.class));
+        JsonNode errorInfo = objectMapper.convertValue(errorDetails, JsonNode.class);
+        HearingStatusAuditContext hearingStatusAuditContext =
+            HearingStatusAuditContext.builder()
+                .hearingEntity(hearingEntity)
+                .hearingEvent(LA_RESPONSE)
+                .httpStatus(LA_FAILURE_STATUS)
+                .source(FH)
+                .target(HMC)
+                .errorDetails(errorInfo)
+                .build();
+        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
     }
 
     public Optional<PendingRequestEntity> findById(Long pendingRequestId) {

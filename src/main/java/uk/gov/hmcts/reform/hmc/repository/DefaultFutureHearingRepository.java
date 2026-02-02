@@ -22,6 +22,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckActiveDirectoryException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckHmiException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
 import java.nio.charset.StandardCharsets;
@@ -135,28 +136,44 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         try {
             log.debug("Retrieving authorization token for operation: {} hearingId: {}", operation,
                       caseListingRequestId);
-            saveAuditDetails(hearingEntity, HMC_TO_HMI_AUTH_REQUEST, null, HMC, HMI, null);
+            HearingStatusAuditContext hearingStatusAuditContext =
+                HearingStatusAuditContext.builder()
+                    .hearingEntity(hearingEntity)
+                    .hearingEvent(HMC_TO_HMI_AUTH_REQUEST)
+                    .source(HMC)
+                    .target(HMI)
+                    .build();
+            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
             authorization = retrieveAuthToken().getAccessToken();
             log.debug("Authorization token retrieved successfully for operation: {} hearingId: {}", operation,
                       caseListingRequestId);
-            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_SUCCESS, String.valueOf(HttpStatus.OK.value()),
-                                HMI, HMC, null);
+            hearingStatusAuditContext =
+                HearingStatusAuditContext.builder()
+                    .hearingEntity(hearingEntity)
+                    .hearingEvent(HMI_TO_HMC_AUTH_SUCCESS)
+                    .hearingEvent(String.valueOf(HttpStatus.OK.value()))
+                    .source(HMI)
+                    .target(HMC)
+                    .build();
+            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
         } catch (Exception ex) {
             log.error("Failed to retrieve authorization token for hearingId: {} with exception {}",
                       caseListingRequestId, ex.getMessage());
             JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
-            saveAuditDetails(hearingEntity, HMI_TO_HMC_AUTH_FAIL, String.valueOf(HttpStatus.UNAUTHORIZED.value()),
-                             HMI, HMC, errorDescription);
+            HearingStatusAuditContext hearingStatusAuditContext =
+                HearingStatusAuditContext.builder()
+                    .hearingEntity(hearingEntity)
+                    .hearingEvent(HMI_TO_HMC_AUTH_FAIL)
+                    .httpStatus(String.valueOf(HttpStatus.UNAUTHORIZED.value()))
+                    .source(HMI)
+                    .target(HMC)
+                    .errorDetails(errorDescription)
+                    .build();
+            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
             throw new AuthenticationException("Failed to retrieve authorization token for operation: " + operation
                                               + " hearingId: " + caseListingRequestId);
         }
         return authorization;
-    }
-
-    private void saveAuditDetails(HearingEntity hearingEntity, String action, String responseCode,
-                                  String source, String target, JsonNode errorDescription) {
-        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDate(hearingEntity, action, responseCode,
-                                                                        source, target, errorDescription);
     }
 
     @NotNull

@@ -293,7 +293,7 @@ class PendingRequestServiceImplTest {
         verify(hearingRepository, times(0)).save(any());
         verify(hearingStatusAuditService,
                times(0))
-                    .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
+                    .saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any());
     }
 
     @Test
@@ -327,7 +327,7 @@ class PendingRequestServiceImplTest {
         verifyLogErrors(listAppender);
         verify(hearingRepository, times(1)).save(any());
         verify(hearingStatusAuditService, times(1))
-            .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
+            .saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any());
         assertThat(hearingEntity.getStatus()).isEqualTo(EXCEPTION.name());
         assertThat(hearingEntity.getErrorDescription()).isEqualTo(expectedErrorDescription);
     }
