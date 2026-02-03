@@ -136,40 +136,15 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         try {
             log.debug("Retrieving authorization token for operation: {} hearingId: {}", operation,
                       caseListingRequestId);
-            HearingStatusAuditContext hearingStatusAuditContext =
-                HearingStatusAuditContext.builder()
-                    .hearingEntity(hearingEntity)
-                    .hearingEvent(HMC_TO_HMI_AUTH_REQUEST)
-                    .source(HMC)
-                    .target(HMI)
-                    .build();
-            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
+            saveAuditAuthRequest(hearingEntity);
             authorization = retrieveAuthToken().getAccessToken();
             log.debug("Authorization token retrieved successfully for operation: {} hearingId: {}", operation,
                       caseListingRequestId);
-            hearingStatusAuditContext =
-                HearingStatusAuditContext.builder()
-                    .hearingEntity(hearingEntity)
-                    .hearingEvent(HMI_TO_HMC_AUTH_SUCCESS)
-                    .hearingEvent(String.valueOf(HttpStatus.OK.value()))
-                    .source(HMI)
-                    .target(HMC)
-                    .build();
-            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
+            saveAuditAuthSuccess(hearingEntity);
         } catch (Exception ex) {
             log.error("Failed to retrieve authorization token for hearingId: {} with exception {}",
                       caseListingRequestId, ex.getMessage());
-            JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
-            HearingStatusAuditContext hearingStatusAuditContext =
-                HearingStatusAuditContext.builder()
-                    .hearingEntity(hearingEntity)
-                    .hearingEvent(HMI_TO_HMC_AUTH_FAIL)
-                    .httpStatus(String.valueOf(HttpStatus.UNAUTHORIZED.value()))
-                    .source(HMI)
-                    .target(HMC)
-                    .errorDetails(errorDescription)
-                    .build();
-            hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
+            saveAuditAuthFail(hearingEntity, ex);
             throw new AuthenticationException("Failed to retrieve authorization token for operation: " + operation
                                               + " hearingId: " + caseListingRequestId);
         }
@@ -289,5 +264,42 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
 
     private Integer getAuthErrorCode(List<Integer> authErrorCodes) {
         return authErrorCodes != null && !authErrorCodes.isEmpty() ? authErrorCodes.getFirst() : null;
+    }
+
+    private void saveAuditAuthSuccess(HearingEntity hearingEntity) {
+        HearingStatusAuditContext hearingStatusAuditContext =
+            HearingStatusAuditContext.builder()
+                .hearingEntity(hearingEntity)
+                .hearingEvent(HMI_TO_HMC_AUTH_SUCCESS)
+                .hearingEvent(String.valueOf(HttpStatus.OK.value()))
+                .source(HMI)
+                .target(HMC)
+                .build();
+        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
+    }
+
+    private void saveAuditAuthRequest(HearingEntity hearingEntity) {
+        HearingStatusAuditContext hearingStatusAuditContext =
+            HearingStatusAuditContext.builder()
+                .hearingEntity(hearingEntity)
+                .hearingEvent(HMC_TO_HMI_AUTH_REQUEST)
+                .source(HMC)
+                .target(HMI)
+                .build();
+        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
+    }
+
+    private void saveAuditAuthFail(HearingEntity hearingEntity, Exception ex) {
+        JsonNode errorDescription = objectMapper.convertValue(ex.getMessage(), JsonNode.class);
+        HearingStatusAuditContext hearingStatusAuditContext =
+            HearingStatusAuditContext.builder()
+                .hearingEntity(hearingEntity)
+                .hearingEvent(HMI_TO_HMC_AUTH_FAIL)
+                .httpStatus(String.valueOf(HttpStatus.UNAUTHORIZED.value()))
+                .source(HMI)
+                .target(HMC)
+                .errorDetails(errorDescription)
+                .build();
+        hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(hearingStatusAuditContext);
     }
 }
