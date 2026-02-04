@@ -36,6 +36,7 @@ public class HearingStatusAuditServiceImpl implements HearingStatusAuditService 
     @Override
     public void saveAuditTriageDetails(HearingStatusAuditContext auditContext) {
         HearingStatusAuditEntity hearingStatusAuditEntity = mapHearingStatusAuditDetails(auditContext);
+        hearingStatusAuditEntity.setStatusUpdateDateTime(auditContext.getHearingEntity().getCreatedDateTime());
         saveHearingStatusAudit(hearingStatusAuditEntity);
     }
 
@@ -45,7 +46,6 @@ public class HearingStatusAuditServiceImpl implements HearingStatusAuditService 
         hearingStatusAuditEntity.setHmctsServiceId(hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode());
         hearingStatusAuditEntity.setHearingId(hearingEntity.getId().toString());
         hearingStatusAuditEntity.setStatus(hearingEntity.getStatus());
-        hearingStatusAuditEntity.setStatusUpdateDateTime(hearingEntity.getCreatedDateTime());
         hearingStatusAuditEntity.setHearingEvent(hearingStatusAuditContext.getHearingEvent());
         hearingStatusAuditEntity.setHttpStatus(hearingStatusAuditContext.getHttpStatus());
         hearingStatusAuditEntity.setSource(hearingStatusAuditContext.getSource());

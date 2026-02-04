@@ -15,6 +15,4 @@ public class HearingStatusAuditContext {
     private String target;
     private JsonNode errorDetails;
     private JsonNode otherInfo;
-    private boolean useCurrentTimestamp;
-
 }

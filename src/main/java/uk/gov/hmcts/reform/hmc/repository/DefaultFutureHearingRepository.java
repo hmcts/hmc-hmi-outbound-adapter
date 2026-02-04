@@ -271,7 +271,7 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
             HearingStatusAuditContext.builder()
                 .hearingEntity(hearingEntity)
                 .hearingEvent(HMI_TO_HMC_AUTH_SUCCESS)
-                .hearingEvent(String.valueOf(HttpStatus.OK.value()))
+                .httpStatus(String.valueOf(HttpStatus.OK.value()))
                 .source(HMI)
                 .target(HMC)
                 .build();

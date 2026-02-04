@@ -25,8 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.CREATE_HEARING_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.FAILURE_STATUS;
@@ -61,11 +59,13 @@ class HearingStatusAuditServiceImplTest {
     class HearingStatusAuditDetails {
         @Test
         void shouldSaveAuditTriageDetailsWhenFailure() throws JsonProcessingException {
+            HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+            hearingEntity.setCreatedDateTime(LocalDateTime.now());
             JsonNode errorDetails = new ObjectMapper().readTree("{\"deadLetterReason\":"
                                                                     + " \"MaxDeliveryCountExceeded \"}");
             HearingStatusAuditContext context =
                 HearingStatusAuditContext.builder()
-                    .hearingEntity(TestingUtil.hearingEntity().get())
+                    .hearingEntity(hearingEntity)
                     .hearingEvent(HMC_TO_HMI_AUTH)
                     .httpStatus(FAILURE_STATUS)
                     .source(HMC)
@@ -81,15 +81,17 @@ class HearingStatusAuditServiceImplTest {
             assertEquals(HMC_TO_HMI_AUTH, auditEntity.getHearingEvent());
             assertEquals("Test", auditEntity.getHmctsServiceId());
             assertEquals("1", auditEntity.getRequestVersion());
+            assertEquals(auditEntity.getStatusUpdateDateTime(), hearingEntity.getCreatedDateTime());
             assertNotNull(auditEntity.getErrorDescription());
-            verify(hearingStatusAuditRepository, times(1)).save(any());
         }
 
         @Test
         void shouldSaveAuditTriageDetailsWhenSuccess() {
+            HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
+            hearingEntity.setCreatedDateTime(LocalDateTime.now());
             HearingStatusAuditContext context =
                 HearingStatusAuditContext.builder()
-                    .hearingEntity(TestingUtil.hearingEntity().get())
+                    .hearingEntity(hearingEntity)
                     .hearingEvent(HMC_TO_HMI_AUTH)
                     .httpStatus(SUCCESS_STATUS)
                     .source(HMC)
@@ -104,14 +106,13 @@ class HearingStatusAuditServiceImplTest {
             assertEquals(HMC_TO_HMI_AUTH, auditEntity.getHearingEvent());
             assertEquals("Test", auditEntity.getHmctsServiceId());
             assertEquals("1", auditEntity.getRequestVersion());
+            assertEquals(auditEntity.getStatusUpdateDateTime(), hearingEntity.getCreatedDateTime());
             assertNull(auditEntity.getErrorDescription());
-            verify(hearingStatusAuditRepository, times(1)).save(any());
         }
 
         @Test
         void shouldSaveAuditTriageDetailsWithUpdatedDateWhenSuccess_UpdateTimeIsNotNull() {
             HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
-            hearingEntity.setCreatedDateTime(LocalDateTime.now());
             hearingEntity.setUpdatedDateTime(LocalDateTime.now());
             HearingStatusAuditContext context =
                 HearingStatusAuditContext.builder()
@@ -123,16 +124,14 @@ class HearingStatusAuditServiceImplTest {
                     .build();
             hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(context);
             HearingStatusAuditEntity auditEntity = getHearingStatusAuditEntity();
-            verify(hearingStatusAuditRepository, times(1)).save(any());
             assertEquals(SUCCESS_STATUS, auditEntity.getHttpStatus());
             assertEquals(CREATE_HEARING_REQUEST, auditEntity.getHearingEvent());
-            assertEquals(context.getHearingEntity().getUpdatedDateTime(), auditEntity.getStatusUpdateDateTime());
+            assertEquals(auditEntity.getStatusUpdateDateTime(),context.getHearingEntity().getUpdatedDateTime());
         }
 
         @Test
         void shouldSaveAuditTriageDetailsWithUpdatedDateWhenSuccess_UpdateTimeIsNull() {
             HearingEntity hearingEntity = TestingUtil.hearingEntity().get();
-            hearingEntity.setCreatedDateTime(LocalDateTime.now());
             HearingStatusAuditContext context =
                 HearingStatusAuditContext.builder()
                     .hearingEntity(hearingEntity)
@@ -145,14 +144,11 @@ class HearingStatusAuditServiceImplTest {
             LocalDateTime startDateTimePlusFiveMinutes = startDateTime.plusMinutes(5);
             hearingStatusAuditService.saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(context);
             HearingStatusAuditEntity auditEntity = getHearingStatusAuditEntity();
-            verify(hearingStatusAuditRepository, times(1)).save(any());
             assertTrue(auditEntity.getStatusUpdateDateTime().isAfter(startDateTime)
                            && auditEntity.getStatusUpdateDateTime().isBefore(startDateTimePlusFiveMinutes));
             assertEquals(SUCCESS_STATUS, auditEntity.getHttpStatus());
             assertEquals(CREATE_HEARING_REQUEST, auditEntity.getHearingEvent());
-
         }
-
     }
 
     private HearingStatusAuditEntity getHearingStatusAuditEntity() {
@@ -160,5 +156,4 @@ class HearingStatusAuditServiceImplTest {
         HearingStatusAuditEntity savedEntity = hearingStatusAuditEntityCaptor.getValue();
         return savedEntity;
     }
-
 }
