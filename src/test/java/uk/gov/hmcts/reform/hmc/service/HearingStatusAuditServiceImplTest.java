@@ -15,7 +15,6 @@ import org.mockito.MockitoAnnotations;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
 import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
-import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.HearingStatusAuditRepository;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
 
@@ -43,9 +42,6 @@ class HearingStatusAuditServiceImplTest {
 
     @Captor
     private ArgumentCaptor<HearingStatusAuditEntity> hearingStatusAuditEntityCaptor;
-
-    @Mock
-    HearingRepository hearingRepository;
 
     @BeforeEach
     public void setUp() {
@@ -81,7 +77,7 @@ class HearingStatusAuditServiceImplTest {
             assertEquals(HMC_TO_HMI_AUTH, auditEntity.getHearingEvent());
             assertEquals("Test", auditEntity.getHmctsServiceId());
             assertEquals("1", auditEntity.getRequestVersion());
-            assertEquals(auditEntity.getStatusUpdateDateTime(), hearingEntity.getCreatedDateTime());
+            assertEquals(hearingEntity.getCreatedDateTime(), auditEntity.getStatusUpdateDateTime());
             assertNotNull(auditEntity.getErrorDescription());
         }
 
@@ -106,7 +102,7 @@ class HearingStatusAuditServiceImplTest {
             assertEquals(HMC_TO_HMI_AUTH, auditEntity.getHearingEvent());
             assertEquals("Test", auditEntity.getHmctsServiceId());
             assertEquals("1", auditEntity.getRequestVersion());
-            assertEquals(auditEntity.getStatusUpdateDateTime(), hearingEntity.getCreatedDateTime());
+            assertEquals(hearingEntity.getCreatedDateTime(), auditEntity.getStatusUpdateDateTime());
             assertNull(auditEntity.getErrorDescription());
         }
 
@@ -126,7 +122,7 @@ class HearingStatusAuditServiceImplTest {
             HearingStatusAuditEntity auditEntity = getHearingStatusAuditEntity();
             assertEquals(SUCCESS_STATUS, auditEntity.getHttpStatus());
             assertEquals(CREATE_HEARING_REQUEST, auditEntity.getHearingEvent());
-            assertEquals(auditEntity.getStatusUpdateDateTime(),context.getHearingEntity().getUpdatedDateTime());
+            assertEquals(context.getHearingEntity().getUpdatedDateTime(), auditEntity.getStatusUpdateDateTime());
         }
 
         @Test
