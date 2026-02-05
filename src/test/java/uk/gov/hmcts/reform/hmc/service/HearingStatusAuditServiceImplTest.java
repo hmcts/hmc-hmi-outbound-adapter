@@ -151,5 +151,6 @@ class HearingStatusAuditServiceImplTest {
         verify(hearingStatusAuditRepository).save(hearingStatusAuditEntityCaptor.capture());
         HearingStatusAuditEntity savedEntity = hearingStatusAuditEntityCaptor.getValue();
         return savedEntity;
+
     }
 }
