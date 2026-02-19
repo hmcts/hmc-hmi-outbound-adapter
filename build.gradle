@@ -298,8 +298,8 @@ dependencies {
   implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
 
 
-  implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.21'
-  implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.5.21'
+  implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.32'
+  implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.5.32'
   implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: '7.17.17'
   implementation group: 'com.azure', name: 'azure-core', version: '1.57.1'
   implementation group: 'com.azure', name: 'azure-core-amqp', version: '2.11.3'
