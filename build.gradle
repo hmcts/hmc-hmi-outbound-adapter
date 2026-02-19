@@ -246,8 +246,8 @@ repositories {
 
 def versions = [
   springCloudVersion: '2025.0.0',
-  junit           : '5.14.2',
-  junitPlatform   : '1.14.2',
+  junit           : '5.14.3',
+  junitPlatform   : '1.14.3',
   lombok          : '1.18.42',
   mapstruct       : '1.4.2.Final',
   reformLogging   : '6.1.9',
