@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
@@ -35,13 +35,13 @@ class MessageProcessorIT extends BaseTest {
     private static final String MESSAGE_TYPE = "message_type";
     private static final String HEARING_ID = "hearing_id";
 
-    @MockBean
+    @MockitoBean
     private MessageSenderConfiguration messageSenderConfiguration;
 
-    @MockBean
+    @MockitoBean
     private DefaultFutureHearingRepository defaultFutureHearingRepository;
 
-    @MockBean
+    @MockitoBean
     private PendingRequestService pendingRequestService;
 
     @Autowired

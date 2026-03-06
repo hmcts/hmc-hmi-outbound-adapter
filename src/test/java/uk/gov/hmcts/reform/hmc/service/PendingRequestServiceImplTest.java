@@ -27,6 +27,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
+import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
 import uk.gov.hmcts.reform.hmc.model.HmcHearingUpdate;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
@@ -282,8 +283,7 @@ class PendingRequestServiceImplTest {
         verify(hearingRepository).save(hearing);
         verify(hmiHearingResponseMapper).mapEntityToHmcModel(any(), any());
         verify(messageSenderToTopicConfiguration).sendMessage(any(), any(), any(), any());
-        verify(hearingStatusAuditService)
-            .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
+        verify(hearingStatusAuditService).saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any());
 
         assertThat(hearing.getStatus()).isEqualTo("EXCEPTION");
         assertThat(hearing.getUpdatedDateTime()).isNotNull();
@@ -332,12 +332,15 @@ class PendingRequestServiceImplTest {
         verify(messageSenderToTopicConfiguration)
             .sendMessage(messageSenderMessage.toString(), "Test", "2000000001", null);
         verify(objectMapper).convertValue(extractedErrorDetails, JsonNode.class);
-        verify(hearingStatusAuditService).saveAuditTriageDetailsWithUpdatedDate(hearing,
-                                                                                "list-assist-response",
-                                                                                "400",
-                                                                                "fh",
-                                                                                "hmc",
-                                                                                hearingStatusAuditErrorDescription);
+        verify(hearingStatusAuditService).saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(
+            HearingStatusAuditContext.builder()
+                .hearingEntity(hearing)
+                .hearingEvent("list-assist-response")
+                .httpStatus("400")
+                .source("fh")
+                .target("hmc")
+                .errorDetails(hearingStatusAuditErrorDescription).build()
+        );
 
         verify(pendingRequestRepository).markRequestForNonRetriableException(1L);
     }
@@ -360,8 +363,7 @@ class PendingRequestServiceImplTest {
         verify(pendingRequestRepository).markRequestWithGivenStatus(1L, EXCEPTION.name());
 
         verify(hearingRepository, never()).save(any());
-        verify(hearingStatusAuditService, never())
-            .saveAuditTriageDetailsWithUpdatedDate(any(), any(), any(), any(), any(), any());
+        verify(hearingStatusAuditService, never()).saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any());
         verify(pendingRequestRepository, never()).markRequestForNonRetriableException(1L);
     }
 

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
@@ -104,8 +105,16 @@ public class ServiceBusMessageErrorHandler {
                                                                 + exceptionMessage + "\"}");
         Optional<HearingEntity> hearingEntity = hearingRepository.findById(Long.valueOf(hearingId));
         if (hearingEntity.isPresent()) {
-            hearingStatusAuditService.saveAuditTriageDetails(hearingEntity.get(), HMC_TO_HMI_AUTH,
-                                                             FAILURE_STATUS, HMC, HMI, errorDetails);
+            HearingStatusAuditContext hearingStatusAuditContext =
+                HearingStatusAuditContext.builder()
+                    .hearingEntity(hearingEntity.get())
+                    .hearingEvent(HMC_TO_HMI_AUTH)
+                    .httpStatus(FAILURE_STATUS)
+                    .source(HMC)
+                    .target(HMI)
+                    .errorDetails(errorDetails)
+                    .build();
+            hearingStatusAuditService.saveAuditTriageDetails(hearingStatusAuditContext);
         }
     }
 

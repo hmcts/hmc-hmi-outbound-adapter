@@ -10,7 +10,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
@@ -52,7 +52,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         "classpath:sql/insert-pending_requests_unknown_message_type.sql";
 
     // Mocked so tests will function in an environment without a servicebus
-    @MockBean
+    @MockitoBean
     @SuppressWarnings("unused")
     private MessageSenderConfiguration messageSenderConfiguration;
 

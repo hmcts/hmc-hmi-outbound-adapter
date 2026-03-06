@@ -10,6 +10,9 @@ management:
       base-path: /
       exposure:
         include: health, info, prometheus
+  health:
+    ssl:
+      enabled: false
 
 springdoc:
   packagesToScan: uk.gov.hmcts.reform.hmc.controllers
