@@ -149,32 +149,43 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         return pendingRequestRepository.claimRequest(id);
     }
 
-    public void catchExceptionAndUpdateHearing(Long hearingId, Exception exception) {
-        log.debug("catchExceptionAndUpdateHearing ({}, {})", hearingId, exception.getMessage());
-        JsonNode errorDetails = null;
-        Optional<HearingEntity> hearingResult = hearingRepository.findById(hearingId);
-        if (hearingResult.isEmpty()) {
+    @Override
+    public void handleNonRetriableException(PendingRequestEntity pendingRequest, Exception exception) {
+        Long hearingId = pendingRequest.getHearingId();
+
+        Optional<HearingEntity> hearingEntityOptional = hearingRepository.findById(hearingId);
+        if (hearingEntityOptional.isPresent()) {
+            HearingEntity hearing = hearingEntityOptional.get();
+            catchExceptionAndUpdateHearing(hearing, exception);
+            pendingRequestRepository.markRequestForNonRetriableException(pendingRequest.getId());
+        } else {
             log.error("Hearing id {} not found", hearingId);
-            return;
+            pendingRequestRepository.markRequestWithGivenStatus(pendingRequest.getId(), EXCEPTION.name());
         }
-        HearingEntity hearingEntity = hearingResult.get();
+    }
+
+    public void catchExceptionAndUpdateHearing(HearingEntity hearingEntity, Exception exception) {
+        Long hearingId = hearingEntity.getId();
+        log.debug("catchExceptionAndUpdateHearing ({}, {})", hearingId, exception.getMessage());
+
         hearingEntity.setStatus(EXCEPTION.name());
         hearingEntity.setUpdatedDateTime(LocalDateTime.now());
 
+        JsonNode errorDetails = null;
         BiConsumer<Exception, HearingEntity> handler = EXCEPTION_HANDLERS.get(exception.getClass());
         if (handler != null) {
             handler.accept(exception, hearingEntity);
             errorDetails = extractErrorDetails(exception);
         } else {
-            log.error("Unhandled exception type for hearing id {}, exception {}, errorMessage {} ", hearingId,
+            log.error("Unhandled exception type for hearing id {}, exception {}, errorMessage {}", hearingId,
                       exception.getClass(), exception.getMessage());
         }
         hearingRepository.save(hearingEntity);
         HmcHearingResponse hmcHearingResponse = getHmcHearingResponse(hearingEntity);
-        log.debug("Sending hearing id {} to topic with Hearing response  {} is", hearingId, hmcHearingResponse);
+        log.debug("Sending hearing id {} to topic with Hearing response {}", hearingId, hmcHearingResponse);
         messageSenderToTopicConfiguration
             .sendMessage(objectMapper.convertValue(hmcHearingResponse, JsonNode.class).toString(),
-                         hmcHearingResponse.getHmctsServiceCode(),hearingId.toString(),
+                         hmcHearingResponse.getHmctsServiceCode(), hearingId.toString(),
                          hearingEntity.getDeploymentId());
         logErrorStatusToException(hearingId, hearingEntity.getLatestCaseReferenceNumber(),
                                   hearingEntity.getLatestCaseHearingRequest().getHmctsServiceCode(),
