@@ -250,7 +250,7 @@ def versions = [
   junitPlatform   : '1.14.3',
   lombok          : '1.18.42',
   mapstruct       : '1.4.2.Final',
-  reformLogging   : '6.1.9',
+  reformLogging   : '8.0.0',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.21.4'
 ]
@@ -295,8 +295,6 @@ dependencies {
 
   // HMCTS dependencies
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
-  implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
-
 
   implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.21'
   implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.5.21'
