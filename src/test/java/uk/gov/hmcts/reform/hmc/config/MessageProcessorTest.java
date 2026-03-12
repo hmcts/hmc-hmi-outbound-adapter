@@ -175,8 +175,8 @@ class MessageProcessorTest {
                                         boolean lastTriedElapsed) {
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(submittedElapsed);
         // Strict mocking is enabled, so only mock lastTriedDateTimePeriodElapsed() if submittedElapsed is false.
-        // If submittedElapsed is true, short-circuiting will prevent lastTriedDateTimePeriodElapsed() from being
-        // called which will cause a test failure due to unnecessary mocking.
+        // If submittedElapsed is true, the short-circuiting logical operators in processPendingRequest() will prevent
+        // lastTriedDateTimePeriodElapsed() from being called causing a test failure due to unnecessary mocking.
         if (!submittedElapsed) {
             when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(lastTriedElapsed);
         }
