@@ -115,17 +115,12 @@ public class MessageProcessor {
                 convertMessage(pendingRequest.getMessage()),
                 pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
             );
-        } catch (AuthenticationException | BadFutureHearingRequestException
-                 | ResourceNotFoundException exception) {
-            log.debug("{} {}", exception.getClass().getSimpleName(), exception.getMessage());
-            pendingRequestService.markRequestWithGivenStatus(
-                pendingRequest.getId(),
-                PendingStatusType.EXCEPTION.name()
-            );
-            pendingRequestService.catchExceptionAndUpdateHearing(pendingRequest.getHearingId(), exception);
+        } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException ex) {
+            log.debug("Non-retriable exception {}, message {}", ex.getClass().getSimpleName(), ex.getMessage());
+            pendingRequestService.handleNonRetriableException(pendingRequest, ex);
             return;
         } catch (Exception ex) {
-            log.debug("Exception {}", ex.getMessage());
+            log.debug("Retriable exception {}, message {}", ex.getClass().getSimpleName(), ex.getMessage());
             pendingRequestService.markRequestAsPending(
                 pendingRequest.getId(),
                 pendingRequest.getRetryCount(),
