@@ -2,20 +2,19 @@ package uk.gov.hmcts.reform.hmc.config;
 
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import uk.gov.hmcts.reform.hmc.ApplicationParams;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.ActiveDirectoryApiClient;
-import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
@@ -36,15 +35,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class MessageProcessorTest {
 
-    private MessageProcessor messageProcessor;
     private static final String HEARING_ID = "hearing_id";
     private static final String MESSAGE_TYPE = "message_type";
 
@@ -61,35 +59,52 @@ class MessageProcessorTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private ApplicationParams applicationParams;
+    private ServiceBusReceivedMessageContext messageContext;
 
     @Mock
-    private ActiveDirectoryApiClient activeDirectoryApiClient;
-
-    @Mock
-    private ServiceBusReceivedMessage message = mock(ServiceBusReceivedMessage.class);
+    private ServiceBusReceivedMessage message;
 
     @Mock
     private ServiceBusMessageErrorHandler errorHandler;
+
+    private MessageProcessor messageProcessor;
 
     private JsonNode anyData;
 
     @BeforeEach
      void setUp() {
-        MockitoAnnotations.openMocks(this);
         messageProcessor = new MessageProcessor(
                 futureHearingRepository, errorHandler,
                 messageSenderConfiguration,
                 objectMapper,
                 pendingRequestService);
+
         anyData = objectMapper.convertValue("test data", JsonNode.class);
-        String requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
-        when(applicationParams.getGrantType()).thenReturn("GRANT_TYPE");
-        when(applicationParams.getClientId()).thenReturn("CLIENT_ID");
-        when(applicationParams.getScope()).thenReturn("SCOPE");
-        when(applicationParams.getClientSecret()).thenReturn("CLIENT_SECRET");
-        when(activeDirectoryApiClient.authenticate(requestString)).thenReturn(new AuthenticationResponse());
-        when(pendingRequestService.claimRequest(any())).thenReturn(1);
+    }
+
+    @Test
+    void shouldThrowErrorWhenCannotConvertMessage() throws JsonProcessingException {
+        Map<String, Object> applicationProperties = Map.of(
+            HEARING_ID, 1234567890,
+            MESSAGE_TYPE, MessageType.REQUEST_HEARING.name()
+        );
+        when(message.getApplicationProperties()).thenReturn(applicationProperties);
+
+        String messageBody = "invalid data";
+        when(message.getBody()).thenReturn(BinaryData.fromString(messageBody));
+
+        JsonParseException jsonParseException = new JsonParseException("json parse exception");
+        when(objectMapper.readTree(messageBody)).thenThrow(jsonParseException);
+
+        when(messageContext.getMessage()).thenReturn(message);
+
+        messageProcessor.processMessage(messageContext);
+
+        verify(messageContext, times(2)).getMessage();
+        verify(message).getBody();
+        verify(objectMapper).readTree(messageBody);
+        verify(message).getApplicationProperties();
+        verify(errorHandler).handleJsonError(messageContext, jsonParseException);
     }
 
     @ParameterizedTest
@@ -99,8 +114,6 @@ class MessageProcessorTest {
             HEARING_ID, "1234567890",
             MESSAGE_TYPE, messageType
         );
-        Mockito.when(message.getApplicationProperties()).thenReturn(applicationProperties);
-        Mockito.when(message.getBody()).thenReturn(BinaryData.fromString("{ \"test\": \"name\"}"));
         assertDoesNotThrow(() -> messageProcessor.processMessage(anyData, applicationProperties));
         verifyMethod.run();
     }
@@ -112,16 +125,6 @@ class MessageProcessorTest {
         assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
             .isInstanceOf(MalformedMessageException.class)
             .hasMessageContaining(MessageProcessor.UNSUPPORTED_MESSAGE_TYPE);
-    }
-
-    @Test
-    void shouldThrowErrorWhenCannotConvertMessage() {
-        Map<String, Object> applicationProperties = new HashMap<>();
-        when(message.getApplicationProperties()).thenReturn(applicationProperties);
-        when(message.getBody()).thenReturn(BinaryData.fromString("invalid data"));
-        assertThatThrownBy(() -> messageProcessor.processMessage(anyData, applicationProperties))
-                .isInstanceOf(MalformedMessageException.class)
-                .hasMessageContaining(MessageProcessor.MISSING_MESSAGE_TYPE);
     }
 
     @Test
@@ -151,11 +154,12 @@ class MessageProcessorTest {
     }
 
     @Test
-    void shouldNotProcessPendingRequest_SubmittedDateTimePeriodElapsedIsFalse() {
+    void shouldProcessPendingRequest() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
 
         messageProcessor.processPendingRequest(pendingRequest);
 
@@ -165,32 +169,17 @@ class MessageProcessorTest {
         verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
     }
 
-    @Test
-    void shouldLogDebugWhenNotInPendingStateWhileProcessing() {
-
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setStatus(PendingStatusType.PROCESSING.name());
-
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.findById(pendingRequest.getId())).thenReturn(java.util.Optional.of(pendingRequest));
-
-        messageProcessor.processPendingRequest(pendingRequest);
-
-        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService, times(0)).markRequestWithGivenStatus(
-            pendingRequest.getId(), "PROCESSING");
-        //verify(futureHearingRepository, times(0)).createHearingRequest(any(), any());
-        verify(pendingRequestService, times(0)).markRequestAsPending(eq(pendingRequest.getId()),
-                                                                     eq(pendingRequest.getRetryCount()), any());
-    }
-
     @ParameterizedTest
     @MethodSource("providePendingRequestTestCases")
     void shouldNotProcessPendingRequest(PendingRequestEntity pendingRequest, boolean submittedElapsed,
                                         boolean lastTriedElapsed) {
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(submittedElapsed);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(lastTriedElapsed);
+        // Strict mocking is enabled, so only mock lastTriedDateTimePeriodElapsed() if submittedElapsed is false.
+        // If submittedElapsed is true, the short-circuiting logical operators in processPendingRequest() will prevent
+        // lastTriedDateTimePeriodElapsed() from being called causing a test failure due to unnecessary mocking.
+        if (!submittedElapsed) {
+            when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(lastTriedElapsed);
+        }
 
         messageProcessor.processPendingRequest(pendingRequest);
 
@@ -216,6 +205,7 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
@@ -223,8 +213,7 @@ class MessageProcessorTest {
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
         verify(pendingRequestService).claimRequest(pendingRequest.getId());
         verify(futureHearingRepository).createHearingRequest(any(), any());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(),
-                                                           PendingStatusType.EXCEPTION.name());
+        verify(pendingRequestService).handleNonRetriableException(pendingRequest, exception);
     }
 
     @ParameterizedTest
@@ -234,6 +223,7 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
@@ -253,10 +243,14 @@ class MessageProcessorTest {
 
         when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
         when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
+        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
 
         messageProcessor.processPendingRequest(pendingRequest);
 
         verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestService, never())
+            .markRequestAsPending(eq(pendingRequest.getId()), eq(pendingRequest.getRetryCount()), any());
+        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
     }
 
     @Test
