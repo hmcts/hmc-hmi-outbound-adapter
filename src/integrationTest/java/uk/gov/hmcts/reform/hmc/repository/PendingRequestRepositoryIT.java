@@ -4,21 +4,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.reform.hmc.BaseTest;
-import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.reform.hmc.config.MessageType.AMEND_HEARING;
 import static uk.gov.hmcts.reform.hmc.config.MessageType.DELETE_HEARING;
 import static uk.gov.hmcts.reform.hmc.config.MessageType.REQUEST_HEARING;
+import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.COMPLETED;
+import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
+import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.PENDING;
+import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.PROCESSING;
 
 class PendingRequestRepositoryIT extends BaseTest {
-
-    @Autowired
-    private PendingRequestRepository pendingRequestRepository;
 
     private static final String DELETE_PENDING_REQUEST_DATA_SCRIPT
         = "classpath:sql/delete-pending_request_tables.sql";
@@ -36,11 +40,20 @@ class PendingRequestRepositoryIT extends BaseTest {
         = "classpath:sql/insert-pending_requests_delete_with_exception.sql";
     private static final String INSERT_PENDING_REQUESTS_PROCESSING
         = "classpath:sql/insert-pending_requests_processing.sql";
+    private static final String INSERT_PENDING_REQUESTS_NON_RETRIABLE_EXCEPTION
+        = "classpath:sql/insert-pending_requests_non_retriable_exception.sql";
+
+    private final PendingRequestRepository pendingRequestRepository;
+
+    @Autowired
+    public PendingRequestRepositoryIT(PendingRequestRepository pendingRequestRepository) {
+        this.pendingRequestRepository = pendingRequestRepository;
+    }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void findOldestPendingRequestForProcessing_shouldReturnPendingRequest() {
-        PendingRequestEntity pendingRequest = createPendingRequestEntity(PendingStatusType.PENDING.name(),
+        PendingRequestEntity pendingRequest = createPendingRequestEntity(PENDING.name(),
                                                                          LocalDateTime.now().minusHours(1));
         pendingRequestRepository.save(pendingRequest);
 
@@ -52,23 +65,23 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void findRequestsForEscalation_shouldReturnListOfRequests() {
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now().minusDays(3), 1);
+        createTestData(PENDING.name(), LocalDateTime.now().minusDays(3), 1);
 
         PendingRequestEntity expectedPendingRequest = pendingRequestRepository.findLatestRecord();
         assertThat(expectedPendingRequest.getIncidentFlag()).isFalse();
 
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
+        createTestData(PENDING.name(), LocalDateTime.now(), 5);
 
         List<PendingRequestEntity> result = pendingRequestRepository
             .findRequestsForEscalation(1L, "DAY");
         assertThat(result).hasSize(1);
-        assertThat(result.get(0)).isEqualTo(expectedPendingRequest);
+        assertThat(result.getFirst()).isEqualTo(expectedPendingRequest);
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void findRequestsForEscalation_shouldFindNone() {
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 6);
+        createTestData(PENDING.name(), LocalDateTime.now(), 6);
 
         List<PendingRequestEntity> result = pendingRequestRepository
             .findRequestsForEscalation(1L, "DAY");
@@ -78,25 +91,28 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void identifyRequestsForEscalation_shouldUpdateIncidentFlag() {
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now().minusDays(3), 1);
+        createTestData(PENDING.name(), LocalDateTime.now().minusDays(3), 1);
 
         Iterable<PendingRequestEntity> list = pendingRequestRepository.findAll();
         PendingRequestEntity expectedPendingRequest = list.iterator().next();
         assertThat(expectedPendingRequest.getIncidentFlag()).isFalse();
 
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now(), 5);
+        createTestData(PENDING.name(), LocalDateTime.now(), 5);
 
         int identifiedRows = pendingRequestRepository.markRequestForEscalation(1L, LocalDateTime.now());
         assertThat(identifiedRows).isEqualTo(1);
 
-        PendingRequestEntity pendingRequest = pendingRequestRepository.findById(expectedPendingRequest.getId()).get();
+        Optional<PendingRequestEntity> pendingRequestOptional =
+            pendingRequestRepository.findById(expectedPendingRequest.getId());
+        assertThat(pendingRequestOptional).isPresent();
+        PendingRequestEntity pendingRequest = pendingRequestOptional.get();
         assertThat(pendingRequest.getIncidentFlag()).isTrue();
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void deleteCompletedRecords_shouldDeleteRecords() {
-        PendingRequestEntity pendingRequest = createPendingRequestEntity(PendingStatusType.COMPLETED.name(),
+        PendingRequestEntity pendingRequest = createPendingRequestEntity(COMPLETED.name(),
                                                                          LocalDateTime.now().minusMonths(2));
         pendingRequestRepository.save(pendingRequest);
 
@@ -108,7 +124,7 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void deleteCompletedRecords_shouldNotDeleteRecordsNotAged() {
-        PendingRequestEntity pendingRequest = createPendingRequestEntity(PendingStatusType.COMPLETED.name(),
+        PendingRequestEntity pendingRequest = createPendingRequestEntity(COMPLETED.name(),
                                                                          LocalDateTime.now());
         pendingRequestRepository.save(pendingRequest);
 
@@ -126,85 +142,93 @@ class PendingRequestRepositoryIT extends BaseTest {
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITHOUT_EXCEPTION})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_NEW_WITHOUT_EXCEPTION})
     void findLatestRecord_whenRequestHearingWithoutException_shouldReturnRequest() {
         List<PendingRequestEntity> results = pendingRequestRepository
             .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
         assertThat(results).isNotEmpty();
-        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(results.get(0).getHearingId()).isEqualTo(2000000001);
+        assertThat(results.getFirst().getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.getFirst().getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_NEW_WITH_EXCEPTION})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_NEW_WITH_EXCEPTION})
     void findLatestRecord_whenRequestHearingWithException_shouldReturnNextHearing() {
         List<PendingRequestEntity> results = pendingRequestRepository
             .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
         assertThat(results).isNotEmpty();
-        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(results.get(0).getHearingId()).isEqualTo(2000000002);
+        assertThat(results.getFirst().getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.getFirst().getHearingId()).isEqualTo(2000000002);
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITHOUT_EXCEPTION})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_AMEND_WITHOUT_EXCEPTION})
     void findLatestRecord_whenAmendHearingWithoutPreviousException_shouldReturnAmendHearing() {
         List<PendingRequestEntity> results = pendingRequestRepository
             .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
         assertThat(results).isNotEmpty();
-        assertThat(results.get(0).getMessageType()).isEqualTo(AMEND_HEARING.name());
-        assertThat(results.get(0).getHearingId()).isEqualTo(2000000001);
+        assertThat(results.getFirst().getMessageType()).isEqualTo(AMEND_HEARING.name());
+        assertThat(results.getFirst().getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_AMEND_WITH_EXCEPTION})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_AMEND_WITH_EXCEPTION})
     void findLatestRecord_whenAmendHearingWithPreviousException_shouldReturnNextHearing() {
         List<PendingRequestEntity> results = pendingRequestRepository
             .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
         assertThat(results).isNotEmpty();
-        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(results.get(0).getHearingId()).isEqualTo(2000000002);
+        assertThat(results.getFirst().getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.getFirst().getHearingId()).isEqualTo(2000000002);
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITHOUT_EXCEPTION})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_DELETE_WITHOUT_EXCEPTION})
     void findLatestRecord_whenDeleteHearingWithoutPreviousException_shouldReturnDeleteHearing() {
         List<PendingRequestEntity> results = pendingRequestRepository
             .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
         assertThat(results).isNotEmpty();
-        assertThat(results.get(0).getMessageType()).isEqualTo(DELETE_HEARING.name());
-        assertThat(results.get(0).getHearingId()).isEqualTo(2000000001);
+        assertThat(results.getFirst().getMessageType()).isEqualTo(DELETE_HEARING.name());
+        assertThat(results.getFirst().getHearingId()).isEqualTo(2000000001);
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION})
     void findLatestRecord_whenDeleteHearingWithPreviousException_shouldReturnNextHearing() {
         List<PendingRequestEntity> results = pendingRequestRepository
             .findQueuedPendingRequestsForProcessing(2L, "MINUTES");
         assertThat(results).isNotEmpty();
-        assertThat(results.get(0).getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(results.get(0).getHearingId()).isEqualTo(2000000002);
+        assertThat(results.getFirst().getMessageType()).isEqualTo(REQUEST_HEARING.name());
+        assertThat(results.getFirst().getHearingId()).isEqualTo(2000000002);
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_PROCESSING})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_PROCESSING})
     void markRequestWithGivenStatus_shouldBeSuccessful() {
         final long id = 1;
-        PendingRequestEntity pendingRequestBefore = pendingRequestRepository.findById(id).get();
-        assertThat(pendingRequestBefore.getStatus()).isEqualTo(PendingStatusType.PROCESSING.name());
+
+        Optional<PendingRequestEntity> pendingRequestBeforeOptional = pendingRequestRepository.findById(id);
+        assertThat(pendingRequestBeforeOptional).isPresent();
+        PendingRequestEntity pendingRequestBefore = pendingRequestBeforeOptional.get();
+        assertThat(pendingRequestBefore.getStatus()).isEqualTo(PROCESSING.name());
         assertThat(pendingRequestBefore.getRetryCount()).isEqualTo(1);
 
-        pendingRequestRepository.markRequestWithGivenStatus(pendingRequestBefore.getId(),
-                                                      PendingStatusType.COMPLETED.name());
-        PendingRequestEntity pendingRequestUpdated = pendingRequestRepository.findById(id).get();
-        assertThat(pendingRequestUpdated.getStatus()).isEqualTo(PendingStatusType.COMPLETED.name());
+        pendingRequestRepository.markRequestWithGivenStatus(pendingRequestBefore.getId(), COMPLETED.name());
+
+        Optional<PendingRequestEntity> pendingRequestUpdatedOptional = pendingRequestRepository.findById(id);
+        assertThat(pendingRequestUpdatedOptional).isPresent();
+        PendingRequestEntity pendingRequestUpdated = pendingRequestUpdatedOptional.get();
+        assertThat(pendingRequestUpdated.getStatus()).isEqualTo(COMPLETED.name());
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT,INSERT_PENDING_REQUESTS_PROCESSING})
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_PROCESSING})
     void markRequestAsPending_shouldFail_ValuesTheSameAsBefore() {
         final long id = 1;
-        PendingRequestEntity pendingRequestBefore = pendingRequestRepository.findById(id).get();
-        assertThat(pendingRequestBefore.getStatus()).isEqualTo(PendingStatusType.PROCESSING.name());
+
+        Optional<PendingRequestEntity> pendingRequestBeforeOptional = pendingRequestRepository.findById(id);
+        assertThat(pendingRequestBeforeOptional).isPresent();
+        PendingRequestEntity pendingRequestBefore = pendingRequestBeforeOptional.get();
+        assertThat(pendingRequestBefore.getStatus()).isEqualTo(PROCESSING.name());
         assertThat(pendingRequestBefore.getRetryCount()).isEqualTo(1);
 
         final int retryCountNow = pendingRequestBefore.getRetryCount() + 1;
@@ -212,7 +236,10 @@ class PendingRequestRepositoryIT extends BaseTest {
         pendingRequestRepository.markRequestAsPending(500001L,
                                                       retryCountNow,
                                                       lastTriedDateTimeNow);
-        PendingRequestEntity pendingRequestUpdated = pendingRequestRepository.findById(id).get();
+
+        Optional<PendingRequestEntity> pendingRequestUpdatedOptional = pendingRequestRepository.findById(id);
+        assertThat(pendingRequestUpdatedOptional).isPresent();
+        PendingRequestEntity pendingRequestUpdated = pendingRequestUpdatedOptional.get();
         assertThat(pendingRequestUpdated.getStatus()).isEqualTo(pendingRequestBefore.getStatus());
         assertThat(pendingRequestUpdated.getRetryCount()).isEqualTo(pendingRequestBefore.getRetryCount());
         assertThat(pendingRequestUpdated.getLastTriedDateTime())
@@ -222,12 +249,21 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void shouldMarkRequestForEscalation() {
-        createTestData(PendingStatusType.PENDING.name(), LocalDateTime.now().minusDays(3), 1);
+        createTestData(PENDING.name(), LocalDateTime.now().minusDays(3), 1);
         PendingRequestEntity expectedPendingRequest = pendingRequestRepository.findLatestRecord();
         assertThat(expectedPendingRequest.getIncidentFlag()).isFalse();
 
         int countMarkedRequests = pendingRequestRepository.markRequestForEscalation(1L, LocalDateTime.now());
         assertThat(countMarkedRequests).isEqualTo(1);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_NON_RETRIABLE_EXCEPTION})
+    void shouldMarkRequestForNonRetriableException() {
+        pendingRequestRepository.markRequestForNonRetriableException(1L);
+
+        assertPendingRequestStatusIncidentFlag(1L, EXCEPTION.name(), true);
+        assertPendingRequestStatusIncidentFlag(2L, PROCESSING.name(), false);
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {
@@ -262,4 +298,18 @@ class PendingRequestRepositoryIT extends BaseTest {
         return pendingRequest;
     }
 
+    private void assertPendingRequestStatusIncidentFlag(long pendingRequestId, String status, boolean incidentFlag) {
+        String messagePrefix = "Pending request id " + pendingRequestId;
+
+        Optional<PendingRequestEntity> pendingRequestOptional = pendingRequestRepository.findById(pendingRequestId);
+        assertTrue(pendingRequestOptional.isPresent(), messagePrefix + " should exist");
+
+        PendingRequestEntity pendingRequest = pendingRequestOptional.get();
+        assertEquals(status, pendingRequest.getStatus(), messagePrefix + " has unexpected status");
+        if (incidentFlag) {
+            assertTrue(pendingRequest.getIncidentFlag(), messagePrefix + " incident flag should be true");
+        } else {
+            assertFalse(pendingRequest.getIncidentFlag(), messagePrefix + " incident flag should be false");
+        }
+    }
 }

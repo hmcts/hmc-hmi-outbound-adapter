@@ -10,6 +10,7 @@ import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import org.springframework.boot.actuate.health.Status;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 
 import java.util.List;
@@ -148,6 +149,22 @@ public class WiremockFixtures {
                                     .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                                     .withBody(getJsonString(response))
                                     .withStatus(202)
+                    ));
+    }
+
+    public static void stubRequestHearingThrowingError(String token, ErrorDetails errorDetails, int httpStatus) {
+        stubFor(post(urlEqualTo(HMI_REQUEST_URL))
+                    .withHeader(CONTENT_TYPE, equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader(ACCEPT, equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader(HEADER_SOURCE_SYSTEM, equalTo(SOURCE_SYSTEM))
+                    .withHeader(HEADER_DESTINATION_SYSTEM, equalTo(DESTINATION_SYSTEM))
+                    .withHeader(HEADER_REQUEST_CREATED_AT, matching(REGEX_TIMESTAMP))
+                    .withHeader(AUTHORIZATION, equalTo("Bearer " + token))
+                    .withHeader(HEADER_TRANSACTION_ID_HMCTS, matching(REGEX_UUID))
+                    .willReturn(aResponse()
+                                    .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+                                    .withBody(getJsonString(errorDetails))
+                                    .withStatus(httpStatus)
                     ));
     }
 
