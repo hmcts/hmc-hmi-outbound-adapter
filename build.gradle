@@ -250,7 +250,7 @@ def versions = [
   junitPlatform   : '1.14.3',
   lombok          : '1.18.42',
   mapstruct       : '1.4.2.Final',
-  reformLogging   : '6.1.9',
+  reformLogging   : '8.0.0',
   springBoot      : springBoot.class.package.implementationVersion,
   testcontainers  : '1.21.4'
 ]
