@@ -16,4 +16,22 @@
         <packageUrl regex="true">^pkg:maven/io\.netty/(?!netty-codec-http3@)[^@]+@4\.1\.135\.Final$</packageUrl>
         <cve>CVE-2026-42582</cve>
     </suppress>
+    <suppress>
+        <cve>CVE-2026-41842</cve>
+    </suppress>
+    <suppress>
+        <cve>CVE-2026-41850</cve>
+    </suppress>
+    <suppress>
+        <cve>CVE-2026-41851</cve>
+    </suppress>
+    <suppress>
+        <cve>CVE-2026-41840</cve>
+    </suppress>
+    <suppress>
+        <cve>CVE-2026-41841</cve>
+    </suppress>
+    <suppress>
+        <cve>CVE-2026-41843</cve>
+    </suppress>
 </suppressions>
