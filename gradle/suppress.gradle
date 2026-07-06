@@ -22,68 +22,119 @@ void suppressCves(String reportName = Globals.REPORT_NAME) {
       "\nPossible Solution: run :dependencyCheckAggregate")
   }
 
-  // Creates a unique set of non-suppressed vulnerabilities
+  // Creates a unique set of non-suppressed dependency/vulnerability pairs.
   GPathResult vulnerabilityReport = new XmlSlurper().parse(new FileReader(reportFile))
-  Set<String> unSuppressedCves = vulnerabilityReport.'**'
-    .findAll { node -> node.name() == 'vulnerability' }
-    .collect { it.name.text() } as Set<String>
+  Set<Map<String, String>> unSuppressedFindings = collectUnsuppressedFindings(vulnerabilityReport)
 
-  if (!unSuppressedCves.isEmpty()) {
+  if (!unSuppressedFindings.isEmpty()) {
     // Suppression file must be specified as 'suppressionFile=...' in build.gradle.
     def suppressionFilePath = dependencyCheck.getSuppressionFile()
     if (suppressionFilePath.respondsTo('get')) {
       suppressionFilePath = suppressionFilePath.get()
     }
     File suppressionFile = project.file(suppressionFilePath)
-    validateSection(suppressionFile, new XmlSlurper(false, false).parse(suppressionFile))
 
     String suppressionXml = new String(suppressionFile.readBytes(), "UTF-8")
     Element suppressionDoc = DOMBuilder.parse(new StringReader(suppressionXml)).getDocumentElement()
-    addNewSuppression(unSuppressedCves, suppressionDoc)
+    addNewSuppressions(unSuppressedFindings, suppressionDoc)
     suppressionFile.write(XmlUtil.serialize(cleanXml(suppressionDoc)))
   }
 }
 
-static void addNewSuppression(unSuppressedCves, suppressionDoc) {
-  /*
-  * Find a specified phrase in a <notes> element
-  * Amend text content with new cve
-  * Amend suppress element with new cve tag containing cve value
-   */
-  XPathExpression xpathExp = XPathFactory.newInstance().newXPath().compile(
-    "//*[local-name()='notes']")
-  NodeList noteNodes = xpathExp.evaluate(suppressionDoc, XPathConstants.NODESET) as NodeList
-  noteNodes.find {
-    if (it.getTextContent().contains(Globals.TEXT_TO_FIND)) {
-      def noteNode = it
-      Document document = suppressionDoc.getOwnerDocument()
-      Node parentNode = noteNode.getParentNode()
-      unSuppressedCves.each {
-        String cveValue = it
-        if (cveValue.contains("CVE")) {
-          noteNode.appendChild(
-            document.createTextNode(Globals.WHITE_SPACE_FOR_INDENT + cveValue + " refer [Ticket]"))
-          parentNode.appendChild(
-            document.createElement("cve")).appendChild(document.createTextNode(cveValue))
+static Set<Map<String, String>> collectUnsuppressedFindings(GPathResult vulnerabilityReport) {
+  Set<Map<String, String>> findings = [] as Set
+
+  vulnerabilityReport.'**'
+    .findAll { node -> node.name() == 'dependency' }
+    .each { dependency ->
+      String fileName = dependency.fileName.text()
+      String packageUrl = dependency.identifiers.package.id.text()
+      String sha1 = dependency.sha1.text()
+      String matchElement = packageUrl ? "packageUrl" : "sha1"
+      String matchValue = packageUrl ?: sha1
+
+      if (matchValue) {
+        dependency.vulnerabilities.vulnerability.each { vulnerability ->
+          String cveValue = vulnerability.name.text()
+          if (cveValue.contains("CVE")) {
+            findings << [
+              fileName: fileName,
+              matchElement: matchElement,
+              matchValue: matchValue,
+              cve: cveValue
+            ]
+          }
         }
       }
-      return true
     }
-  } ?: { throw new GradleException(String.format("Error adding cve to '%s' section", Globals.TEXT_TO_FIND)) }()
+
+  findings
 }
 
-static boolean validateSection(suppressionFile, suppressions) {
-  // Add section if missing
-  if (suppressionFile.getText().find(Globals.TEXT_TO_FIND) == null) {
-    suppressions.appendNode {
-      suppress {
-        notes(Globals.TEXT_TO_FIND)
+static void addNewSuppressions(Set<Map<String, String>> findings, Element suppressionDoc) {
+  Document document = suppressionDoc.getOwnerDocument()
+  String namespace = suppressionDoc.getNamespaceURI()
+
+  findings
+    .groupBy { [it.matchElement, it.matchValue, it.fileName] }
+    .each { key, dependencyFindings ->
+      String matchElement = key[0]
+      String matchValue = key[1]
+      String fileName = key[2]
+      List<String> cves = dependencyFindings.collect { it.cve }.unique().sort()
+      Element existingSuppression = findExactSuppression(suppressionDoc, matchElement, matchValue)
+
+      if (existingSuppression) {
+        cves.findAll { !hasDirectChildText(existingSuppression, "cve", it) }
+          .each { appendTextElement(document, existingSuppression, namespace, "cve", it) }
+      } else {
+        Element suppressNode = document.createElementNS(namespace, "suppress")
+        Element notesNode = document.createElementNS(namespace, "notes")
+        notesNode.appendChild(document.createCDATASection(
+          "\n        ${Globals.TEXT_TO_FIND}\n        file name: ${fileName}\n        "
+        ))
+
+        suppressNode.appendChild(notesNode)
+        appendTextElement(document, suppressNode, namespace, matchElement, matchValue)
+        cves.each { appendTextElement(document, suppressNode, namespace, "cve", it) }
+        suppressionDoc.appendChild(suppressNode)
       }
     }
-    suppressionFile.write(XmlUtil.serialize(suppressions))
-    return true
+}
+
+static Element findExactSuppression(Element suppressionDoc, String matchElement, String matchValue) {
+  NodeList suppressNodes = suppressionDoc.getElementsByTagNameNS("*", "suppress")
+  for (int i = 0; i < suppressNodes.getLength(); i++) {
+    Element suppressNode = suppressNodes.item(i) as Element
+    if (hasDirectChildText(suppressNode, matchElement, matchValue)) {
+      return suppressNode
+    }
+  }
+  return null
+}
+
+static boolean hasDirectChildText(Element parent, String childName, String childText) {
+  NodeList childNodes = parent.getChildNodes()
+  for (int i = 0; i < childNodes.getLength(); i++) {
+    Node childNode = childNodes.item(i)
+    if (childNode.getNodeType() == Node.ELEMENT_NODE && nodeNameMatches(childNode, childName)) {
+      Element childElement = childNode as Element
+      if (childElement.getAttribute("regex") != "true" && childElement.getTextContent().trim() == childText) {
+        return true
+      }
+    }
   }
   return false
+}
+
+static boolean nodeNameMatches(Node node, String name) {
+  node.getLocalName() == name || node.getNodeName() == name
+}
+
+static void appendTextElement(Document document, Element parent, String namespace, String name, String value) {
+  Element child = document.createElementNS(namespace, name)
+  child.appendChild(document.createTextNode(value))
+  parent.appendChild(child)
 }
 
 static def cleanXml(Element suppressionDoc) {
@@ -104,7 +155,6 @@ static def cleanXml(Element suppressionDoc) {
 class Globals {
   static String TEXT_TO_FIND = "Temporary Suppression"
   static String REPORT_NAME = "dependency-check-report.xml"
-  static String WHITE_SPACE_FOR_INDENT = "\n" + "\u0020".repeat(8) // white space for indentation
 }
 
 task suppressCves() {
