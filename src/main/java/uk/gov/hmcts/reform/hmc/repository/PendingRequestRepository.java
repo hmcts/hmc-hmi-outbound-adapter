@@ -64,6 +64,11 @@ public interface PendingRequestRepository extends CrudRepository<PendingRequestE
     int markRequestForEscalation(Long id, LocalDateTime lastTriedDateTime);
 
     @Modifying
+    @Query(value = "UPDATE public.pending_requests SET incident_flag = true, status = 'EXCEPTION' WHERE id = :id",
+        nativeQuery = true)
+    void markRequestForNonRetriableException(Long id);
+
+    @Modifying
     @Query(value = "DELETE FROM public.pending_requests WHERE status = 'COMPLETED' AND submitted_date_time < NOW()"
         + " - CAST(:deletionWaitValue || ' ' || :deletionWaitInterval AS INTERVAL)", nativeQuery = true)
     int deleteCompletedRecords(

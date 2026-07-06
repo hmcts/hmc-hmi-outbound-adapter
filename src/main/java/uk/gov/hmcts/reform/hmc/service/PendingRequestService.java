@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.service;
 
+import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.time.LocalDateTime;
@@ -26,7 +27,9 @@ public interface PendingRequestService {
 
     void escalatePendingRequests();
 
-    void catchExceptionAndUpdateHearing(Long hearingId, Exception exception);
+    void handleNonRetriableException(PendingRequestEntity pendingRequest, Exception exception);
+
+    void catchExceptionAndUpdateHearing(HearingEntity hearingEntity, Exception exception);
 
     Optional<PendingRequestEntity> findById(Long pendingRequestId);
 }

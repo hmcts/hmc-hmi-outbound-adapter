@@ -131,8 +131,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleParsingError(ERROR_MESSAGE);
-        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
-                                                                           any(), any(), any());
+        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any());
     }
 
     @Test
@@ -166,8 +165,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(0))
             .handleApplicationError(ERROR_MESSAGE);
-        verify(hearingStatusAuditService, times(0)).saveAuditTriageDetails(any(), any(), any(),
-                                                                           any(), any(), any());
+        verify(hearingStatusAuditService, times(0)).saveAuditTriageDetails(any());
     }
 
     @Test
@@ -207,8 +205,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleApplicationError(ERROR_MESSAGE);
-        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
-                                                                           any(), any(), any());
+        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any());
     }
 
     @Test
@@ -243,8 +240,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleApplicationError(ERROR_MESSAGE);
-        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any(), any(), any(),
-                                                                           any(), any(), any());
+        verify(hearingStatusAuditService, times(1)).saveAuditTriageDetails(any());
     }
 
     @Test
@@ -278,8 +274,7 @@ class ServiceBusMessageErrorHandlerTest {
 
         verify(deadLetterService, Mockito.times(1))
             .handleApplicationError(NO_EXCEPTION_MESSAGE);
-        verify(hearingStatusAuditService, times(0)).saveAuditTriageDetails(any(), any(), any(),
-                                                                           any(), any(), any());
+        verify(hearingStatusAuditService, times(0)).saveAuditTriageDetails(any());
     }
 
     private void getHearingEntity() {

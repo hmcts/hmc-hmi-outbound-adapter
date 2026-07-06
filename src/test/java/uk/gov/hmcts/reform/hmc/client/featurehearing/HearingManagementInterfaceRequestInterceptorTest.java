@@ -5,13 +5,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.reform.hmc.ApplicationParams;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceRequestInterceptor;
 
@@ -23,11 +22,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UUID.class})
+@ExtendWith(MockitoExtension.class)
 class HearingManagementInterfaceRequestInterceptorTest {
 
     private final Clock fixedClock = Clock.fixed(Instant.parse("2021-06-10T04:00:00.08Z"), ZoneOffset.UTC);
@@ -48,9 +46,9 @@ class HearingManagementInterfaceRequestInterceptorTest {
         MockitoAnnotations.openMocks(this);
         mockedUuid = mockStatic(UUID.class);
         template = new RequestTemplate();
-        template.header(AUTHORIZATION,TEST_TOKEN);
-        hearingManagementInterfaceRequestInterceptor = new
-            HearingManagementInterfaceRequestInterceptor(applicationParams, fixedClock);
+        template.header(AUTHORIZATION, TEST_TOKEN);
+        hearingManagementInterfaceRequestInterceptor = 
+            new HearingManagementInterfaceRequestInterceptor(applicationParams, fixedClock);
         given(applicationParams.getSourceSystem()).willReturn(SOURCE_SYSTEM);
         given(applicationParams.getDestinationSystem()).willReturn(DESTINATION_SYSTEM);
     }
