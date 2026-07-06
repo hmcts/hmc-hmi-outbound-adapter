@@ -524,6 +524,32 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        Temporary Suppression
+        file name: tomcat-embed-core-10.1.55.jar
+        ]]></notes>
+        <packageUrl>pkg:maven/org.apache.tomcat.embed/tomcat-embed-core@10.1.55</packageUrl>
+        <cve>CVE-2026-50229</cve>
+        <cve>CVE-2026-53404</cve>
+        <cve>CVE-2026-53434</cve>
+        <cve>CVE-2026-55276</cve>
+        <cve>CVE-2026-55955</cve>
+        <cve>CVE-2026-55956</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Temporary Suppression
+        file name: tomcat-embed-websocket-10.1.55.jar
+        ]]></notes>
+        <packageUrl>pkg:maven/org.apache.tomcat.embed/tomcat-embed-websocket@10.1.55</packageUrl>
+        <cve>CVE-2026-50229</cve>
+        <cve>CVE-2026-53404</cve>
+        <cve>CVE-2026-53434</cve>
+        <cve>CVE-2026-55276</cve>
+        <cve>CVE-2026-55955</cve>
+        <cve>CVE-2026-55956</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         file name: angus-activation-2.0.3.jar
         ]]></notes>
         <packageUrl>pkg:maven/org.eclipse.angus/angus-activation@2.0.3</packageUrl>
