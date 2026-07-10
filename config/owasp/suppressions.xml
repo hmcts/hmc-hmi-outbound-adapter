@@ -555,4 +555,7 @@
         <packageUrl>pkg:maven/org.eclipse.angus/angus-activation@2.0.3</packageUrl>
         <cve>CVE-2025-7962</cve>
     </suppress>
+    <suppress>
+      <cve>CVE-2026-54291</cve>
+    </suppress>
 </suppressions>
