@@ -42,9 +42,7 @@ import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDec
 @ExtendWith(MockitoExtension.class)
 class FutureHearingErrorDecoderTest {
 
-    private String methodKey = null;
-    private Response response;
-    private byte[] byteArray;
+    private static final String METHOD_KEY = null;
     private static final String INPUT_STRING = """
         {
             "errCode": "1000",
@@ -58,7 +56,8 @@ class FutureHearingErrorDecoderTest {
         + "error message ''300' is not a valid value for 'caseCourt.locationId'', "
         + "AuthErrorCode null, AuthErrorMessage 'null', "
         + "ApiStatusCode null, ApiErrorMessage 'null'";
-    private RequestTemplate template;
+
+    private byte[] byteArray;
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
 
@@ -77,9 +76,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 400, HttpMethod.POST);
+        Response response = createResponse(byteArray, 400, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         assertEquals(INVALID_REQUEST, exception.getMessage());
@@ -96,9 +95,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 401, HttpMethod.POST);
+        Response response = createResponse(byteArray, 401, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
         assertEquals(INVALID_SECRET, exception.getMessage());
@@ -115,9 +114,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 404, HttpMethod.PUT);
+        Response response = createResponse(byteArray, 404, HttpMethod.PUT);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
         assertEquals(REQUEST_NOT_FOUND, exception.getMessage());
@@ -134,9 +133,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 500, HttpMethod.POST);
+        Response response = createResponse(byteArray, 500, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
         assertEquals(SERVER_ERROR, exception.getMessage());
@@ -164,9 +163,9 @@ class FutureHearingErrorDecoderTest {
             """;
         byte[] apiErrorByteArray = apiError.getBytes(StandardCharsets.UTF_8);
 
-        response = createResponse(apiErrorByteArray, 400, HttpMethod.GET);
+        Response response = createResponse(apiErrorByteArray, 400, HttpMethod.GET);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         BadFutureHearingRequestException badRequestException = (BadFutureHearingRequestException) exception;
@@ -198,9 +197,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 400, HttpMethod.POST);
+        Response response = createResponse(byteArray, 400, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         assertEquals(INVALID_REQUEST, exception.getMessage());
@@ -228,13 +227,13 @@ class FutureHearingErrorDecoderTest {
 
         byte[] requestBody = "RequestBody".getBytes(StandardCharsets.UTF_8);
 
-        response = Response.builder()
+        Response response = Response.builder()
             .body(responseBody.getBytes(StandardCharsets.UTF_8))
             .status(401)
             .request(Request.create(HttpMethod.POST, "/api", Collections.emptyMap(), requestBody, Util.UTF_8, null))
             .build();
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
 
@@ -258,9 +257,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(null, 404, HttpMethod.POST);
+        Response response = createResponse(null, 404, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
 
@@ -310,7 +309,7 @@ class FutureHearingErrorDecoderTest {
             }
         };
 
-        response = Response.builder()
+        Response response = Response.builder()
             .body(body)
             .status(500)
             .request(Request.create(HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
@@ -360,7 +359,7 @@ class FutureHearingErrorDecoderTest {
             }
         };
 
-        response = Response.builder()
+        Response response = Response.builder()
             .body(body)
             .status(500)
             .request(Request.create(HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
@@ -385,7 +384,7 @@ class FutureHearingErrorDecoderTest {
                 "error_description": "Auth error"
             }""".getBytes(StandardCharsets.UTF_8);
 
-        response = createResponse(body, 401, HttpMethod.POST);
+        Response response = createResponse(body, 401, HttpMethod.POST);
 
         Optional<ErrorDetails> responseBody = futureHearingErrorDecoder.getResponseBody(response, ErrorDetails.class);
 
@@ -411,7 +410,7 @@ class FutureHearingErrorDecoderTest {
 
     @Test
     void shouldReturnPresentOptionalWhenResponseBodyNull() {
-        response = createResponse(null, 404, HttpMethod.GET);
+        Response response = createResponse(null, 404, HttpMethod.GET);
 
         Optional<ErrorDetails> responseBody = futureHearingErrorDecoder.getResponseBody(response, ErrorDetails.class);
 
@@ -432,6 +431,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     private Response createResponse(byte[] body, int status, HttpMethod httpMethod) {
+        RequestTemplate template = new RequestTemplate();
         return Response.builder()
             .body(body)
             .status(status)
