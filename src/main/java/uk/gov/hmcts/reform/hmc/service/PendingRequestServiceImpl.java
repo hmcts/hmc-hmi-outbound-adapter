@@ -110,7 +110,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
         List<PendingRequestEntity> lockedRequests =
             pendingRequestRepository.findAndLockByHearingId(hearingId);
-        log.debug(
+        log.info(
             "{} locked records = findAndLockByHearingId({})",
             null == lockedRequests ? 0 : lockedRequests.size(),
             hearingId
