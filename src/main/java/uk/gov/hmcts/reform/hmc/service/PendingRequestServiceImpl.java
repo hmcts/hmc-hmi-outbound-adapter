@@ -77,11 +77,11 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         LocalDateTime currentDateTime = LocalDateTime.now();
         LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime();
         long hoursElapsed = ChronoUnit.HOURS.between(submittedDateTime, currentDateTime);
-        log.info("Hours elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
+        log.debug("Hours elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
                   hoursElapsed, submittedDateTime, currentDateTime);
         boolean result = false;
         if (hoursElapsed >= exceptionLimitInHours) {
-            log.info("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
+            log.debug("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
                       pendingRequest.getHearingId());
             markRequestWithGivenStatus(pendingRequest.getId(), EXCEPTION.name());
             log.error("Submitted time of request with ID {} is {} hours later than before.",
@@ -100,7 +100,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
         long minutesElapsed = ChronoUnit.MINUTES.between(lastTriedDateTime, LocalDateTime.now());
         boolean result = retryLimitInMinutes < minutesElapsed;
-        log.info("lastTriedDateTimePeriodNotElapsed()={}  retryLimitInMinutes<{}> hearingId<{}> Minutes elapsed<{}> "
+        log.debug("lastTriedDateTimePeriodNotElapsed()={}  retryLimitInMinutes<{}> hearingId<{}> Minutes elapsed<{}> "
                       + "submittedDateTime<{}> currentDateTime<{}>",
                   result, retryLimitInMinutes, pendingRequest.getHearingId(), minutesElapsed, lastTriedDateTime,
                   LocalDateTime.now());
@@ -110,7 +110,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
         List<PendingRequestEntity> lockedRequests =
             pendingRequestRepository.findAndLockByHearingId(hearingId);
-        log.info(
+        log.debug(
             "{} locked records = findAndLockByHearingId({})",
             null == lockedRequests ? 0 : lockedRequests.size(),
             hearingId
@@ -141,7 +141,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void markRequestWithGivenStatus(Long id, String status) {
-        log.info("markRequestWithGivenStatus({}, {})", id, status);
+        log.debug("markRequestWithGivenStatus({}, {})", id, status);
         pendingRequestRepository.markRequestWithGivenStatus(id, status);
         log.debug("markRequestWithGivenStatus({}, {} completed)", id, status);
     }
@@ -219,7 +219,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     );
 
     public void escalatePendingRequests() {
-        log.info("escalatePendingRequests()");
+        log.debug("escalatePendingRequests()");
 
         try {
             List<PendingRequestEntity> pendingRequests =
@@ -233,7 +233,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     public void deleteCompletedPendingRequests() {
-        log.info("deleteCompletedPendingRequests({})", deletionWaitInterval);
+        log.debug("deleteCompletedPendingRequests({})", deletionWaitInterval);
         try {
             int countOfDeletedRecords = pendingRequestRepository.deleteCompletedRecords(
                 getIntervalUnits(deletionWaitInterval), getIntervalMeasure(deletionWaitInterval));
@@ -244,7 +244,7 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     protected void escalatePendingRequest(PendingRequestEntity pendingRequest) {
-        log.info("escalatePendingRequests");
+        log.debug("escalatePendingRequests");
         pendingRequestRepository.markRequestForEscalation(pendingRequest.getId(), LocalDateTime.now());
         HearingEntity hearingEntity = hearingRepository.findById(pendingRequest.getHearingId()).get();
         logErrorStatusToException(hearingEntity.getId(), hearingEntity.getLatestCaseReferenceNumber(),
