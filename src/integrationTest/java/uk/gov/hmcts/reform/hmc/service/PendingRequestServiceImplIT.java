@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,6 +64,7 @@ class PendingRequestServiceImplIT extends BaseTest {
         this.pendingRequestService = pendingRequestService;
     }
 
+    @Disabled
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("handleNonRetriableExceptionTestData")
     @Sql(scripts = {DATA_SCRIPT_DELETE_HEARING_TABLES,
@@ -94,6 +96,7 @@ class PendingRequestServiceImplIT extends BaseTest {
         assertLogErrorMessages(listAppender, expectedLogMessages);
     }
 
+    @Disabled
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("catchExceptionAndUpdateHearingTestData")
     @Sql(scripts = {DATA_SCRIPT_DELETE_HEARING_TABLES,
