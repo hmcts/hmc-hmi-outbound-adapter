@@ -191,10 +191,27 @@
     <suppress>
         <notes><![CDATA[
         Temporary Suppression
+        file name: log4j-api-2.26.0.jar
+        ]]></notes>
+        <packageUrl>pkg:maven/org.apache.logging.log4j/log4j-api@2.26.0</packageUrl>
+        <cve>CVE-2026-49844</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Temporary Suppression
+        file name: log4j-to-slf4j-2.26.0.jar
+        ]]></notes>
+        <packageUrl>pkg:maven/org.apache.logging.log4j/log4j-to-slf4j@2.26.0</packageUrl>
+        <cve>CVE-2026-49844</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Temporary Suppression
         file name: spring-aop-6.2.18.jar
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-aop@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -217,6 +234,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-aspects@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -239,6 +257,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-beans@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -261,6 +280,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-context@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -283,6 +303,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-context-support@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -305,6 +326,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-core@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -327,6 +349,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-expression@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -349,6 +372,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-jcl@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -371,6 +395,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-jdbc@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -393,6 +418,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-orm@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -415,6 +441,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-tx@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -437,6 +464,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-web@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -459,6 +487,7 @@
         ]]></notes>
         <packageUrl>pkg:maven/org.springframework/spring-webmvc@6.2.18</packageUrl>
         <cve>CVE-2026-41838</cve>
+        <cve>CVE-2026-41839</cve>
         <cve>CVE-2026-41840</cve>
         <cve>CVE-2026-41841</cve>
         <cve>CVE-2026-41842</cve>
@@ -534,6 +563,8 @@
         <cve>CVE-2026-55276</cve>
         <cve>CVE-2026-55955</cve>
         <cve>CVE-2026-55956</cve>
+        <cve>CVE-2026-59083</cve>
+        <cve>CVE-2026-59084</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -547,6 +578,8 @@
         <cve>CVE-2026-55276</cve>
         <cve>CVE-2026-55955</cve>
         <cve>CVE-2026-55956</cve>
+        <cve>CVE-2026-59083</cve>
+        <cve>CVE-2026-59084</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
