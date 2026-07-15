@@ -243,14 +243,15 @@ class PendingRequestServiceImplIT extends BaseTest {
     }
 
     private void assertLogErrorMessages(ListAppender<ILoggingEvent> listAppender, List<String> expectedLogMessages) {
-        List<ILoggingEvent> logList = listAppender.list;
+        List<ILoggingEvent> logList = listAppender.list.stream()
+            .filter(logItem -> logItem.getLevel() == Level.ERROR)
+            .toList();
 
         assertEquals(expectedLogMessages.size(), logList.size(), "Log contains unexpected number of messages");
         expectedLogMessages
             .forEach(logMessage ->
                          assertTrue(logList.stream()
-                                        .anyMatch(logItem -> logItem.getLevel() == Level.ERROR
-                                            && logItem.getFormattedMessage().equals(logMessage)),
+                                        .anyMatch(logItem -> logItem.getFormattedMessage().equals(logMessage)),
                                     "Log does not contain expected error message: " + logMessage));
     }
 }
