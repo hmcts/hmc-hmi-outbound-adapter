@@ -257,7 +257,7 @@ def versions = [
   lombok             : '1.18.42',
   mapstruct          : '1.4.2.Final',
   netty              : '4.1.135.Final',
-  postgresql         : '42.7.12',
+  postgresql         : '42.7.13',
   reformLogging      : '8.0.0',
   springBoot         : springBoot.class.package.implementationVersion,
   testcontainers     : '1.21.4',
