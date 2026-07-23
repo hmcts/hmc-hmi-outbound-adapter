@@ -254,7 +254,7 @@ def versions = [
   junit              : '5.14.3',
   junitPlatform      : '1.14.3',
   kotlin             : '2.2.21',
-  lombok             : '1.18.42',
+  lombok             : '1.18.46',
   mapstruct          : '1.4.2.Final',
   netty              : '4.1.135.Final',
   postgresql         : '42.7.13',
