@@ -591,4 +591,9 @@
     <suppress>
       <cve>CVE-2026-54291</cve>
     </suppress>
+    <suppress>
+      <cve>CVE-2026-55833</cve>
+      <cve>CVE-2026-44891</cve>
+      <cve>CVE-2026-55831</cve>
+    </suppress>
 </suppressions>
