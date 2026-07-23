@@ -46,7 +46,7 @@ public class MessageSenderToTopicConfiguration {
             if (!StringUtils.isEmpty(deploymentId)) {
                 serviceBusMessage.getApplicationProperties().put(HMCTS_DEPLOYMENT_ID, deploymentId);
             }
-            log.debug("Sending request for hmctsServiceCode  :{} , {} , {} ",hmctsServiceId, message);
+            log.debug("Sending request for hmctsServiceCode  :{} , {} ",hmctsServiceId, message);
             senderClient.sendMessage(serviceBusMessage);
             log.debug("Message has been sent to the topic {}", applicationParams.getExternalTopicName());
         } catch (Exception e) {
