@@ -256,7 +256,7 @@ def versions = [
   kotlin             : '2.2.21',
   lombok             : '1.18.42',
   mapstruct          : '1.4.2.Final',
-  netty              : '4.1.135.Final',
+  netty              : '4.2.16.Final',
   postgresql         : '42.7.13',
   reformLogging      : '8.0.0',
   springBoot         : springBoot.class.package.implementationVersion,
