@@ -328,8 +328,8 @@ dependencies {
   implementation group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '9.0'
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
-  implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
-  implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.17'
+  implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.18'
+  implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.18'
 
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: versions.postgresql
 
