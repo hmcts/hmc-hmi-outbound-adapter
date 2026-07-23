@@ -257,24 +257,20 @@ def versions = [
   lombok             : '1.18.42',
   mapstruct          : '1.4.2.Final',
   netty              : '4.1.135.Final',
-  postgresql         : '42.7.11',
+  postgresql         : '42.7.13',
   reformLogging      : '8.0.0',
   springBoot         : springBoot.class.package.implementationVersion,
-  springFramework    : '6.2.18',
-  springSecurity     : '6.5.10',
   testcontainers     : '1.21.4',
-  tomcat             : '10.1.55',
-  toolsJackson       : '3.1.2'
+  tomcat             : '10.1.57',
+  toolsJackson       : '3.1.4'
 ]
 
 ext {
-  set('log4j2.version', '2.26.0')
-  set('jackson.version', '2.21.2')
+  set('log4j2.version', '2.26.1')
+  set('jackson.version', '2.21.5')
   set('kotlin.version', versions.kotlin)
   set('netty.version', versions.netty)
   set('snakeyaml.version', '2.4')
-  set('spring-framework.version', versions.springFramework)
-  set('spring-security.version', versions.springSecurity)
   set('tomcat.version', versions.tomcat)
 }
 
@@ -317,7 +313,7 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
   implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign'
   implementation group: 'org.springframework.cloud', name: 'spring-cloud-openfeign-core'
-  implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.16'
+  implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.17'
 
   // HMCTS dependencies
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
