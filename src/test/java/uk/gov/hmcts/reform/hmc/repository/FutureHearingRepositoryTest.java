@@ -11,12 +11,13 @@ import feign.Request;
 import feign.RetryableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
@@ -27,11 +28,13 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HealthCheckResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckActiveDirectoryException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckHmiException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditServiceImpl;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
 
@@ -48,13 +51,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
+@ExtendWith(MockitoExtension.class)
 class FutureHearingRepositoryTest {
 
     private AuthenticationResponse response;
-    private String requestString;
+    private static final String REQUEST_STRING =
+        "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
@@ -65,6 +72,8 @@ class FutureHearingRepositoryTest {
     private static final String ERROR_DESCRIPTION_BAD_REQUEST = "Bad request error";
     private static final String EXCEPTION_MESSAGE_AUTH = "Auth exception";
     private static final String ERROR_DESCRIPTION_AUTH = "Auth error";
+    private static final String EXCEPTION_MESSAGE_API_CLIENT = "Api client exception";
+    private static final String ERROR_DESCRIPTION_API_CLIENT = "Api client error";
 
     private static final Logger logger = (Logger) LoggerFactory.getLogger(DefaultFutureHearingRepository.class);
 
@@ -91,25 +100,19 @@ class FutureHearingRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         response = new AuthenticationResponse();
-        repository = new DefaultFutureHearingRepository(activeDirectoryApiClient, applicationParams, hmiClient,
-                                                        hearingRepository,hearingStatusAuditService, objectMapper);
-        requestString = "grant_type=GRANT_TYPE&client_id=CLIENT_ID&scope=SCOPE&client_secret=CLIENT_SECRET";
+
         given(applicationParams.getGrantType()).willReturn("GRANT_TYPE");
         given(applicationParams.getClientId()).willReturn("CLIENT_ID");
         given(applicationParams.getScope()).willReturn("SCOPE");
         given(applicationParams.getClientSecret()).willReturn("CLIENT_SECRET");
-        given(hearingRepository.findById(Long.valueOf(CASE_LISTING_REQUEST_ID)))
-            .willReturn(TestingUtil.hearingEntity());
 
         logger.setLevel(Level.INFO);
     }
 
     @Test
     void shouldSuccessfullyReturnAuthenticationObject() {
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willReturn(response);
         AuthenticationResponse testResponse = repository.retrieveAuthToken();
         assertEquals(response, testResponse);
     }
@@ -121,12 +124,12 @@ class FutureHearingRepositoryTest {
 
         response.setAccessToken("test-token");
 
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willReturn(response);
         given(hmiClient.privateHealthCheck("Bearer test-token")).willReturn(expectedResponse);
 
         HealthCheckResponse actualResponse = repository.privateHealthCheck();
 
-        then(activeDirectoryApiClient).should().authenticate(requestString);
+        then(activeDirectoryApiClient).should().authenticate(REQUEST_STRING);
         then(hmiClient).should().privateHealthCheck("Bearer test-token");
 
         assertNotNull(actualResponse, "HealthCheckResponse should not be null");
@@ -139,13 +142,13 @@ class FutureHearingRepositoryTest {
                                                      String expectedMessage,
                                                      Integer expectedErrorCode,
                                                      String expectedErrorDescription) {
-        given(activeDirectoryApiClient.authenticate(requestString)).willThrow(activeDirectoryException);
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willThrow(activeDirectoryException);
 
         HealthCheckActiveDirectoryException healthCheckActiveDirectoryException =
             assertThrows(HealthCheckActiveDirectoryException.class,
                          () -> repository.privateHealthCheck());
 
-        then(activeDirectoryApiClient).should().authenticate(requestString);
+        then(activeDirectoryApiClient).should().authenticate(REQUEST_STRING);
 
         assertEquals(expectedMessage,
                      healthCheckActiveDirectoryException.getMessage(),
@@ -184,26 +187,24 @@ class FutureHearingRepositoryTest {
         RetryableException retryableException =
             new RetryableException(400, "Connection/Read timeout", POST, null, 1L, getTokenRequest);
 
-        given(activeDirectoryApiClient.authenticate(requestString)).willThrow(retryableException);
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willThrow(retryableException);
 
         HealthCheckActiveDirectoryException healthCheckActiveDirectoryException =
             assertThrows(HealthCheckActiveDirectoryException.class,
                          () -> repository.privateHealthCheck());
 
-        then(activeDirectoryApiClient).should().authenticate(requestString);
+        then(activeDirectoryApiClient).should().authenticate(REQUEST_STRING);
 
         assertEquals("Connection/Read timeout",
                      healthCheckActiveDirectoryException.getMessage(),
                      "Health check exception has unexpected message");
 
-        List<ILoggingEvent> logsList = listAppender.list;
+        List<ILoggingEvent> logList = listAppender.list;
+        assertNotNull(logList, "Log list should not be null");
 
-        assertNotNull(logsList, "Log list should not be null");
-        assertTrue(logsList.stream()
-                       .anyMatch(log -> log.getLevel() == Level.DEBUG
-                           && log.getFormattedMessage().equals("Request to Active Directory timed out - "
-                                                                   + "URL: /get/token/url, Method: POST, Body: N/A")),
-                   "Log list does not contain expected debug message");
+        String expectedLogMessage =
+            "Request to Active Directory timed out - URL: /get/token/url, Method: POST, Body: N/A";
+        assertLogContainsMessage(logList, Level.DEBUG, expectedLogMessage);
 
         logger.detachAndStopAllAppenders();
     }
@@ -216,14 +217,14 @@ class FutureHearingRepositoryTest {
                                          String expectedErrorDescription) {
         response.setAccessToken("test-token");
 
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willReturn(response);
         given(hmiClient.privateHealthCheck("Bearer test-token")).willThrow(hmiException);
 
         HealthCheckHmiException healthCheckHmiException =
             assertThrows(HealthCheckHmiException.class,
                          () -> repository.privateHealthCheck());
 
-        then(activeDirectoryApiClient).should().authenticate(requestString);
+        then(activeDirectoryApiClient).should().authenticate(REQUEST_STRING);
         then(hmiClient).should().privateHealthCheck("Bearer test-token");
 
         assertEquals(expectedMessage, healthCheckHmiException.getMessage(), "Exception has unexpected message");
@@ -250,12 +251,14 @@ class FutureHearingRepositoryTest {
         HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
         expectedResponse.setResponseCode(202);
         response.setAccessToken("test-token");
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        given(hearingRepository.findById(Long.valueOf(CASE_LISTING_REQUEST_ID)))
+            .willReturn(TestingUtil.hearingEntity());
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willReturn(response);
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(hmiClient.requestHearing("Bearer test-token", anyData))
             .willReturn(expectedResponse);
-        HearingManagementInterfaceResponse actualResponse = repository.createHearingRequest(anyData,
-                                                                                            CASE_LISTING_REQUEST_ID);
+        HearingManagementInterfaceResponse actualResponse =
+            repository.createHearingRequest(anyData, CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
     }
 
@@ -264,12 +267,14 @@ class FutureHearingRepositoryTest {
         HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
         expectedResponse.setResponseCode(202);
         response.setAccessToken("test-token");
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        given(hearingRepository.findById(Long.valueOf(CASE_LISTING_REQUEST_ID)))
+            .willReturn(TestingUtil.hearingEntity());
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willReturn(response);
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(hmiClient.amendHearing(CASE_LISTING_REQUEST_ID, "Bearer test-token", anyData))
             .willReturn(expectedResponse);
-        HearingManagementInterfaceResponse actualResponse = repository.amendHearingRequest(anyData,
-                                                                                           CASE_LISTING_REQUEST_ID);
+        HearingManagementInterfaceResponse actualResponse =
+            repository.amendHearingRequest(anyData, CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
     }
 
@@ -278,13 +283,59 @@ class FutureHearingRepositoryTest {
         HearingManagementInterfaceResponse expectedResponse = new HearingManagementInterfaceResponse();
         expectedResponse.setResponseCode(200);
         response.setAccessToken("test-token");
-        given(activeDirectoryApiClient.authenticate(requestString)).willReturn(response);
+        given(hearingRepository.findById(Long.valueOf(CASE_LISTING_REQUEST_ID)))
+            .willReturn(TestingUtil.hearingEntity());
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willReturn(response);
         JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         given(hmiClient.deleteHearing(CASE_LISTING_REQUEST_ID, "Bearer test-token", anyData))
             .willReturn(expectedResponse);
-        HearingManagementInterfaceResponse actualResponse = repository.deleteHearingRequest(anyData,
-                                                                                           CASE_LISTING_REQUEST_ID);
+        HearingManagementInterfaceResponse actualResponse =
+            repository.deleteHearingRequest(anyData, CASE_LISTING_REQUEST_ID);
         assertEquals(expectedResponse, actualResponse);
+    }
+
+    @Test
+    void shouldRethrowExceptionWhenGetAuthTokenFails() {
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        given(hearingRepository.findById(Long.valueOf(CASE_LISTING_REQUEST_ID)))
+            .willReturn(TestingUtil.hearingEntity());
+
+        ApiClientException apiClientException =
+            new ApiClientException(EXCEPTION_MESSAGE_API_CLIENT, 500, ERROR_DESCRIPTION_API_CLIENT);
+
+        given(activeDirectoryApiClient.authenticate(REQUEST_STRING)).willThrow(apiClientException);
+
+        JsonNode anyData = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
+        ApiClientException thrownException =
+            assertThrows(ApiClientException.class,
+                         () -> repository.createHearingRequest(anyData, CASE_LISTING_REQUEST_ID),
+                         "ApiClientException should be rethrown");
+
+        assertEquals(EXCEPTION_MESSAGE_API_CLIENT,
+                     thrownException.getMessage(),
+                     "ApiClientException has unexpected message");
+        assertEquals(500, thrownException.getErrorCode(), "ApiClientException has unexpected error code");
+        assertEquals(ERROR_DESCRIPTION_API_CLIENT,
+                     thrownException.getErrorDescription(),
+                     "ApiClientException has unexpected error description");
+
+        List<ILoggingEvent> logList = listAppender.list;
+        assertNotNull(logList, "Log list should not be null");
+
+        String expectedLogMessage = "Failed to retrieve authorization token for operation: createHearingRequest "
+            + "hearingId: 2000000000 with exception Api client exception";
+        assertLogContainsMessage(logList, Level.ERROR, expectedLogMessage);
+
+        logger.detachAndStopAllAppenders();
+
+        then(hearingRepository).should().findById(Long.valueOf(CASE_LISTING_REQUEST_ID));
+        then(activeDirectoryApiClient).should().authenticate(REQUEST_STRING);
+        then(hearingStatusAuditService).should(times(2))
+            .saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any(HearingStatusAuditContext.class));
+        then(hmiClient).shouldHaveNoInteractions();
     }
 
     private static Stream<Arguments> activeDirectoryExceptions() {
@@ -383,6 +434,18 @@ class FutureHearingRepositoryTest {
                       "Resource not found",
                       null,
                       null),
+            arguments(named("ApiClientException: error code",
+                            new ApiClientException(EXCEPTION_MESSAGE_API_CLIENT, 500)
+                      ),
+                      EXCEPTION_MESSAGE_API_CLIENT,
+                      500,
+                      null),
+            arguments(named("ApiClientException: error code and error description",
+                            new ApiClientException(EXCEPTION_MESSAGE_API_CLIENT, 500, ERROR_DESCRIPTION_API_CLIENT)
+                      ),
+                      EXCEPTION_MESSAGE_API_CLIENT,
+                      500,
+                      ERROR_DESCRIPTION_API_CLIENT),
             arguments(named("RetryableException",
                             new RetryableException(400, "Connection/Read timeout", POST, null, 1L, getTokenRequest)
                       ),
@@ -427,7 +490,18 @@ class FutureHearingRepositoryTest {
                       ),
                       "Resource not found",
                       null,
-                      null)
+                      null),
+            arguments(named("ApiClientException: error code",
+                            new ApiClientException(EXCEPTION_MESSAGE_API_CLIENT, 500)
+                      ),
+                      EXCEPTION_MESSAGE_API_CLIENT,
+                      500,
+                      null),
+            arguments(named("ApiClientException: error code and error description",
+                            new ApiClientException(EXCEPTION_MESSAGE_API_CLIENT, 500, ERROR_DESCRIPTION_API_CLIENT)),
+                      EXCEPTION_MESSAGE_API_CLIENT,
+                      500,
+                      ERROR_DESCRIPTION_API_CLIENT)
         );
     }
 
@@ -447,5 +521,12 @@ class FutureHearingRepositoryTest {
         errorDetails.setApiErrorMessage(errorDescription);
 
         return errorDetails;
+    }
+
+    private void assertLogContainsMessage(List<ILoggingEvent> logList, Level logLevel, String message) {
+        assertTrue(logList.stream()
+                       .anyMatch(log -> log.getLevel() == logLevel
+                           && log.getFormattedMessage().equals(message)),
+                   "Log does not contain " + logLevel + " message " + message);
     }
 }

@@ -10,6 +10,7 @@ import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingResponseEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
@@ -21,6 +22,7 @@ import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -210,13 +212,15 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     private static final Map<Class<? extends Exception>, BiConsumer<Exception, HearingEntity>> EXCEPTION_HANDLERS =
         Map.of(
-        ResourceNotFoundException.class, (ex, entity) ->
-            handleResourceNotFoundException((ResourceNotFoundException) ex, entity),
-        AuthenticationException.class, (ex, entity) ->
-            handleAuthenticationException((AuthenticationException) ex, entity),
-        BadFutureHearingRequestException.class, (ex, entity) ->
-            handleBadFutureHearingRequestException((BadFutureHearingRequestException) ex, entity)
-    );
+            ResourceNotFoundException.class, (ex, entity) ->
+                handleResourceNotFoundException((ResourceNotFoundException) ex, entity),
+            AuthenticationException.class, (ex, entity) ->
+                handleAuthenticationException((AuthenticationException) ex, entity),
+            BadFutureHearingRequestException.class, (ex, entity) ->
+                handleBadFutureHearingRequestException((BadFutureHearingRequestException) ex, entity),
+            ApiClientException.class, (ex, entity) ->
+                handleApiClientException((ApiClientException) ex, entity)
+        );
 
     public void escalatePendingRequests() {
         log.info("escalatePendingRequests()");
@@ -281,6 +285,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         handleException(entity, ex.getErrorDetails().getErrorCode(), ex.getErrorDetails().getErrorDescription());
     }
 
+    private static void handleApiClientException(ApiClientException ex, HearingEntity entity) {
+        handleException(entity, ex.getErrorCode(), ex.getErrorDescription());
+    }
+
     private JsonNode extractErrorDetails(Exception exception) {
         if (exception instanceof ResourceNotFoundException resourceNotFoundException) {
             return objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
@@ -288,6 +296,11 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             return objectMapper.convertValue(authException.getErrorDetails(), JsonNode.class);
         } else if (exception instanceof BadFutureHearingRequestException badRequestException) {
             return objectMapper.convertValue(badRequestException.getErrorDetails(), JsonNode.class);
+        } else if (exception instanceof ApiClientException apiClientException) {
+            Map<String, Object> errorInfo = new HashMap<>();
+            errorInfo.put("errorCode", apiClientException.getErrorCode());
+            errorInfo.put("errorDescription", apiClientException.getErrorDescription());
+            return objectMapper.convertValue(errorInfo, JsonNode.class);
         }
         return objectMapper.convertValue(exception.getMessage(), JsonNode.class);
     }

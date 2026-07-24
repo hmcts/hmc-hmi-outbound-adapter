@@ -23,6 +23,7 @@ import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
@@ -82,6 +83,7 @@ class PendingRequestServiceImplTest {
     private MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
 
     private static final String TEST_EXCEPTION_MESSAGE = "Test Exception";
+    private static final String TEST_ERROR_DESCRIPTION = "Test Error Description";
     private static final String ERROR_MESSAGE =
         "Hearing id: %s with Case reference: %s , Service Code: %s and Error Description: %s updated to status %s";
 
@@ -133,8 +135,7 @@ class PendingRequestServiceImplTest {
         List<PendingRequestEntity> result = pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
 
         assertThat(pendingRequest).isEqualTo(result.getFirst());
-        verify(pendingRequestRepository, times(1))
-            .findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestRepository).findAndLockByHearingId(pendingRequest.getHearingId());
     }
 
     @Test
@@ -149,8 +150,7 @@ class PendingRequestServiceImplTest {
         List<PendingRequestEntity> results = pendingRequestService.findQueuedPendingRequestsForProcessing();
 
         assertThat(results.getFirst()).isEqualTo(pendingRequest);
-        verify(pendingRequestRepository, times(1))
-            .findQueuedPendingRequestsForProcessing(anyLong(), anyString());
+        verify(pendingRequestRepository).findQueuedPendingRequestsForProcessing(anyLong(), anyString());
     }
 
     @Test
@@ -188,8 +188,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.PROCESSING.name());
 
-        verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
-                                                                              PendingStatusType.PROCESSING.name());
+        verify(pendingRequestRepository).markRequestWithGivenStatus(id, PendingStatusType.PROCESSING.name());
     }
 
     @Test
@@ -197,7 +196,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.claimRequest(id);
 
-        verify(pendingRequestRepository, times(1)).claimRequest(id);
+        verify(pendingRequestRepository).claimRequest(id);
     }
 
     @Test
@@ -207,9 +206,7 @@ class PendingRequestServiceImplTest {
         LocalDateTime lastRetriedDateTime = LocalDateTime.now();
         pendingRequestService.markRequestAsPending(id, retryCount, lastRetriedDateTime);
 
-        verify(pendingRequestRepository, times(1)).markRequestAsPending(eq(id),
-                                                                        eq(retryCount + 1),
-                                                                        any());
+        verify(pendingRequestRepository).markRequestAsPending(eq(id), eq(retryCount + 1), any());
     }
 
     @Test
@@ -217,8 +214,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.COMPLETED.name());
 
-        verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
-                                                                              PendingStatusType.COMPLETED.name());
+        verify(pendingRequestRepository).markRequestWithGivenStatus(id, PendingStatusType.COMPLETED.name());
     }
 
     @Test
@@ -226,8 +222,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, EXCEPTION.name());
 
-        verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
-                                                                              EXCEPTION.name());
+        verify(pendingRequestRepository).markRequestWithGivenStatus(id, EXCEPTION.name());
     }
 
     @Test
@@ -236,15 +231,13 @@ class PendingRequestServiceImplTest {
 
         pendingRequestService.deleteCompletedPendingRequests();
 
-        verify(pendingRequestRepository, times(1)).deleteCompletedRecords(30L,
-                                                                          "DAYS");
+        verify(pendingRequestRepository).deleteCompletedRecords(30L, "DAYS");
     }
 
     @Test
     void shouldGetIntervalUnits() {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
-        assertThat(pendingRequestService.getIntervalUnits(pendingRequestService.deletionWaitInterval)).isEqualTo(
-            30L);
+        assertThat(pendingRequestService.getIntervalUnits(pendingRequestService.deletionWaitInterval)).isEqualTo(30L);
     }
 
     @Test
@@ -260,8 +253,7 @@ class PendingRequestServiceImplTest {
                                                Exception exception,
                                                String expectedErrorDescription,
                                                int expectedErrorCode) {
-        JsonNode data = OBJECT_MAPPER.convertValue(generateErrorDetails(expectedErrorDescription, BAD_REQUEST.value()),
-                                                   JsonNode.class);
+        JsonNode data = OBJECT_MAPPER.convertValue("test data", JsonNode.class);
         when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
         when(hmiHearingResponseMapper.mapEntityToHmcModel(any(), any())).thenReturn(generateHmcResponse("EXCEPTION"));
 
@@ -378,35 +370,36 @@ class PendingRequestServiceImplTest {
         assertThat(result)
             .isPresent()
             .contains(pendingRequest);
-        verify(pendingRequestRepository, times(1)).findById(pendingRequestId);
+        verify(pendingRequestRepository).findById(pendingRequestId);
     }
 
     private static Stream<Arguments> hearingsAndExceptions() {
         return Stream.of(
-            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                           BAD_REQUEST.value(),
-                                                                           "version is invalid"),
+            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L, null, null),
                       new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE,
-                                                           TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE,
+                                                           TestingUtil.generateErrorDetails(TEST_ERROR_DESCRIPTION,
                                                                                             BAD_REQUEST.value())),
-                      TEST_EXCEPTION_MESSAGE,
+                      TEST_ERROR_DESCRIPTION,
                       BAD_REQUEST.value()
             ),
-            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                           INTERNAL_SERVER_ERROR.value(),
-                                                                           "invalid credentials"),
+            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L, null, null),
                       new AuthenticationException("Test Auth Exception",
-                                                  TestingUtil.generateAuthErrorDetails("Test Auth Exception",
+                                                  TestingUtil.generateAuthErrorDetails("Test Auth Error",
                                                                                        INTERNAL_SERVER_ERROR.value())),
-                      "Test Auth Exception",
+                      "Test Auth Error",
                       INTERNAL_SERVER_ERROR.value()
             ),
-            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                           NOT_FOUND.value(),
-                                                                           "invalid credentials"),
+            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L, null, null),
                       new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE),
                       TEST_EXCEPTION_MESSAGE,
                       NOT_FOUND.value()
+            ),
+            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L, null, null),
+                      new ApiClientException(TEST_EXCEPTION_MESSAGE,
+                                             INTERNAL_SERVER_ERROR.value(),
+                                             TEST_ERROR_DESCRIPTION),
+                      TEST_ERROR_DESCRIPTION,
+                      INTERNAL_SERVER_ERROR.value()
             )
         );
     }
@@ -439,13 +432,6 @@ class PendingRequestServiceImplTest {
         hmcHearingUpdate.setHmcStatus(status);
         hmcHearingResponse.setHearingUpdate(hmcHearingUpdate);
         return hmcHearingResponse;
-    }
-
-    private ErrorDetails generateErrorDetails(String description, int code) {
-        ErrorDetails errorDetails = new ErrorDetails();
-        errorDetails.setErrorDescription(description);
-        errorDetails.setErrorCode(code);
-        return errorDetails;
     }
 
 }
