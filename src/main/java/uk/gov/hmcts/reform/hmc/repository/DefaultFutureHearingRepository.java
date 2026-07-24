@@ -17,6 +17,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.HealthCheckResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceApiClient;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckActiveDirectoryException;
@@ -87,6 +88,9 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         } catch (ResourceNotFoundException e) {
             logDebugHealthCheckActiveDirectoryException(e.getClass().getSimpleName());
             throw new HealthCheckActiveDirectoryException("Resource not found");
+        } catch (ApiClientException e) {
+            logDebugHealthCheckActiveDirectoryException(e.getClass().getSimpleName());
+            throw createHealthCheckActiveDirectoryException(e);
         } catch (RetryableException e) {
             log.error(e.getMessage());
             logDebugHealthCheckActiveDirectoryException(e);
@@ -142,11 +146,10 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
                       caseListingRequestId);
             saveAuditAuthSuccess(hearingEntity);
         } catch (Exception ex) {
-            log.error("Failed to retrieve authorization token for hearingId: {} with exception {}",
-                      caseListingRequestId, ex.getMessage());
+            log.error("Failed to retrieve authorization token for operation: {} hearingId: {} with exception {}",
+                      operation, caseListingRequestId, ex.getMessage());
             saveAuditAuthFail(hearingEntity, ex);
-            throw new AuthenticationException("Failed to retrieve authorization token for operation: " + operation
-                                              + " hearingId: " + caseListingRequestId);
+            throw ex;
         }
         return authorization;
     }
@@ -174,6 +177,9 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         } catch (ResourceNotFoundException e) {
             logDebugHealthCheckHmiException(e);
             throw new HealthCheckHmiException("Resource not found");
+        } catch (ApiClientException e) {
+            logDebugHealthCheckHmiException(e);
+            throw createHealthCheckHmiException(e);
         }
     }
 
@@ -232,6 +238,14 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         return healthCheckActiveDirectoryException;
     }
 
+    private HealthCheckActiveDirectoryException createHealthCheckActiveDirectoryException(
+        ApiClientException exception) {
+
+        return new HealthCheckActiveDirectoryException(exception.getMessage(),
+                                                       exception.getErrorCode(),
+                                                       exception.getErrorDescription());
+    }
+
     private HealthCheckHmiException createHealthCheckHmiException(BadFutureHearingRequestException exception) {
         HealthCheckHmiException healthCheckHmiException;
 
@@ -260,6 +274,12 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         }
 
         return healthCheckHmiException;
+    }
+
+    private HealthCheckHmiException createHealthCheckHmiException(ApiClientException exception) {
+        return new HealthCheckHmiException(exception.getMessage(),
+                                           exception.getErrorCode(),
+                                           exception.getErrorDescription());
     }
 
     private Integer getAuthErrorCode(List<Integer> authErrorCodes) {

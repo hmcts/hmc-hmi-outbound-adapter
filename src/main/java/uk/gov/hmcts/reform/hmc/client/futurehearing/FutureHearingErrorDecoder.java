@@ -5,6 +5,7 @@ import feign.Request;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 import lombok.extern.slf4j.Slf4j;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
@@ -26,8 +27,10 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
 
     @Override
     public Exception decode(String methodKey, Response response) {
-        ErrorDetails errorDetails = getResponseBody(response, ErrorDetails.class)
-            .orElseThrow(() -> new AuthenticationException(SERVER_ERROR));
+        String responseBody = getResponseBody(response)
+            .orElseThrow(() -> new ApiClientException(SERVER_ERROR, response.status()));
+        ErrorDetails errorDetails = convertResponseBody(responseBody, ErrorDetails.class, response.status())
+            .orElseThrow(() -> new ApiClientException(SERVER_ERROR, response.status(), responseBody));
         log.error("Response from FH failed with HTTP code {}, error code {}, error message '{}', "
                       + "AuthErrorCode {}, AuthErrorMessage '{}', "
                       + "ApiStatusCode {}, ApiErrorMessage '{}'",
@@ -35,7 +38,7 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
                   errorDetails.getErrorCode(),
                   errorDetails.getErrorDescription(),
                   errorDetails.getAuthErrorCodes() != null && !errorDetails.getAuthErrorCodes().isEmpty()
-                                    ? errorDetails.getAuthErrorCodes().get(0) : null,
+                                    ? errorDetails.getAuthErrorCodes().getFirst() : null,
                   errorDetails.getAuthErrorDescription(),
                   errorDetails.getApiStatusCode(),
                   errorDetails.getApiErrorMessage());
@@ -72,16 +75,23 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
         }
     }
 
-    public <T> Optional<T> getResponseBody(Response response, Class<T> klass) {
-        String bodyJson = "{}";
+    private Optional<String> getResponseBody(Response response) {
         try {
-            if (response.body() != null) {
-                bodyJson = new BufferedReader(new InputStreamReader(response.body().asInputStream()))
+            String responseBody = response.body() == null ? "{}" :
+                new BufferedReader(new InputStreamReader(response.body().asInputStream()))
                     .lines().parallel().collect(Collectors.joining("\n"));
-            }
-            return Optional.ofNullable(new ObjectMapper().readValue(bodyJson, klass));
+            return Optional.of(responseBody);
         } catch (IOException e) {
-            log.error("Response from FH failed with error code {}, error message {}", response.status(), bodyJson);
+            log.error("Response from FH failed with error code {}, unable to read response body", response.status());
+            return Optional.empty();
+        }
+    }
+
+    private <T> Optional<T> convertResponseBody(String responseBody, Class<T> klass, int status) {
+        try {
+            return Optional.ofNullable(new ObjectMapper().readValue(responseBody, klass));
+        } catch (IOException e) {
+            log.error("Response from FH failed with error code {}, error message {}", status, responseBody);
             return Optional.empty();
         }
     }

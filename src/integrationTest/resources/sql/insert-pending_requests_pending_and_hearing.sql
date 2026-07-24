@@ -27,6 +27,6 @@ INSERT INTO public.pending_requests
  deployment_id, retry_count, last_tried_date_time, status, incident_flag,
  message)
 VALUES
-(1, 2000000000, 1, 'REQUEST_HEARING', now() - INTERVAL '20 minute',
- 'depId01', 0, now() - INTERVAL '20 minute', 'PENDING', false,
+(1, 2000000000, 1, 'REQUEST_HEARING', now() AT TIME ZONE 'UTC' - INTERVAL '20 minute',
+ 'depId01', 0, now() AT TIME ZONE 'UTC' - INTERVAL '20 minute', 'PENDING', false,
  '{"test":"request for hearing in pending state"}');

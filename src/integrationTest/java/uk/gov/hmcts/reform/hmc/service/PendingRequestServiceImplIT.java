@@ -15,6 +15,7 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
@@ -203,6 +204,9 @@ class PendingRequestServiceImplIT extends BaseTest {
         BadFutureHearingRequestException badFutureHearingRequestException =
             new BadFutureHearingRequestException("bad future hearing request message", errorDetailsBadFhrException);
 
+        String errorDescriptionHtml = "<html><head><title>500 Internal Server Error</title></head></html>";
+        ApiClientException apiClientException = new ApiClientException("Server error", 500, errorDescriptionHtml);
+
         return Stream.of(
             arguments(named("ResourceNotFoundException", createResourceNotFoundException()),
                       404,
@@ -221,6 +225,12 @@ class PendingRequestServiceImplIT extends BaseTest {
                       "error description",
                       "{\"errCode\":401,\"errorDesc\":\"error description\"}",
                       List.of(createErrorStatusLogMessage("error description"))
+            ),
+            arguments(named("ApiClientException", apiClientException),
+                      500,
+                      errorDescriptionHtml,
+                      "{\"errorCode\":500,\"errorDescription\":\"" + errorDescriptionHtml + "\"}",
+                      List.of(createErrorStatusLogMessage(errorDescriptionHtml))
             ),
             arguments(named("RuntimeException", new RuntimeException("runtime exception")),
                       null,

@@ -11,15 +11,19 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Status;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HealthCheckResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.config.MessageReceiverConfiguration;
+import uk.gov.hmcts.reform.hmc.data.HearingStatusAuditEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckActiveDirectoryException;
@@ -31,12 +35,15 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubDeleteMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnToken;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnTokenHtmlResponse;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubHealthCheck;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubHealthCheckThrowingError;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubHealthCheckThrowingErrorHtmlResponse;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPostMethodThrowingAuthenticationError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubPutMethodThrowingError;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyAmendHearing;
@@ -47,6 +54,8 @@ import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDec
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_SECRET;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.REQUEST_NOT_FOUND;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.SERVER_ERROR;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH_REQUEST;
+import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI_TO_HMC_AUTH_FAIL;
 
 @ExtendWith(SpringExtension.class)
 public class FutureHearingRepositoryIT extends BaseTest {
@@ -56,6 +65,8 @@ public class FutureHearingRepositoryIT extends BaseTest {
     private static final String HMI_REQUEST_URL = "/hearings";
     private static final String CASE_LISTING_REQUEST_ID = "2000000000";
     private static final String HMI_REQUEST_URL_WITH_ID = "/hearings/" + CASE_LISTING_REQUEST_ID;
+    private static final String HTML_INTERNAL_SERVER_ERROR =
+        "<html><head><title>500 Internal Server Error</title></head></html>";
     private static final ObjectMapper OBJECT_MAPPER = new Jackson2ObjectMapperBuilder()
         .modules(new Jdk8Module())
         .build();
@@ -68,9 +79,13 @@ public class FutureHearingRepositoryIT extends BaseTest {
 
     private final DefaultFutureHearingRepository defaultFutureHearingRepository;
 
+    private final HearingStatusAuditRepository hearingStatusAuditRepository;
+
     @Autowired
-    public FutureHearingRepositoryIT(DefaultFutureHearingRepository defaultFutureHearingRepository) {
+    public FutureHearingRepositoryIT(DefaultFutureHearingRepository defaultFutureHearingRepository,
+                                     HearingStatusAuditRepository hearingStatusAuditRepository) {
         this.defaultFutureHearingRepository = defaultFutureHearingRepository;
+        this.hearingStatusAuditRepository = hearingStatusAuditRepository;
     }
 
     @Nested
@@ -147,6 +162,18 @@ public class FutureHearingRepositoryIT extends BaseTest {
                                        expectedErrorDescription);
         }
 
+        @Test
+        void shouldThrowHealthCheckActiveDirectoryExceptionForActiveDirectoryApiClientException() {
+            stubFailToReturnTokenHtmlResponse(500, HTML_INTERNAL_SERVER_ERROR);
+
+            HealthCheckActiveDirectoryException exception =
+                assertThrows(HealthCheckActiveDirectoryException.class,
+                             defaultFutureHearingRepository::privateHealthCheck,
+                             "HealthCheckActiveDirectoryException should be thrown");
+
+            assertHealthCheckException(exception, "ActiveDirectory", SERVER_ERROR, 500, HTML_INTERNAL_SERVER_ERROR);
+        }
+
         @ParameterizedTest(name = "{index}: {0}")
         @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#hmiApiErrorsAndExpectedHealthCheckValues")
         void shouldThrowHealthCheckHmiExceptionForHmiErrors(int errorStatus,
@@ -168,6 +195,21 @@ public class FutureHearingRepositoryIT extends BaseTest {
                                        expectedExceptionMessage,
                                        expectedErrorCode,
                                        expectedErrorDescription);
+        }
+
+        @Test
+        void shouldThrowHealthCheckHmiExceptionForHmiApiClientException() {
+            stubSuccessfullyReturnToken(TOKEN);
+            stubHealthCheckThrowingErrorHtmlResponse(500, HTML_INTERNAL_SERVER_ERROR);
+
+            HealthCheckHmiException exception =
+                assertThrows(HealthCheckHmiException.class,
+                             defaultFutureHearingRepository::privateHealthCheck,
+                             "HealthCheckHmiException should be thrown");
+
+            assertHealthCheckException(exception, "HearingManagementInterface", SERVER_ERROR, 500,
+                                       HTML_INTERNAL_SERVER_ERROR
+            );
         }
 
         private void assertHealthCheckException(HealthCheckException healthCheckException,
@@ -326,14 +368,130 @@ public class FutureHearingRepositoryIT extends BaseTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(REQUEST_NOT_FOUND);
         }
+    }
+
+    @Nested
+    @DisplayName("Authorisation Token Request Failure")
+    @Sql(scripts = {DELETE_HEARING_DATA_SCRIPT, INSERT_HEARINGS_DATA_SCRIPT})
+    class AuthorisationTokenRequestFailure {
 
         @Test
-        void shouldThrowAuthExceptionWhenAuthTokenFails() {
-            stubFailToReturnToken(401, "Failed to get token", List.of(1000));
-            assertThatThrownBy(() -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID))
-                .isInstanceOf(AuthenticationException.class)
-                .hasMessageContaining("Failed to retrieve authorization token for operation: "
-                                          + "deleteHearingRequest hearingId: 2000000000");
+        void shouldRethrowBadFutureHearingRequestExceptionWhen400Error() {
+            stubFailToReturnToken(400, "1000: Failed to get token", List.of(1000));
+
+            BadFutureHearingRequestException exception =
+                assertThrows(BadFutureHearingRequestException.class,
+                             () -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID),
+                             "BadFutureHearingRequestException should be thrown");
+            assertEquals(INVALID_REQUEST, exception.getMessage());
+
+            ErrorDetails errorDetails = exception.getErrorDetails();
+            assertErrorDetails(errorDetails, "1000: Failed to get token", 1000);
+
+            assertHearingStatusAuditEntities(INVALID_REQUEST);
+        }
+
+        @Test
+        void shouldRethrowAuthenticationExceptionWhen401Error() {
+            stubFailToReturnToken(401, "2000: Failed to get token", List.of(2000));
+
+            AuthenticationException exception =
+                assertThrows(AuthenticationException.class,
+                             () -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID),
+                             "AuthenticationException should be thrown");
+
+            ErrorDetails errorDetails = exception.getErrorDetails();
+            assertErrorDetails(errorDetails, "2000: Failed to get token", 2000);
+
+            assertHearingStatusAuditEntities(INVALID_SECRET);
+        }
+
+        @Test
+        void shouldRethrowResourceNotFoundExceptionWhen404Error() {
+            stubFailToReturnToken(404, "3000: Failed to get token", List.of(3000));
+
+            ResourceNotFoundException exception =
+                assertThrows(ResourceNotFoundException.class,
+                             () -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID),
+                             "ResourceNotFoundException should be thrown");
+
+            assertEquals(REQUEST_NOT_FOUND, exception.getMessage());
+            assertHearingStatusAuditEntities(REQUEST_NOT_FOUND);
+        }
+
+        @Test
+        void shouldRethrowAuthenticationExceptionWhen405Error() {
+            stubFailToReturnToken(405, "4000: Failed to get token", List.of(4000));
+
+            AuthenticationException exception =
+                assertThrows(AuthenticationException.class,
+                             () -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID),
+                             "AuthenticationException should be thrown");
+
+            ErrorDetails errorDetails = exception.getErrorDetails();
+            assertErrorDetails(errorDetails, "4000: Failed to get token", 4000);
+
+            assertHearingStatusAuditEntities(SERVER_ERROR);
+        }
+
+        @Test
+        void shouldRethrowApiClientExceptionWhen500ErrorWithNonJsonBody() {
+            stubFailToReturnTokenHtmlResponse(500, HTML_INTERNAL_SERVER_ERROR);
+
+            ApiClientException exception =
+                assertThrows(ApiClientException.class,
+                             () -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID),
+                             "ApiClientException should be thrown");
+
+            assertEquals(500, exception.getErrorCode());
+            assertEquals(HTML_INTERNAL_SERVER_ERROR, exception.getErrorDescription());
+
+            assertHearingStatusAuditEntities(SERVER_ERROR);
+        }
+
+        private void assertErrorDetails(ErrorDetails errorDetails,
+                                        String expectedAuthErrorDescription,
+                                        Integer expectedAuthErrorCode) {
+            assertNotNull(errorDetails, "Error details should not be null");
+            assertEquals(expectedAuthErrorDescription,
+                         errorDetails.getAuthErrorDescription(),
+                         "Error details auth error description has unexpected value");
+
+            List<Integer> authErrorCodes = errorDetails.getAuthErrorCodes();
+            assertNotNull(authErrorCodes, "Error details auth error codes should not be null");
+            assertEquals(1, authErrorCodes.size(), "Unexpected number of auth error codes");
+            assertEquals(expectedAuthErrorCode, authErrorCodes.getFirst(), "Auth error code has unexpected value");
+        }
+
+        private void assertHearingStatusAuditEntities(String expectedErrorDescription) {
+            List<HearingStatusAuditEntity> hearingAuditStatusList =
+                hearingStatusAuditRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+            assertNotNull(hearingAuditStatusList, "Hearing status audit records should be created");
+            assertEquals(2, hearingAuditStatusList.size(), "Unexpected number of hearing status audit records");
+
+            assertHearingStatusAuditEntity(hearingAuditStatusList.getFirst(), HMC_TO_HMI_AUTH_REQUEST, null);
+            assertHearingStatusAuditEntity(hearingAuditStatusList.get(1),
+                                           HMI_TO_HMC_AUTH_FAIL,
+                                           expectedErrorDescription);
+        }
+
+        private void assertHearingStatusAuditEntity(HearingStatusAuditEntity hearingStatusAudit,
+                                                    String expectedHearingEvent,
+                                                    String expectedErrorDescription) {
+            assertEquals(expectedHearingEvent,
+                         hearingStatusAudit.getHearingEvent(),
+                         "Hearing status audit has unexpected hearing event");
+
+            if (expectedErrorDescription == null) {
+                assertNull(hearingStatusAudit.getErrorDescription(),
+                           "Hearing status audit error description should be null");
+            } else {
+                JsonNode errorDescription = hearingStatusAudit.getErrorDescription();
+                assertNotNull(errorDescription, "Hearing status audit error description should not be null");
+                assertEquals(expectedErrorDescription,
+                             errorDescription.asText(),
+                             "Hearing status audit has unexpected error description");
+            }
         }
     }
 }
