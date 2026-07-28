@@ -77,12 +77,16 @@ class PendingRequestServiceImplIT extends BaseTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
+        final Level originalLogLevel = logger.getLevel();
+        logger.setLevel(Level.INFO);
+
         PendingRequestEntity pendingRequestBefore = getPendingRequest(pendingRequestId);
         ResourceNotFoundException exception = createResourceNotFoundException();
 
         pendingRequestService.handleNonRetriableException(pendingRequestBefore, exception);
 
         logger.detachAndStopAllAppenders();
+        logger.setLevel(originalLogLevel);
 
         PendingRequestEntity pendingRequestAfter = getPendingRequest(pendingRequestId);
         assertEquals("EXCEPTION", pendingRequestAfter.getStatus(), "Pending request has unexpected status");
@@ -110,12 +114,16 @@ class PendingRequestServiceImplIT extends BaseTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
+        final Level originalLogLevel = logger.getLevel();
+        logger.setLevel(Level.INFO);
+
         final LocalDateTime startDateTime = LocalDateTime.now();
         HearingEntity hearingBefore = getHearing();
 
         pendingRequestService.catchExceptionAndUpdateHearing(hearingBefore, exception);
 
         logger.detachAndStopAllAppenders();
+        logger.setLevel(originalLogLevel);
 
         HearingEntity hearingAfter = getHearing();
         final LocalDateTime endDateTime = LocalDateTime.now();
