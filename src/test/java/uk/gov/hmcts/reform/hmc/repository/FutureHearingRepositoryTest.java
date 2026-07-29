@@ -10,6 +10,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import feign.Request;
 import feign.RetryableException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -136,7 +137,8 @@ class FutureHearingRepositoryTest {
         assertEquals(Status.UP, actualResponse.getStatus(), "HealthCheckResponse has unexpected status");
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("shouldFailPrivateHealthCheckActiveDirectory")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("activeDirectoryExceptions")
     void shouldFailPrivateHealthCheckActiveDirectory(Exception activeDirectoryException,
                                                      String expectedMessage,
@@ -209,7 +211,8 @@ class FutureHearingRepositoryTest {
         logger.detachAndStopAllAppenders();
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("shouldFailPrivateHealthCheckHmi")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("hmiExceptions")
     void shouldFailPrivateHealthCheckHmi(Exception hmiException,
                                          String expectedMessage,

@@ -58,6 +58,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 
 @DisplayName("PendingRequestServiceImpl")
@@ -272,7 +273,8 @@ class PendingRequestServiceImplTest {
             pendingRequestService.deletionWaitInterval)).isEqualTo("DAYS");
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("shouldUpdateHearingStatusForException")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("nonRetriableExceptions")
     void shouldUpdateHearingStatusForException(Exception exception,
                                                Object errorDetails,
@@ -310,7 +312,11 @@ class PendingRequestServiceImplTest {
 
         assertThat(hearing.getStatus()).isEqualTo("EXCEPTION");
         assertThat(hearing.getUpdatedDateTime()).isNotNull();
-        assertThat(hearing.getErrorDescription()).isEqualTo(expectedErrorDescription);
+        if (expectedErrorDescription == null) {
+            assertThat(hearing.getErrorDescription()).isNull();
+        } else {
+            assertThat(hearing.getErrorDescription()).isEqualTo(expectedErrorDescription);
+        }
         assertThat(hearing.getErrorCode()).isEqualTo(expectedErrorCode);
 
         verify(objectMapper).convertValue(errorDetails, JsonNode.class);
@@ -516,10 +522,17 @@ class PendingRequestServiceImplTest {
         BadFutureHearingRequestException badFutureHearingRequestException =
             new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE, badFutureHearingRequestErrorDetails);
 
-        ErrorDetails authenticationErrorDetails =
+        ErrorDetails authenticationErrorDetailsNonEmpty =
             TestingUtil.generateAuthErrorDetails("Test Auth Error", INTERNAL_SERVER_ERROR.value());
-        AuthenticationException authenticationException =
-            new AuthenticationException("Test Auth Exception", authenticationErrorDetails);
+        AuthenticationException authenticationExceptionNonEmptyErrorDetails =
+            new AuthenticationException("Test Auth Exception", authenticationErrorDetailsNonEmpty);
+
+        ErrorDetails authenticationErrorDetailsEmpty = new ErrorDetails();
+        AuthenticationException authenticationExceptionEmptyErrorDetails =
+            new AuthenticationException("Test Auth Exception", authenticationErrorDetailsEmpty);
+
+        AuthenticationException authenticationExceptionErrorDetailsNull =
+            new AuthenticationException("Test Auth Exception");
 
         ResourceNotFoundException resourceNotFoundException = new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE);
 
@@ -535,10 +548,21 @@ class PendingRequestServiceImplTest {
                       TEST_ERROR_DESCRIPTION,
                       BAD_REQUEST.value()
             ),
-            arguments(named("AuthenticationException", authenticationException),
-                      authenticationErrorDetails,
+            arguments(named("AuthenticationException - non-empty ErrorDetails",
+                            authenticationExceptionNonEmptyErrorDetails),
+                      authenticationErrorDetailsNonEmpty,
                       "Test Auth Error",
                       INTERNAL_SERVER_ERROR.value()
+            ),
+            arguments(named("AuthenticationException - empty ErrorDetails", authenticationExceptionEmptyErrorDetails),
+                      authenticationErrorDetailsEmpty,
+                      null,
+                      UNAUTHORIZED.value()
+            ),
+            arguments(named("AuthenticationException - null ErrorDetails", authenticationExceptionErrorDetailsNull),
+                      null,
+                      null,
+                      UNAUTHORIZED.value()
             ),
             arguments(named("ResourceNotFoundException", resourceNotFoundException),
                       TEST_EXCEPTION_MESSAGE,

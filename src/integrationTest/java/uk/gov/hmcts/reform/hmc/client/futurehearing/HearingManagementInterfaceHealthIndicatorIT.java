@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,7 +64,8 @@ class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
         assertEquals(healthStatus, health.getStatus(), "Health status has unexpected value");
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("healthShouldBeDownForActiveDirectoryApiError")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#adApiErrorsAndExpectedHealthCheckValues")
     void healthShouldBeDownForActiveDirectoryApiError(int responseStatusCode,
                                                       String responseErrorDescription,
@@ -97,7 +99,8 @@ class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
         assertHealthDown(health, API_NAME_AD, "Connection/Read timeout", null, null);
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("healthShouldBeDownForHmiApiError")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#hmiApiErrorsAndExpectedHealthCheckValues")
     void healthShouldBeDownForHmiApiError(int responseStatusCode,
                                           String responseErrorMessage,

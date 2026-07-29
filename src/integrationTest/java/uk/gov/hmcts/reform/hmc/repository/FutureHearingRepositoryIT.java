@@ -6,7 +6,6 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.AuthenticationResponse;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
@@ -57,7 +55,6 @@ import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDec
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMC_TO_HMI_AUTH_REQUEST;
 import static uk.gov.hmcts.reform.hmc.constants.Constants.HMI_TO_HMC_AUTH_FAIL;
 
-@ExtendWith(SpringExtension.class)
 public class FutureHearingRepositoryIT extends BaseTest {
 
     private static final String TOKEN = "example-token";
@@ -139,7 +136,8 @@ public class FutureHearingRepositoryIT extends BaseTest {
             assertEquals(healthStatus, response.getStatus(), "Health check response has unexpected health status");
         }
 
-        @ParameterizedTest(name = "{index}: {0}")
+        @DisplayName("shouldThrowHealthCheckActiveDirectoryExceptionForActiveDirectoryErrors")
+        @ParameterizedTest(name = "{displayName} {index}: {0}")
         @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#adApiErrorsAndExpectedHealthCheckValues")
         void shouldThrowHealthCheckActiveDirectoryExceptionForActiveDirectoryErrors(int status,
                                                                                     String errorDescription,
@@ -174,7 +172,8 @@ public class FutureHearingRepositoryIT extends BaseTest {
             assertHealthCheckException(exception, "ActiveDirectory", SERVER_ERROR, 500, HTML_INTERNAL_SERVER_ERROR);
         }
 
-        @ParameterizedTest(name = "{index}: {0}")
+        @DisplayName("shouldThrowHealthCheckHmiExceptionForHmiErrors")
+        @ParameterizedTest(name = "{displayName} {index}: {0}")
         @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#hmiApiErrorsAndExpectedHealthCheckValues")
         void shouldThrowHealthCheckHmiExceptionForHmiErrors(int errorStatus,
                                                             String errorMessage,

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingResponseEntity;
@@ -274,10 +275,13 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     }
 
     private static void handleAuthenticationException(AuthenticationException ex, HearingEntity entity) {
-        Integer errorCode = (ex.getErrorDetails().getAuthErrorCodes() != null
-            && !ex.getErrorDetails().getAuthErrorCodes().isEmpty())
-            ? ex.getErrorDetails().getAuthErrorCodes().get(0) : HttpStatus.UNAUTHORIZED.value();
-        handleException(entity, errorCode, ex.getErrorDetails().getAuthErrorDescription());
+        ErrorDetails errorDetails = ex.getErrorDetails();
+        Integer errorCode = (errorDetails != null
+            && errorDetails.getAuthErrorCodes() != null
+            && !errorDetails.getAuthErrorCodes().isEmpty())
+            ? errorDetails.getAuthErrorCodes().getFirst() : HttpStatus.UNAUTHORIZED.value();
+        String errorDescription = errorDetails != null ? errorDetails.getAuthErrorDescription() : null;
+        handleException(entity, errorCode, errorDescription);
     }
 
     private static void handleBadFutureHearingRequestException(BadFutureHearingRequestException ex,

@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -64,7 +65,8 @@ class PendingRequestServiceImplIT extends BaseTest {
         this.pendingRequestService = pendingRequestService;
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("handleNonRetriableException_shouldUpdatePendingRequest")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("handleNonRetriableExceptionTestData")
     @Sql(scripts = {DATA_SCRIPT_DELETE_HEARING_TABLES,
         DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
@@ -99,7 +101,8 @@ class PendingRequestServiceImplIT extends BaseTest {
         assertLogErrorMessages(listAppender, expectedLogMessages);
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("catchExceptionAndUpdateHearing_shouldUpdateHearingAndLogError")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("catchExceptionAndUpdateHearingTestData")
     @Sql(scripts = {DATA_SCRIPT_DELETE_HEARING_TABLES,
         DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
@@ -203,8 +206,14 @@ class PendingRequestServiceImplIT extends BaseTest {
         ErrorDetails errorDetailsAuthException = new ErrorDetails();
         errorDetailsAuthException.setAuthErrorCodes(List.of(1000, 2000));
         errorDetailsAuthException.setAuthErrorDescription("auth error description");
-        AuthenticationException authenticationException =
-            new AuthenticationException("authentication message", errorDetailsAuthException);
+        AuthenticationException authenticationExceptionNonEmptyErrorDetails =
+            new AuthenticationException("authentication message - non-empty ErrorDetails", errorDetailsAuthException);
+
+        AuthenticationException authenticationExceptionEmptyErrorDetails =
+            new AuthenticationException("authentication message - empty ErrorDetails", new ErrorDetails());
+
+        AuthenticationException authenticationExceptionNullErrorDetails =
+            new AuthenticationException("authentication message - null ErrorDetails", null);
 
         ErrorDetails errorDetailsBadFhrException = new ErrorDetails();
         errorDetailsBadFhrException.setErrorCode(401);
@@ -222,11 +231,24 @@ class PendingRequestServiceImplIT extends BaseTest {
                       "\"resource not found message\"",
                       List.of(createErrorStatusLogMessage("resource not found message"))
             ),
-            arguments(named("AuthenticationException", authenticationException),
+            arguments(named("AuthenticationException - non-empty ErrorDetails",
+                            authenticationExceptionNonEmptyErrorDetails),
                       1000,
                       "auth error description",
                       "{\"error_codes\":[1000,2000],\"error_description\":\"auth error description\"}",
                       List.of(createErrorStatusLogMessage("auth error description"))
+            ),
+            arguments(named("AuthenticationException - empty ErrorDetails", authenticationExceptionEmptyErrorDetails),
+                      401,
+                      null,
+                      "{}",
+                      List.of(createErrorStatusLogMessage(null))
+            ),
+            arguments(named("AuthenticationException - null ErrorDetails", authenticationExceptionNullErrorDetails),
+                      401,
+                      null,
+                      null,
+                      List.of(createErrorStatusLogMessage(null))
             ),
             arguments(named("BadFutureHearingRequestException", badFutureHearingRequestException),
                       401,
