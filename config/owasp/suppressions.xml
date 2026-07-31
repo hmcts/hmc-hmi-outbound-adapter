@@ -23,7 +23,6 @@
         Dependency-Check incorrectly matches the generic Netty CPE against Netty 4.1.136.Final artifacts.
         See https://github.com/netty/netty/security/advisories/GHSA-hpcc-26xq-25fv
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.netty/[^@]+@4\.1\.136\.Final(?:\?.*)?$</packageUrl>
         <cve>CVE-2026-56816</cve>
     </suppress>
     <suppress>
