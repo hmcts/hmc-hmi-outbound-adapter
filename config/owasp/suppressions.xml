@@ -17,4 +17,13 @@
         <packageUrl>pkg:maven/org.jetbrains.kotlin/kotlin-stdlib@2.2.21</packageUrl>
         <cve>CVE-2026-53914</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        CVE-2026-56816 only affects io.netty:netty-codec-http3 versions below 4.2.16.Final.
+        Dependency-Check incorrectly matches the generic Netty CPE against Netty 4.1.136.Final artifacts.
+        See https://github.com/netty/netty/security/advisories/GHSA-hpcc-26xq-25fv
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/[^@]+@4\.1\.136\.Final(?:\?.*)?$</packageUrl>
+        <cve>CVE-2026-56816</cve>
+    </suppress>
 </suppressions>
