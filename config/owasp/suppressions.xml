@@ -19,11 +19,11 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        See https://tools.hmcts.net/jira/browse/HMAN-1158
+        CVE-2026-56816 only affects io.netty:netty-codec-http3 versions below 4.2.16.Final.
+        Dependency-Check incorrectly matches the generic Netty CPE against Netty 4.1.136.Final artifacts.
+        See https://github.com/netty/netty/security/advisories/GHSA-hpcc-26xq-25fv
         ]]></notes>
-        <cve>CVE-2026-55833</cve>
-        <cve>CVE-2026-44891</cve>
-        <cve>CVE-2026-55831</cve>
+        <cve>CVE-2026-56816</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
