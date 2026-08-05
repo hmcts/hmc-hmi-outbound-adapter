@@ -22,6 +22,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.JsonProcessingRuntimeException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 import uk.gov.hmcts.reform.hmc.service.MessageProcessor;
@@ -282,7 +283,8 @@ class MessageProcessorTest {
             Arguments.of(new BadFutureHearingRequestException("N/A", null)),
             Arguments.of(new AuthenticationException("N/A", null)),
             Arguments.of(new ResourceNotFoundException("N/A")),
-            Arguments.of(new ApiClientException("N/A", null, null))
+            Arguments.of(new ApiClientException("N/A", null, null)),
+            Arguments.of(new ServerErrorException("N/A", null, null))
         );
     }
 
