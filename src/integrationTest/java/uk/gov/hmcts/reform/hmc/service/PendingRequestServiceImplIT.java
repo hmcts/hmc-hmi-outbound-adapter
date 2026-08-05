@@ -20,6 +20,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.HearingStatusAuditRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
@@ -206,23 +207,29 @@ class PendingRequestServiceImplIT extends BaseTest {
         ErrorDetails errorDetailsAuthException = new ErrorDetails();
         errorDetailsAuthException.setAuthErrorCodes(List.of(1000, 2000));
         errorDetailsAuthException.setAuthErrorDescription("auth error description");
-        AuthenticationException authenticationExceptionNonEmptyErrorDetails =
+        final AuthenticationException authenticationExceptionNonEmptyErrorDetails =
             new AuthenticationException("authentication message - non-empty ErrorDetails", errorDetailsAuthException);
 
-        AuthenticationException authenticationExceptionEmptyErrorDetails =
+        final AuthenticationException authenticationExceptionEmptyErrorDetails =
             new AuthenticationException("authentication message - empty ErrorDetails", new ErrorDetails());
 
-        AuthenticationException authenticationExceptionNullErrorDetails =
+        final AuthenticationException authenticationExceptionNullErrorDetails =
             new AuthenticationException("authentication message - null ErrorDetails", null);
 
         ErrorDetails errorDetailsBadFhrException = new ErrorDetails();
         errorDetailsBadFhrException.setErrorCode(401);
         errorDetailsBadFhrException.setErrorDescription("error description");
-        BadFutureHearingRequestException badFutureHearingRequestException =
+        final BadFutureHearingRequestException badFutureHearingRequestException =
             new BadFutureHearingRequestException("bad future hearing request message", errorDetailsBadFhrException);
 
         String errorDescriptionHtml = "<html><head><title>500 Internal Server Error</title></head></html>";
-        ApiClientException apiClientException = new ApiClientException("Server error", 500, errorDescriptionHtml);
+        final ApiClientException apiClientException = new ApiClientException("Server error", 500, errorDescriptionHtml);
+
+        ErrorDetails errorDetailsServerErrorException = new ErrorDetails();
+        errorDetailsServerErrorException.setErrorCode(500);
+        errorDetailsServerErrorException.setErrorDescription("server error description");
+        final ServerErrorException serverErrorException =
+            new ServerErrorException("server error message", 500, errorDetailsServerErrorException);
 
         return Stream.of(
             arguments(named("ResourceNotFoundException", createResourceNotFoundException()),
@@ -261,6 +268,12 @@ class PendingRequestServiceImplIT extends BaseTest {
                       errorDescriptionHtml,
                       "{\"errorCode\":500,\"errorDescription\":\"" + errorDescriptionHtml + "\"}",
                       List.of(createErrorStatusLogMessage(errorDescriptionHtml))
+            ),
+            arguments(named("ServerErrorException", serverErrorException),
+                      500,
+                      "server error description",
+                      "{\"errCode\":500,\"errorDesc\":\"server error description\"}",
+                      List.of(createErrorStatusLogMessage("server error description"))
             ),
             arguments(named("RuntimeException", new RuntimeException("runtime exception")),
                       null,

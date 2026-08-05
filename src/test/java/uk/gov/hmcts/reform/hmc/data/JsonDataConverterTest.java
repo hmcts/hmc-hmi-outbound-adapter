@@ -5,17 +5,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ExtendWith(MockitoExtension.class)
 class JsonDataConverterTest {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     static {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -25,33 +27,39 @@ class JsonDataConverterTest {
     private JsonDataConverter jsonbConverter;
 
     @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
+    void setup() {
         jsonbConverter = new JsonDataConverter();
     }
 
     @Test
     void convertToDatabaseColumn() throws Exception {
-        assertNull(jsonbConverter.convertToDatabaseColumn(null));
-
         final String jsonString = "{\"key\":\"value\"}";
         assertEquals(jsonString, jsonbConverter.convertToDatabaseColumn(mapper.readTree(jsonString)));
     }
 
     @Test
-    void convertToEntityAttribute() {
-        // Testing null
-        assertNull(jsonbConverter.convertToEntityAttribute(null));
+    void convertToDatabaseColumn_shouldReturnNull() {
+        assertNull(jsonbConverter.convertToDatabaseColumn(null));
+    }
 
-        // Teasing valid non null
+    @Test
+    void convertToEntityAttribute() {
         final JsonNode converted = jsonbConverter.convertToEntityAttribute("{\"key\":\"value\"}");
         assertEquals("value", converted.get("key").asText());
+    }
 
-        try {
-            jsonbConverter.convertToEntityAttribute("hjkdash\"");
-            fail("Expected failure due to incorrect JSON");
-        } catch (Exception e) {
-            assertNotNull(e);
-        }
+    @Test
+    void convertToEntityAttribute_shouldReturnNull() {
+        assertNull(jsonbConverter.convertToEntityAttribute(null));
+    }
+
+    @Test
+    void convertToEntityAttribute_shouldThrowRuntimeException() {
+        RuntimeException exception =
+            assertThrows(RuntimeException.class,
+                         () -> jsonbConverter.convertToEntityAttribute("hjkdash\""),
+                         "Expected failure due to incorrect JSON");
+        assertNotNull(exception);
+        assertEquals("Unable to deserialize to json field", exception.getMessage());
     }
 }
