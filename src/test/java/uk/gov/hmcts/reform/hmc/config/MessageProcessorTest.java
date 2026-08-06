@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.JsonProcessingRuntimeException;
@@ -280,7 +281,8 @@ class MessageProcessorTest {
         return Stream.of(
             Arguments.of(new BadFutureHearingRequestException("N/A", null)),
             Arguments.of(new AuthenticationException("N/A", null)),
-            Arguments.of(new ResourceNotFoundException("N/A , null"))
+            Arguments.of(new ResourceNotFoundException("N/A")),
+            Arguments.of(new ApiClientException("N/A", null, null))
         );
     }
 

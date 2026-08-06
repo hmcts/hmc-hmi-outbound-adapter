@@ -22,7 +22,9 @@ import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
+import uk.gov.hmcts.reform.hmc.data.HearingResponseEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
@@ -36,24 +38,27 @@ import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 
 @DisplayName("PendingRequestServiceImpl")
@@ -82,8 +87,10 @@ class PendingRequestServiceImplTest {
     private MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
 
     private static final String TEST_EXCEPTION_MESSAGE = "Test Exception";
+    private static final String TEST_ERROR_DESCRIPTION = "Test Error Description";
     private static final String ERROR_MESSAGE =
         "Hearing id: %s with Case reference: %s , Service Code: %s and Error Description: %s updated to status %s";
+    private static final String CASE_REF = "1111222233334444";
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -133,8 +140,7 @@ class PendingRequestServiceImplTest {
         List<PendingRequestEntity> result = pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
 
         assertThat(pendingRequest).isEqualTo(result.getFirst());
-        verify(pendingRequestRepository, times(1))
-            .findAndLockByHearingId(pendingRequest.getHearingId());
+        verify(pendingRequestRepository).findAndLockByHearingId(pendingRequest.getHearingId());
     }
 
     @Test
@@ -149,8 +155,7 @@ class PendingRequestServiceImplTest {
         List<PendingRequestEntity> results = pendingRequestService.findQueuedPendingRequestsForProcessing();
 
         assertThat(results.getFirst()).isEqualTo(pendingRequest);
-        verify(pendingRequestRepository, times(1))
-            .findQueuedPendingRequestsForProcessing(anyLong(), anyString());
+        verify(pendingRequestRepository).findQueuedPendingRequestsForProcessing(anyLong(), anyString());
     }
 
     @Test
@@ -188,8 +193,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.PROCESSING.name());
 
-        verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
-                                                                              PendingStatusType.PROCESSING.name());
+        verify(pendingRequestRepository).markRequestWithGivenStatus(id, PendingStatusType.PROCESSING.name());
     }
 
     @Test
@@ -197,7 +201,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.claimRequest(id);
 
-        verify(pendingRequestRepository, times(1)).claimRequest(id);
+        verify(pendingRequestRepository).claimRequest(id);
     }
 
     @Test
@@ -207,9 +211,7 @@ class PendingRequestServiceImplTest {
         LocalDateTime lastRetriedDateTime = LocalDateTime.now();
         pendingRequestService.markRequestAsPending(id, retryCount, lastRetriedDateTime);
 
-        verify(pendingRequestRepository, times(1)).markRequestAsPending(eq(id),
-                                                                        eq(retryCount + 1),
-                                                                        any());
+        verify(pendingRequestRepository).markRequestAsPending(eq(id), eq(retryCount + 1), any());
     }
 
     @Test
@@ -217,8 +219,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.COMPLETED.name());
 
-        verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
-                                                                              PendingStatusType.COMPLETED.name());
+        verify(pendingRequestRepository).markRequestWithGivenStatus(id, PendingStatusType.COMPLETED.name());
     }
 
     @Test
@@ -226,8 +227,7 @@ class PendingRequestServiceImplTest {
         long id = 1L;
         pendingRequestService.markRequestWithGivenStatus(id, EXCEPTION.name());
 
-        verify(pendingRequestRepository, times(1)).markRequestWithGivenStatus(id,
-                                                                              EXCEPTION.name());
+        verify(pendingRequestRepository).markRequestWithGivenStatus(id, EXCEPTION.name());
     }
 
     @Test
@@ -236,15 +236,34 @@ class PendingRequestServiceImplTest {
 
         pendingRequestService.deleteCompletedPendingRequests();
 
-        verify(pendingRequestRepository, times(1)).deleteCompletedRecords(30L,
-                                                                          "DAYS");
+        verify(pendingRequestRepository).deleteCompletedRecords(30L, "DAYS");
+    }
+
+    @Test
+    void deleteCompletedPendingRequestShouldHandleException() {
+        pendingRequestService.deletionWaitInterval = "30,DAYS";
+
+        RuntimeException exception = new RuntimeException("Runtime error");
+        when(pendingRequestRepository.deleteCompletedRecords(30L, "DAYS")).thenThrow(exception);
+
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+
+        pendingRequestService.deleteCompletedPendingRequests();
+
+        logger.detachAndStopAllAppenders();
+
+        List<LogMessage> expectedLogMessages =
+            List.of(new LogMessage(Level.INFO, "deleteCompletedPendingRequests(30,DAYS)"),
+                    new LogMessage(Level.ERROR, "Failed to deleteCompletedRecords"));
+        verifyLogMessages(listAppender, expectedLogMessages);
+
+        verify(pendingRequestRepository).deleteCompletedRecords(30L, "DAYS");
     }
 
     @Test
     void shouldGetIntervalUnits() {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
-        assertThat(pendingRequestService.getIntervalUnits(pendingRequestService.deletionWaitInterval)).isEqualTo(
-            30L);
+        assertThat(pendingRequestService.getIntervalUnits(pendingRequestService.deletionWaitInterval)).isEqualTo(30L);
     }
 
     @Test
@@ -254,16 +273,32 @@ class PendingRequestServiceImplTest {
             pendingRequestService.deletionWaitInterval)).isEqualTo("DAYS");
     }
 
-    @ParameterizedTest
-    @MethodSource("hearingsAndExceptions")
-    void shouldUpdateHearingStatusForException(HearingEntity hearing,
-                                               Exception exception,
+    @DisplayName("shouldUpdateHearingStatusForException")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
+    @MethodSource("nonRetriableExceptions")
+    void shouldUpdateHearingStatusForException(Exception exception,
+                                               Object errorDetails,
                                                String expectedErrorDescription,
-                                               int expectedErrorCode) {
-        JsonNode data = OBJECT_MAPPER.convertValue(generateErrorDetails(expectedErrorDescription, BAD_REQUEST.value()),
-                                                   JsonNode.class);
-        when(objectMapper.convertValue(any(), eq(JsonNode.class))).thenReturn(data);
-        when(hmiHearingResponseMapper.mapEntityToHmcModel(any(), any())).thenReturn(generateHmcResponse("EXCEPTION"));
+                                               Integer expectedErrorCode) {
+        JsonNode errorDetailsJson = OBJECT_MAPPER.convertValue(errorDetails, JsonNode.class);
+        when(objectMapper.convertValue(errorDetails, JsonNode.class)).thenReturn(errorDetailsJson);
+
+        HearingResponseEntity hearingResponse = new HearingResponseEntity();
+        hearingResponse.setRequestVersion(1);
+
+        HearingEntity hearing = new HearingEntity();
+        hearing.setId(2000000000L);
+        hearing.setCaseHearingRequests(List.of(TestingUtil.caseHearingRequestEntity()));
+        hearing.setHearingResponses(List.of(hearingResponse));
+
+        HmcHearingResponse hmcHearingResponse = generateHmcResponse("EXCEPTION");
+        hmcHearingResponse.setHmctsServiceCode("Test");
+        when(hmiHearingResponseMapper.mapEntityToHmcModel(hearingResponse, hearing)).thenReturn(hmcHearingResponse);
+
+        JsonNode hmcHearingResponseJson = OBJECT_MAPPER.convertValue(hmcHearingResponse, JsonNode.class);
+        when(objectMapper.convertValue(hmcHearingResponse, JsonNode.class)).thenReturn(hmcHearingResponseJson);
+
+        when(objectMapper.convertValue(errorDetailsJson, JsonNode.class)).thenReturn(errorDetailsJson);
 
         ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
 
@@ -271,24 +306,79 @@ class PendingRequestServiceImplTest {
 
         logger.detachAndStopAllAppenders();
 
-        String expectedErrorMessage = String.format(ERROR_MESSAGE,
-                                                    hearing.getId(),
-                                                    "1111222233334444",
-                                                    "Test",
-                                                    expectedErrorDescription,
-                                                    "EXCEPTION");
+        String expectedErrorMessage =
+            String.format(ERROR_MESSAGE, 2000000000L, CASE_REF, "Test", expectedErrorDescription, "EXCEPTION");
         verifyLogErrors(listAppender, expectedErrorMessage);
-
-        verify(objectMapper, times(3)).convertValue(any(), eq(JsonNode.class));
-        verify(hearingRepository).save(hearing);
-        verify(hmiHearingResponseMapper).mapEntityToHmcModel(any(), any());
-        verify(messageSenderToTopicConfiguration).sendMessage(any(), any(), any(), any());
-        verify(hearingStatusAuditService).saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any());
 
         assertThat(hearing.getStatus()).isEqualTo("EXCEPTION");
         assertThat(hearing.getUpdatedDateTime()).isNotNull();
-        assertThat(hearing.getErrorDescription()).isEqualTo(expectedErrorDescription);
+        if (expectedErrorDescription == null) {
+            assertThat(hearing.getErrorDescription()).isNull();
+        } else {
+            assertThat(hearing.getErrorDescription()).isEqualTo(expectedErrorDescription);
+        }
         assertThat(hearing.getErrorCode()).isEqualTo(expectedErrorCode);
+
+        verify(objectMapper).convertValue(errorDetails, JsonNode.class);
+        verify(hearingRepository).save(hearing);
+        verify(hmiHearingResponseMapper).mapEntityToHmcModel(hearingResponse, hearing);
+        verify(objectMapper).convertValue(hmcHearingResponse, JsonNode.class);
+        verify(messageSenderToTopicConfiguration)
+            .sendMessage(hmcHearingResponseJson.toString(), "Test", String.valueOf(2000000000L), null);
+        verify(objectMapper).convertValue(errorDetailsJson, JsonNode.class);
+        verify(hearingStatusAuditService)
+            .saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any(HearingStatusAuditContext.class));
+    }
+
+    @Test
+    void shouldHandleUnknownExceptionType() {
+        HearingResponseEntity hearingResponse = new HearingResponseEntity();
+        hearingResponse.setRequestVersion(1);
+
+        HearingEntity hearing = new HearingEntity();
+        hearing.setId(2000000000L);
+        hearing.setCaseHearingRequests(List.of(TestingUtil.caseHearingRequestEntity()));
+        hearing.setHearingResponses(List.of(hearingResponse));
+
+        HmcHearingResponse hmcHearingResponse = generateHmcResponse("EXCEPTION");
+        hmcHearingResponse.setHmctsServiceCode("Test");
+        when(hmiHearingResponseMapper.mapEntityToHmcModel(hearingResponse, hearing)).thenReturn(hmcHearingResponse);
+
+        JsonNode hmcHearingResponseJson = OBJECT_MAPPER.convertValue(hmcHearingResponse, JsonNode.class);
+        when(objectMapper.convertValue(hmcHearingResponse, JsonNode.class)).thenReturn(hmcHearingResponseJson);
+
+        JsonNode nullNode = OBJECT_MAPPER.convertValue(null, JsonNode.class);
+        when(objectMapper.convertValue(null, JsonNode.class)).thenReturn(nullNode);
+
+        RuntimeException exception = new RuntimeException("Runtime error");
+
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+
+        pendingRequestService.catchExceptionAndUpdateHearing(hearing, exception);
+
+        logger.detachAndStopAllAppenders();
+
+        List<LogMessage> expectedLogMessages =
+            List.of(new LogMessage(Level.ERROR,
+                                   "Unhandled exception type for hearing id 2000000000, exception class "
+                                       + "java.lang.RuntimeException, errorMessage Runtime error"),
+                    new LogMessage(Level.ERROR,
+                                   String.format(ERROR_MESSAGE, 2000000000L, CASE_REF, "Test", null, "EXCEPTION")));
+        verifyLogMessages(listAppender, expectedLogMessages);
+
+        assertThat(hearing.getStatus()).isEqualTo("EXCEPTION");
+        assertThat(hearing.getUpdatedDateTime()).isNotNull();
+        assertThat(hearing.getErrorDescription()).isNull();
+        assertThat(hearing.getErrorCode()).isNull();
+
+        verify(hearingRepository).save(hearing);
+        verify(hmiHearingResponseMapper).mapEntityToHmcModel(hearingResponse, hearing);
+        verify(objectMapper).convertValue(hmcHearingResponse, JsonNode.class);
+        verify(messageSenderToTopicConfiguration)
+            .sendMessage(hmcHearingResponseJson.toString(), "Test", String.valueOf(2000000000L), null);
+        verify(objectMapper).convertValue(null, JsonNode.class);
+        verify(hearingStatusAuditService)
+            .saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any(HearingStatusAuditContext.class));
     }
 
     @Test
@@ -378,35 +468,111 @@ class PendingRequestServiceImplTest {
         assertThat(result)
             .isPresent()
             .contains(pendingRequest);
-        verify(pendingRequestRepository, times(1)).findById(pendingRequestId);
+        verify(pendingRequestRepository).findById(pendingRequestId);
     }
 
-    private static Stream<Arguments> hearingsAndExceptions() {
+    @Test
+    void escalatePendingRequestsShouldHandleException() {
+        pendingRequestService.escalationWaitInterval = "1,DAY";
+
+        RuntimeException exception = new RuntimeException("Runtime error");
+        when(pendingRequestRepository.findRequestsForEscalation(1L, "DAY")).thenThrow(exception);
+
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+
+        pendingRequestService.escalatePendingRequests();
+
+        logger.detachAndStopAllAppenders();
+
+        List<LogMessage> expectedLogMessages =
+            List.of(new LogMessage(Level.INFO, "escalatePendingRequests()"),
+                    new LogMessage(Level.ERROR, "Failed to escalate Pending Requests"));
+        verifyLogMessages(listAppender, expectedLogMessages);
+
+        verify(pendingRequestRepository).findRequestsForEscalation(1L, "DAY");
+    }
+
+    @Test
+    void shouldEscalatePendingRequest() {
+        HearingEntity hearing =
+            TestingUtil.generateHearingEntityWithHearingResponse(2000000001L, null, null);
+        when(hearingRepository.findById(2000000001L)).thenReturn(Optional.of(hearing));
+
+        PendingRequestEntity pendingRequest = generatePendingRequest();
+
+        ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
+
+        pendingRequestService.escalatePendingRequest(pendingRequest);
+
+        logger.detachAndStopAllAppenders();
+
+        List<LogMessage> expectedLogMessages =
+            List.of(new LogMessage(Level.INFO, "escalatePendingRequests"),
+                    new LogMessage(Level.ERROR,
+                                   String.format(ERROR_MESSAGE, 2000000001L, CASE_REF, "Test", null, "EXCEPTION")));
+        verifyLogMessages(listAppender, expectedLogMessages);
+
+        verify(pendingRequestRepository).markRequestForEscalation(eq(1L), any(LocalDateTime.class));
+        verify(hearingRepository).findById(2000000001L);
+    }
+
+    private static Stream<Arguments> nonRetriableExceptions() {
+        ErrorDetails badFutureHearingRequestErrorDetails =
+            TestingUtil.generateErrorDetails(TEST_ERROR_DESCRIPTION, BAD_REQUEST.value());
+        BadFutureHearingRequestException badFutureHearingRequestException =
+            new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE, badFutureHearingRequestErrorDetails);
+
+        ErrorDetails authenticationErrorDetailsNonEmpty =
+            TestingUtil.generateAuthErrorDetails("Test Auth Error", INTERNAL_SERVER_ERROR.value());
+        AuthenticationException authenticationExceptionNonEmptyErrorDetails =
+            new AuthenticationException("Test Auth Exception", authenticationErrorDetailsNonEmpty);
+
+        ErrorDetails authenticationErrorDetailsEmpty = new ErrorDetails();
+        AuthenticationException authenticationExceptionEmptyErrorDetails =
+            new AuthenticationException("Test Auth Exception", authenticationErrorDetailsEmpty);
+
+        AuthenticationException authenticationExceptionErrorDetailsNull =
+            new AuthenticationException("Test Auth Exception");
+
+        ResourceNotFoundException resourceNotFoundException = new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE);
+
+        Map<String, Object> apiClientErrorDetails =
+            Map.of("errorCode", INTERNAL_SERVER_ERROR.value(),
+                   "errorDescription", TEST_ERROR_DESCRIPTION);
+        ApiClientException apiClientException =
+            new ApiClientException(TEST_EXCEPTION_MESSAGE, INTERNAL_SERVER_ERROR.value(), TEST_ERROR_DESCRIPTION);
+
         return Stream.of(
-            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                           BAD_REQUEST.value(),
-                                                                           "version is invalid"),
-                      new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE,
-                                                           TestingUtil.generateErrorDetails(TEST_EXCEPTION_MESSAGE,
-                                                                                            BAD_REQUEST.value())),
-                      TEST_EXCEPTION_MESSAGE,
+            arguments(named("BadFutureHearingRequestException", badFutureHearingRequestException),
+                      badFutureHearingRequestErrorDetails,
+                      TEST_ERROR_DESCRIPTION,
                       BAD_REQUEST.value()
             ),
-            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                           INTERNAL_SERVER_ERROR.value(),
-                                                                           "invalid credentials"),
-                      new AuthenticationException("Test Auth Exception",
-                                                  TestingUtil.generateAuthErrorDetails("Test Auth Exception",
-                                                                                       INTERNAL_SERVER_ERROR.value())),
-                      "Test Auth Exception",
+            arguments(named("AuthenticationException - non-empty ErrorDetails",
+                            authenticationExceptionNonEmptyErrorDetails),
+                      authenticationErrorDetailsNonEmpty,
+                      "Test Auth Error",
                       INTERNAL_SERVER_ERROR.value()
             ),
-            arguments(TestingUtil.generateHearingEntityWithHearingResponse(2000000000L,
-                                                                           NOT_FOUND.value(),
-                                                                           "invalid credentials"),
-                      new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE),
+            arguments(named("AuthenticationException - empty ErrorDetails", authenticationExceptionEmptyErrorDetails),
+                      authenticationErrorDetailsEmpty,
+                      null,
+                      UNAUTHORIZED.value()
+            ),
+            arguments(named("AuthenticationException - null ErrorDetails", authenticationExceptionErrorDetailsNull),
+                      null,
+                      null,
+                      UNAUTHORIZED.value()
+            ),
+            arguments(named("ResourceNotFoundException", resourceNotFoundException),
+                      TEST_EXCEPTION_MESSAGE,
                       TEST_EXCEPTION_MESSAGE,
                       NOT_FOUND.value()
+            ),
+            arguments(named("ApiClientException", apiClientException),
+                      apiClientErrorDetails,
+                      TEST_ERROR_DESCRIPTION,
+                      INTERNAL_SERVER_ERROR.value()
             )
         );
     }
@@ -418,12 +584,21 @@ class PendingRequestServiceImplTest {
         return pendingRequest;
     }
 
-    private static void verifyLogErrors(ListAppender<ILoggingEvent> listAppender, String expectedErrorMessage) {
-        List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals(1, logsList.size());
-        ILoggingEvent loggingEvent = logsList.getFirst();
-        assertEquals(Level.ERROR, loggingEvent.getLevel());
-        assertEquals(expectedErrorMessage, loggingEvent.getFormattedMessage());
+    private void verifyLogErrors(ListAppender<ILoggingEvent> listAppender, String expectedErrorMessage) {
+        verifyLogMessages(listAppender, List.of(new LogMessage(Level.ERROR, expectedErrorMessage)));
+    }
+
+    private void verifyLogMessages(ListAppender<ILoggingEvent> listAppender, List<LogMessage> expectedLogMessages) {
+        List<ILoggingEvent> logList = listAppender.list;
+        assertEquals(expectedLogMessages.size(), logList.size(), "Unexpected number of messages in log");
+
+        String errorMessage = "Log does not contain expected %s message: %s";
+        expectedLogMessages
+            .forEach(logMessage ->
+                         assertTrue(logList.stream()
+                                        .anyMatch(logEvent -> logEvent.getLevel() == logMessage.level()
+                                            && logEvent.getFormattedMessage().equals(logMessage.message())),
+                                    String.format(errorMessage, logMessage.level(), logMessage.message())));
     }
 
     private @NotNull ListAppender<ILoggingEvent> getILoggingEventListAppender() {
@@ -441,11 +616,5 @@ class PendingRequestServiceImplTest {
         return hmcHearingResponse;
     }
 
-    private ErrorDetails generateErrorDetails(String description, int code) {
-        ErrorDetails errorDetails = new ErrorDetails();
-        errorDetails.setErrorDescription(description);
-        errorDetails.setErrorCode(code);
-        return errorDetails;
-    }
-
+    private record LogMessage(Level level, String message) {}
 }
