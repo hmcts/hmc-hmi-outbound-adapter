@@ -20,32 +20,36 @@ public class ServerErrorException extends RuntimeException {
     }
 
     public Integer deriveErrorCode() {
-        if (errorDetails != null) {
-            if (errorDetails.getErrorCode() != null) {
-                return errorDetails.getErrorCode();
-            }
-            if (errorDetails.getAuthErrorCodes() != null && !errorDetails.getAuthErrorCodes().isEmpty()) {
-                return errorDetails.getAuthErrorCodes().getFirst();
-            }
-            if (errorDetails.getApiStatusCode() != null) {
-                return errorDetails.getApiStatusCode();
-            }
+        if (errorDetails == null) {
+            return statusCode;
+        }
+
+        if (errorDetails.getErrorCode() != null) {
+            return errorDetails.getErrorCode();
+        }
+        if (errorDetails.getAuthErrorCodes() != null && !errorDetails.getAuthErrorCodes().isEmpty()) {
+            return errorDetails.getAuthErrorCodes().getFirst();
+        }
+        if (errorDetails.getApiStatusCode() != null) {
+            return errorDetails.getApiStatusCode();
         }
 
         return statusCode;
     }
 
     public String deriveErrorMessage() {
-        if (errorDetails != null) {
-            if (errorDetails.getErrorDescription() != null) {
-                return errorDetails.getErrorDescription();
-            }
-            if (errorDetails.getAuthErrorDescription() != null) {
-                return errorDetails.getAuthErrorDescription();
-            }
-            if (errorDetails.getApiErrorMessage() != null) {
-                return errorDetails.getApiErrorMessage();
-            }
+        if (errorDetails == null) {
+            return getMessage();
+        }
+
+        if (errorDetails.getErrorDescription() != null) {
+            return errorDetails.getErrorDescription();
+        }
+        if (errorDetails.getAuthErrorDescription() != null) {
+            return errorDetails.getAuthErrorDescription();
+        }
+        if (errorDetails.getApiErrorMessage() != null) {
+            return errorDetails.getApiErrorMessage();
         }
 
         return getMessage();

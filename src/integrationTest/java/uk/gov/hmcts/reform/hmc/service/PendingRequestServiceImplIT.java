@@ -40,6 +40,11 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class PendingRequestServiceImplIT extends BaseTest {
 
+    private static final String ERROR_DESCRIPTION_AUTH_ERROR = "auth error description";
+    private static final String ERROR_DESCRIPTION_BAD_FUTURE_HEARING = "bad future hearing error description";
+    private static final String ERROR_DESCRIPTION_SERVER_ERROR = "server error description";
+    private static final String EXCEPTION_MESSAGE_RESOURCE_NOT_FOUND = "resource not found message";
+
     private static final String DATA_SCRIPT_DELETE_HEARING_TABLES =
         "classpath:sql/delete-hearing-tables.sql";
     private static final String DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES =
@@ -194,7 +199,7 @@ class PendingRequestServiceImplIT extends BaseTest {
         return Stream.of(
             arguments(named("Hearing exists", 1L),
                       true,
-                      List.of(createErrorStatusLogMessage("resource not found message"))
+                      List.of(createErrorStatusLogMessage(EXCEPTION_MESSAGE_RESOURCE_NOT_FOUND))
             ),
             arguments(named("Hearing does not exist", 2L),
                       false,
@@ -206,7 +211,7 @@ class PendingRequestServiceImplIT extends BaseTest {
     private static Stream<Arguments> catchExceptionAndUpdateHearingTestData() {
         ErrorDetails errorDetailsAuthException = new ErrorDetails();
         errorDetailsAuthException.setAuthErrorCodes(List.of(1000, 2000));
-        errorDetailsAuthException.setAuthErrorDescription("auth error description");
+        errorDetailsAuthException.setAuthErrorDescription(ERROR_DESCRIPTION_AUTH_ERROR);
         final AuthenticationException authenticationExceptionNonEmptyErrorDetails =
             new AuthenticationException("authentication message - non-empty ErrorDetails", errorDetailsAuthException);
 
@@ -218,7 +223,7 @@ class PendingRequestServiceImplIT extends BaseTest {
 
         ErrorDetails errorDetailsBadFhrException = new ErrorDetails();
         errorDetailsBadFhrException.setErrorCode(401);
-        errorDetailsBadFhrException.setErrorDescription("error description");
+        errorDetailsBadFhrException.setErrorDescription(ERROR_DESCRIPTION_BAD_FUTURE_HEARING);
         final BadFutureHearingRequestException badFutureHearingRequestException =
             new BadFutureHearingRequestException("bad future hearing request message", errorDetailsBadFhrException);
 
@@ -227,23 +232,23 @@ class PendingRequestServiceImplIT extends BaseTest {
 
         ErrorDetails errorDetailsServerErrorException = new ErrorDetails();
         errorDetailsServerErrorException.setErrorCode(500);
-        errorDetailsServerErrorException.setErrorDescription("server error description");
+        errorDetailsServerErrorException.setErrorDescription(ERROR_DESCRIPTION_SERVER_ERROR);
         final ServerErrorException serverErrorException =
             new ServerErrorException("server error message", 500, errorDetailsServerErrorException);
 
         return Stream.of(
             arguments(named("ResourceNotFoundException", createResourceNotFoundException()),
                       404,
-                      "resource not found message",
-                      "\"resource not found message\"",
-                      List.of(createErrorStatusLogMessage("resource not found message"))
+                      EXCEPTION_MESSAGE_RESOURCE_NOT_FOUND,
+                      "\"" + EXCEPTION_MESSAGE_RESOURCE_NOT_FOUND + "\"",
+                      List.of(createErrorStatusLogMessage(EXCEPTION_MESSAGE_RESOURCE_NOT_FOUND))
             ),
             arguments(named("AuthenticationException - non-empty ErrorDetails",
                             authenticationExceptionNonEmptyErrorDetails),
                       1000,
-                      "auth error description",
-                      "{\"error_codes\":[1000,2000],\"error_description\":\"auth error description\"}",
-                      List.of(createErrorStatusLogMessage("auth error description"))
+                      ERROR_DESCRIPTION_AUTH_ERROR,
+                      "{\"error_codes\":[1000,2000],\"error_description\":\"" + ERROR_DESCRIPTION_AUTH_ERROR + "\"}",
+                      List.of(createErrorStatusLogMessage(ERROR_DESCRIPTION_AUTH_ERROR))
             ),
             arguments(named("AuthenticationException - empty ErrorDetails", authenticationExceptionEmptyErrorDetails),
                       401,
@@ -259,9 +264,9 @@ class PendingRequestServiceImplIT extends BaseTest {
             ),
             arguments(named("BadFutureHearingRequestException", badFutureHearingRequestException),
                       401,
-                      "error description",
-                      "{\"errCode\":401,\"errorDesc\":\"error description\"}",
-                      List.of(createErrorStatusLogMessage("error description"))
+                      ERROR_DESCRIPTION_BAD_FUTURE_HEARING,
+                      "{\"errCode\":401,\"errorDesc\":\"" + ERROR_DESCRIPTION_BAD_FUTURE_HEARING + "\"}",
+                      List.of(createErrorStatusLogMessage(ERROR_DESCRIPTION_BAD_FUTURE_HEARING))
             ),
             arguments(named("ApiClientException", apiClientException),
                       500,
@@ -271,9 +276,9 @@ class PendingRequestServiceImplIT extends BaseTest {
             ),
             arguments(named("ServerErrorException", serverErrorException),
                       500,
-                      "server error description",
-                      "{\"errCode\":500,\"errorDesc\":\"server error description\"}",
-                      List.of(createErrorStatusLogMessage("server error description"))
+                      ERROR_DESCRIPTION_SERVER_ERROR,
+                      "{\"errCode\":500,\"errorDesc\":\"" + ERROR_DESCRIPTION_SERVER_ERROR + "\"}",
+                      List.of(createErrorStatusLogMessage(ERROR_DESCRIPTION_SERVER_ERROR))
             ),
             arguments(named("RuntimeException", new RuntimeException("runtime exception")),
                       null,
