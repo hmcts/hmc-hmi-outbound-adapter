@@ -256,7 +256,7 @@ def versions = [
   kotlin             : '2.2.21',
   lombok             : '1.18.42',
   mapstruct          : '1.4.2.Final',
-  netty              : '4.1.135.Final',
+  netty              : '4.2.17.Final',
   postgresql         : '42.7.13',
   reformLogging      : '8.0.0',
   springBoot         : springBoot.class.package.implementationVersion,
@@ -323,13 +323,13 @@ dependencies {
   implementation group: 'com.azure', name: 'azure-messaging-servicebus', version: versions.azureServiceBus
   implementation group: 'com.azure', name: 'azure-core', version: versions.azureCore
   implementation group: 'com.azure', name: 'azure-core-amqp', version: versions.azureCoreAmqp
-  implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '13.11'
+  implementation group: 'io.github.openfeign', name: 'feign-okhttp', version: '13.13'
   implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.1'
   implementation group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '9.0'
   implementation group: 'org.projectlombok', name: 'lombok', version: versions.lombok
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
-  implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
-  implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.17'
+  implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.18'
+  implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.18'
 
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: versions.postgresql
 
