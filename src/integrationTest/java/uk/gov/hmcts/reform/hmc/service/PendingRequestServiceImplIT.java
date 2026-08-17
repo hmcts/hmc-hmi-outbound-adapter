@@ -4,7 +4,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -64,7 +63,6 @@ class PendingRequestServiceImplIT extends BaseTest {
         this.pendingRequestService = pendingRequestService;
     }
 
-    @Disabled
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("handleNonRetriableExceptionTestData")
     @Sql(scripts = {DATA_SCRIPT_DELETE_HEARING_TABLES,
@@ -96,7 +94,6 @@ class PendingRequestServiceImplIT extends BaseTest {
         assertLogErrorMessages(listAppender, expectedLogMessages);
     }
 
-    @Disabled
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("catchExceptionAndUpdateHearingTestData")
     @Sql(scripts = {DATA_SCRIPT_DELETE_HEARING_TABLES,
@@ -246,15 +243,14 @@ class PendingRequestServiceImplIT extends BaseTest {
     }
 
     private void assertLogErrorMessages(ListAppender<ILoggingEvent> listAppender, List<String> expectedLogMessages) {
-        List<ILoggingEvent> logList = listAppender.list.stream()
-            .filter(logItem -> logItem.getLevel() == Level.ERROR)
-            .toList();
+        List<ILoggingEvent> logList = listAppender.list;
 
         assertEquals(expectedLogMessages.size(), logList.size(), "Log contains unexpected number of messages");
         expectedLogMessages
             .forEach(logMessage ->
                          assertTrue(logList.stream()
-                                        .anyMatch(logItem -> logItem.getFormattedMessage().equals(logMessage)),
+                                        .anyMatch(logItem -> logItem.getLevel() == Level.ERROR
+                                            && logItem.getFormattedMessage().equals(logMessage)),
                                     "Log does not contain expected error message: " + logMessage));
     }
 }
