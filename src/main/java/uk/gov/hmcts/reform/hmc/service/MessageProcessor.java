@@ -19,6 +19,7 @@ import uk.gov.hmcts.reform.hmc.config.MessageType;
 import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.MalformedMessageException;
@@ -115,7 +116,8 @@ public class MessageProcessor {
                 convertMessage(pendingRequest.getMessage()),
                 pendingRequest.getHearingId().toString(), pendingRequest.getMessageType()
             );
-        } catch (AuthenticationException | BadFutureHearingRequestException | ResourceNotFoundException ex) {
+        } catch (ApiClientException | AuthenticationException
+                 | BadFutureHearingRequestException | ResourceNotFoundException ex) {
             log.debug("Non-retriable exception {}, message {}", ex.getClass().getSimpleName(), ex.getMessage());
             pendingRequestService.handleNonRetriableException(pendingRequest, ex);
             return;
