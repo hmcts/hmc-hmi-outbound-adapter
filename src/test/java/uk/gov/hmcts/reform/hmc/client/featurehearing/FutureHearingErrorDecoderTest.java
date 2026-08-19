@@ -12,28 +12,36 @@ import feign.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder;
+import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_REQUEST;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.INVALID_SECRET;
 import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDecoder.REQUEST_NOT_FOUND;
@@ -42,9 +50,7 @@ import static uk.gov.hmcts.reform.hmc.client.futurehearing.FutureHearingErrorDec
 @ExtendWith(MockitoExtension.class)
 class FutureHearingErrorDecoderTest {
 
-    private String methodKey = null;
-    private Response response;
-    private byte[] byteArray;
+    private static final String METHOD_KEY = null;
     private static final String INPUT_STRING = """
         {
             "errCode": "1000",
@@ -58,9 +64,16 @@ class FutureHearingErrorDecoderTest {
         + "error message ''300' is not a valid value for 'caseCourt.locationId'', "
         + "AuthErrorCode null, AuthErrorMessage 'null', "
         + "ApiStatusCode null, ApiErrorMessage 'null'";
-    private RequestTemplate template;
+
+    private byte[] byteArray;
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(FutureHearingErrorDecoder.class);
+
+    @Mock
+    private Response mockResponse;
+
+    @Mock
+    private Response.Body mockResponseBody;
 
     private FutureHearingErrorDecoder futureHearingErrorDecoder;
 
@@ -72,14 +85,14 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    void shouldThrowAuthenticationExceptionWith400Error() {
+    void shouldThrowBadFutureHearingRequestExceptionWith400Error() {
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 400, HttpMethod.POST);
+        Response response = createResponse(byteArray, 400, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         assertEquals(INVALID_REQUEST, exception.getMessage());
@@ -96,9 +109,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 401, HttpMethod.POST);
+        Response response = createResponse(byteArray, 401, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
         assertEquals(INVALID_SECRET, exception.getMessage());
@@ -115,9 +128,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 404, HttpMethod.PUT);
+        Response response = createResponse(byteArray, 404, HttpMethod.PUT);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
         assertEquals(REQUEST_NOT_FOUND, exception.getMessage());
@@ -134,9 +147,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 500, HttpMethod.POST);
+        Response response = createResponse(byteArray, 500, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
         assertEquals(SERVER_ERROR, exception.getMessage());
@@ -164,9 +177,9 @@ class FutureHearingErrorDecoderTest {
             """;
         byte[] apiErrorByteArray = apiError.getBytes(StandardCharsets.UTF_8);
 
-        response = createResponse(apiErrorByteArray, 400, HttpMethod.GET);
+        Response response = createResponse(apiErrorByteArray, 400, HttpMethod.GET);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         BadFutureHearingRequestException badRequestException = (BadFutureHearingRequestException) exception;
@@ -198,9 +211,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(byteArray, 400, HttpMethod.POST);
+        Response response = createResponse(byteArray, 400, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(BadFutureHearingRequestException.class);
         assertEquals(INVALID_REQUEST, exception.getMessage());
@@ -228,13 +241,13 @@ class FutureHearingErrorDecoderTest {
 
         byte[] requestBody = "RequestBody".getBytes(StandardCharsets.UTF_8);
 
-        response = Response.builder()
+        Response response = Response.builder()
             .body(responseBody.getBytes(StandardCharsets.UTF_8))
             .status(401)
             .request(Request.create(HttpMethod.POST, "/api", Collections.emptyMap(), requestBody, Util.UTF_8, null))
             .build();
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(AuthenticationException.class);
 
@@ -258,9 +271,9 @@ class FutureHearingErrorDecoderTest {
         listAppender.start();
         logger.addAppender(listAppender);
 
-        response = createResponse(null, 404, HttpMethod.POST);
+        Response response = createResponse(null, 404, HttpMethod.POST);
 
-        Exception exception = futureHearingErrorDecoder.decode(methodKey, response);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
         assertThat(exception).isInstanceOf(ResourceNotFoundException.class);
 
@@ -277,121 +290,148 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    void shouldReturnEmptyOptionalWhenIoExceptionOccurs() {
-        Response.Body body = new Response.Body() {
-            @Override
-            public void close() throws IOException {
-                // This method is intentionally left empty as no resources need to be closed.
-            }
-
-            @Override
-            public Integer length() {
-                return null;
-            }
-
-            @Override
-            public boolean isRepeatable() {
-                return false;
-            }
-
-            @Override
-            public InputStream asInputStream() throws IOException {
-                throw new IOException("Simulated IO error");
-            }
-
-            @Override
-            public Reader asReader() throws IOException {
-                throw new IOException("Simulated IO error");
-            }
-
-            @Override
-            public Reader asReader(Charset charset) throws IOException {
-                return null;
-            }
-        };
-
-        response = Response.builder()
-            .body(body)
-            .status(500)
-            .request(Request.create(HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
-            .build();
-
-        Optional<Object> result = futureHearingErrorDecoder.getResponseBody(response, Object.class);
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void shouldLogErrorWhenIoExceptionOccursWhileReadingResponseBody() {
-        logger.setLevel(Level.ERROR);
+    void shouldThrowApiClientExceptionWhenIoExceptionOccurs() throws IOException {
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
 
-        Response.Body body = new Response.Body() {
-            @Override
-            public void close() throws IOException {
-                // This method is intentionally left empty as no resources need to be closed.
-            }
+        when(mockResponseBody.asInputStream()).thenThrow(new IOException("Simulated IO error"));
+        when(mockResponse.body()).thenReturn(mockResponseBody);
+        when(mockResponse.status()).thenReturn(500);
 
-            @Override
-            public Integer length() {
-                return null;
-            }
+        // noinspection ThrowableNotThrown
+        ApiClientException apiClientException =
+            assertThrows(ApiClientException.class,
+                         () -> futureHearingErrorDecoder.decode(METHOD_KEY, mockResponse),
+                         "ApiClientException should be thrown");
 
-            @Override
-            public boolean isRepeatable() {
-                return false;
-            }
-
-            @Override
-            public InputStream asInputStream() throws IOException {
-                throw new IOException("Simulated IO error");
-            }
-
-            @Override
-            public Reader asReader() throws IOException {
-                throw new IOException("Simulated IO error");
-            }
-
-            @Override
-            public Reader asReader(Charset charset) throws IOException {
-                return null;
-            }
-        };
-
-        response = Response.builder()
-            .body(body)
-            .status(500)
-            .request(Request.create(HttpMethod.GET, "/api", Collections.emptyMap(), null, Util.UTF_8, null))
-            .build();
-
-        futureHearingErrorDecoder.getResponseBody(response, Object.class);
+        assertEquals(SERVER_ERROR,
+                     apiClientException.getMessage(),
+                     "ApiClientException has unexpected message");
+        assertEquals(500, apiClientException.getErrorCode(), "ApiClientException has unexpected error code");
+        assertNull(apiClientException.getErrorDescription(), "ApiClientException error description should be null");
 
         List<ILoggingEvent> logsList = listAppender.list;
-        assertThat(logsList.stream().anyMatch(
-            log -> log.getLevel() == Level.ERROR
-                && log.getMessage().contains("Response from FH failed with error code")
-        )).isTrue();
+        assertEquals(1, logsList.size(), "Unexpected number of messages in log");
+
+        assertLogEntry(logsList.getFirst(),
+                       Level.ERROR,
+                       "Response from FH failed with error code 500, unable to read response body");
+
+        logger.detachAndStopAllAppenders();
+
+        verify(mockResponse, times(2)).status();
+        verify(mockResponse, times(2)).body();
+        verify(mockResponseBody).asInputStream();
+    }
+
+    @Test
+    void shouldHaveNullErrorDetailsFieldsWhenResponseBodyNull() {
+        Response response = createResponse(null, 400, HttpMethod.GET);
+
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
+
+        BadFutureHearingRequestException badFutureHearingRequestException =
+            assertInstanceOf(BadFutureHearingRequestException.class,
+                             exception,
+                             "BadFutureHearingRequestException should be returned");
+
+        assertEquals(INVALID_REQUEST,
+                     badFutureHearingRequestException.getMessage(),
+                     "BadFutureHearingRequestException has unexpected message");
+
+        ErrorDetails errorDetails = badFutureHearingRequestException.getErrorDetails();
+        assertNotNull(errorDetails, "ErrorDetails should not be null");
+        assertErrorDetailsFieldsNull(errorDetails);
+    }
+
+    @Test
+    void shouldHaveNullErrorDetailsFieldsWhenResponseBodyHasDifferentFields() {
+        byte[] responseBody = """
+            {
+                "differentField": "differentFieldValue"
+            }""".getBytes(StandardCharsets.UTF_8);
+        Response response = createResponse(responseBody, 401, HttpMethod.GET);
+
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
+
+        AuthenticationException authenticationException =
+            assertInstanceOf(AuthenticationException.class, exception, "AuthenticationException should be returned");
+
+        assertEquals(INVALID_SECRET,
+                     authenticationException.getMessage(),
+                     "AuthenticationException has unexpected message");
+
+        ErrorDetails errorDetails = authenticationException.getErrorDetails();
+        assertNotNull(errorDetails, "ErrorDetails should not be null");
+        assertErrorDetailsFieldsNull(errorDetails);
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonJsonResponseBody")
+    void shouldThrowApiClientExceptionWhenResponseBodyNotJson(String responseBody) {
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        byte[] responseBodyByteArray = responseBody.getBytes(StandardCharsets.UTF_8);
+        Response response = createResponse(responseBodyByteArray, 500, HttpMethod.GET);
+
+        // noinspection ThrowableNotThrown
+        ApiClientException apiClientException =
+            assertThrows(ApiClientException.class,
+                         () -> futureHearingErrorDecoder.decode(METHOD_KEY, response),
+                         "ApiClientException should be thrown");
+
+        assertEquals(500, apiClientException.getErrorCode(), "ApiClientException has unexpected error code");
+        assertEquals(responseBody,
+                     apiClientException.getErrorDescription(),
+                     "ApiClientException has unexpected error description");
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertEquals(1, logsList.size(), "Unexpected number of messages in log");
+
+        assertLogEntry(logsList.getFirst(),
+                       Level.ERROR,
+                       "Response from FH failed with error code 500, error message " + responseBody);
 
         logger.detachAndStopAllAppenders();
     }
 
     @Test
-    void shouldReturnPresentOptionalWhenResponseBodyNotNull() {
+    void shouldThrowApiClientExceptionWhenResponseBodyIsWordNull() {
+        String responseBody = "null";
+        byte[] responseBodyByteArray = responseBody.getBytes(StandardCharsets.UTF_8);
+        Response response = createResponse(responseBodyByteArray, 400, HttpMethod.GET);
+
+        // noinspection ThrowableNotThrown
+        ApiClientException apiClientException =
+            assertThrows(ApiClientException.class,
+                         () -> futureHearingErrorDecoder.decode(METHOD_KEY, response),
+                         "ApiClientException should be thrown");
+
+        assertEquals(400, apiClientException.getErrorCode(), "ApiClientException has unexpected error code");
+        assertEquals(responseBody,
+                     apiClientException.getErrorDescription(),
+                     "ApiClientException has unexpected error description");
+    }
+
+    @Test
+    void shouldPopulateAuthErrorFields() {
         byte[] body = """
             {
                 "error_codes": [100, 200],
                 "error_description": "Auth error"
             }""".getBytes(StandardCharsets.UTF_8);
 
-        response = createResponse(body, 401, HttpMethod.POST);
+        Response response = createResponse(body, 401, HttpMethod.POST);
 
-        Optional<ErrorDetails> responseBody = futureHearingErrorDecoder.getResponseBody(response, ErrorDetails.class);
+        Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
-        assertTrue(responseBody.isPresent(), "Optional should contain a value");
+        AuthenticationException authenticationException =
+            assertInstanceOf(AuthenticationException.class, exception, "AuthenticationException should be returned");
 
-        ErrorDetails errorDetails = responseBody.get();
+        ErrorDetails errorDetails = authenticationException.getErrorDetails();
 
         assertNull(errorDetails.getErrorCode(), "Error code should be null");
         assertNull(errorDetails.getErrorDescription(), "Error description should be null");
@@ -409,15 +449,27 @@ class FutureHearingErrorDecoderTest {
         assertNull(errorDetails.getApiErrorMessage(), "API error message should be null");
     }
 
-    @Test
-    void shouldReturnPresentOptionalWhenResponseBodyNull() {
-        response = createResponse(null, 404, HttpMethod.GET);
+    private static Stream<Arguments> nonJsonResponseBody() {
+        return Stream.of(
+            arguments(""),
+            arguments("""
+                      <html>
+                          <head>
+                              <title>500 Internal Server Error</title>
+                          </head>
+                          <body>
+                              <h1>Internal Server Error</h1>
+                          </body>
+                      </html>""")
+        );
+    }
 
-        Optional<ErrorDetails> responseBody = futureHearingErrorDecoder.getResponseBody(response, ErrorDetails.class);
+    private void assertLogEntry(ILoggingEvent logEvent, Level expectedLevel, String expectedMessage) {
+        assertEquals(expectedLevel, logEvent.getLevel(), "Log entry has unexpected level");
+        assertEquals(expectedMessage, logEvent.getFormattedMessage(), "Log entry has unexpected message");
+    }
 
-        assertTrue(responseBody.isPresent(), "Optional should contain a value");
-
-        ErrorDetails errorDetails = responseBody.get();
+    private void assertErrorDetailsFieldsNull(ErrorDetails errorDetails) {
         assertNull(errorDetails.getErrorCode(), "Error code should be null");
         assertNull(errorDetails.getErrorDescription(), "Error description should be null");
         assertNull(errorDetails.getAuthErrorCodes(), "Auth error codes should be null");
@@ -426,12 +478,8 @@ class FutureHearingErrorDecoderTest {
         assertNull(errorDetails.getApiErrorMessage(), "API error message should be null");
     }
 
-    private void assertLogEntry(ILoggingEvent logEvent, Level expectedLevel, String expectedMessage) {
-        assertEquals(expectedLevel, logEvent.getLevel(), "Log entry has unexpected level");
-        assertEquals(expectedMessage, logEvent.getFormattedMessage(), "Log entry has unexpected message");
-    }
-
     private Response createResponse(byte[] body, int status, HttpMethod httpMethod) {
+        RequestTemplate template = new RequestTemplate();
         return Response.builder()
             .body(body)
             .status(status)
