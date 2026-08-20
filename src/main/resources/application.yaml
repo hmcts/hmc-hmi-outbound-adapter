@@ -98,13 +98,6 @@ logging:
         hmcts:
           reform:
             hmc: DEBUG
-    org:
-      hibernate:
-        SQL: DEBUG
-        type:
-          descriptor:
-            sql:
-              BasicBinder: TRACE
 
 pending:
   request:
