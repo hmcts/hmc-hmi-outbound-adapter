@@ -91,23 +91,13 @@ feign:
   okhttp:
     enabled: true
 
-LOGGING:
-  LEVEL:
+logging:
+  level:
     uk:
       gov:
         hmcts:
           reform:
-            hmc: INFO
-
-logging:
-  level:
-    org:
-      hibernate:
-        SQL: DEBUG
-        type:
-          descriptor:
-            sql:
-              BasicBinder: TRACE
+            hmc: DEBUG
 
 pending:
   request:
