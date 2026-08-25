@@ -97,7 +97,7 @@ logging:
       gov:
         hmcts:
           reform:
-            hmc: DEBUG
+            hmc: INFO
 
 pending:
   request:
