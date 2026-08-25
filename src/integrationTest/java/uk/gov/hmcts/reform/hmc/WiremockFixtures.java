@@ -32,6 +32,7 @@ import static org.springframework.http.HttpHeaders.CONNECTION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_HTML_VALUE;
 
 public class WiremockFixtures {
 
@@ -116,6 +117,20 @@ public class WiremockFixtures {
         );
     }
 
+    public static void stubFailToReturnTokenHtmlResponse(int status, String htmlResponseBody) {
+        stubFor(post(urlEqualTo(GET_TOKEN_URL))
+                    .withHeader(CONTENT_TYPE, equalTo(APPLICATION_FORM_URLENCODED_VALUE))
+                    .withRequestBody(matching("grant_type=" + GRANT_TYPE + "&client_id=" + CLIENT_ID + "&scope="
+                                                  + SCOPE + "&client_secret=" + CLIENT_SECRET)
+                    )
+                    .willReturn(aResponse()
+                                    .withHeader(CONTENT_TYPE, TEXT_HTML_VALUE)
+                                    .withBody(htmlResponseBody)
+                                    .withStatus(status)
+                    )
+        );
+    }
+
     public static void stubFailToReturnTokenTimeout() {
         // Note: This needs to be used in conjunction with a smaller than the default
         // value for the feign client readTimeout property to trigger a timeout
@@ -164,6 +179,24 @@ public class WiremockFixtures {
                     .willReturn(aResponse()
                                     .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                                     .withBody(getJsonString(errorDetails))
+                                    .withStatus(httpStatus)
+                    ));
+    }
+
+    public static void stubRequestHearingThrowingErrorHtmlResponse(String token,
+                                                                   String htmlResponseBody,
+                                                                   int httpStatus) {
+        stubFor(post(urlEqualTo(HMI_REQUEST_URL))
+                    .withHeader(CONTENT_TYPE, equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader(ACCEPT, equalTo(APPLICATION_JSON_VALUE))
+                    .withHeader(HEADER_SOURCE_SYSTEM, equalTo(SOURCE_SYSTEM))
+                    .withHeader(HEADER_DESTINATION_SYSTEM, equalTo(DESTINATION_SYSTEM))
+                    .withHeader(HEADER_REQUEST_CREATED_AT, matching(REGEX_TIMESTAMP))
+                    .withHeader(AUTHORIZATION, equalTo("Bearer " + token))
+                    .withHeader(HEADER_TRANSACTION_ID_HMCTS, matching(REGEX_UUID))
+                    .willReturn(aResponse()
+                                    .withHeader(CONTENT_TYPE, TEXT_HTML_VALUE)
+                                    .withBody(htmlResponseBody)
                                     .withStatus(httpStatus)
                     ));
     }
@@ -224,6 +257,16 @@ public class WiremockFixtures {
             }""".formatted(status, message);
         stubFor(get(urlEqualTo(HMI_PRIVATE_HEALTH_URL))
                     .willReturn(jsonResponse(hmiErrorResponse, status))
+        );
+    }
+
+    public static void stubHealthCheckThrowingErrorHtmlResponse(int status, String htmlResponseBody) {
+        stubFor(get(urlEqualTo(HMI_PRIVATE_HEALTH_URL))
+                    .willReturn(aResponse()
+                                    .withHeader(CONTENT_TYPE, TEXT_HTML_VALUE)
+                                    .withStatus(status)
+                                    .withBody(htmlResponseBody)
+                    )
         );
     }
 

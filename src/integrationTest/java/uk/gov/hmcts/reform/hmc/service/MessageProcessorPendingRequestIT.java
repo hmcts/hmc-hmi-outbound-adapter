@@ -26,7 +26,10 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnToken;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnTokenHtmlResponse;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubRequestHearingThrowingError;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubRequestHearingThrowingErrorHtmlResponse;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyRequestHearing;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyReturnToken;
 
@@ -34,6 +37,8 @@ class MessageProcessorPendingRequestIT extends BaseTest {
 
     private static final String TOKEN = "example-token";
     private static final Long PENDING_REQUEST_ID = 1L;
+    private static final String HTML_INTERNAL_SERVER_ERROR =
+        "<html><head><title>500 Internal Server Error</title></head><body><h1>Internal Server Error</h1></body></html>";
 
     private static final String DEBUG_LOG_MESSAGE_PROCESS_PENDING_REQUEST_STARTING =
         "processPendingRequest(pendingRequest) starting : %s";
@@ -199,12 +204,43 @@ class MessageProcessorPendingRequestIT extends BaseTest {
     }
 
     @ParameterizedTest
-    @MethodSource("nonRetriableExceptionsAndHttpStatus")
+    @MethodSource("adHttpStatusAndErrors")
     @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
         DATA_SCRIPT_DELETE_HEARING_TABLES,
         DATA_SCRIPT_INSERT_PENDING_REQUESTS_PENDING_AND_HEARING})
-    void processPendingRequest_shouldSetIncidentFlagForNonRetriableException(ErrorDetails errorDetails,
-                                                                             int httpStatus) {
+    void processPendingRequest_shouldSetIncidentFlagForAdNonRetriableException(int httpStatus,
+                                                                               String errorDescription,
+                                                                               List<Integer> errorCodes) {
+        stubFailToReturnToken(httpStatus, errorDescription, errorCodes);
+
+        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        messageProcessor.processPendingRequest(pendingRequestBefore);
+
+        PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
+        assertPendingRequestStatusExceptionAndIncidentFlag(pendingRequestAfter);
+    }
+
+    @Test
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
+        DATA_SCRIPT_DELETE_HEARING_TABLES,
+        DATA_SCRIPT_INSERT_PENDING_REQUESTS_PENDING_AND_HEARING})
+    void processPendingRequest_shouldSetIncidentFlagForAdNonRetriableExceptionNonJson() {
+        stubFailToReturnTokenHtmlResponse(500, HTML_INTERNAL_SERVER_ERROR);
+
+        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        messageProcessor.processPendingRequest(pendingRequestBefore);
+
+        PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
+        assertPendingRequestStatusExceptionAndIncidentFlag(pendingRequestAfter);
+    }
+
+    @ParameterizedTest
+    @MethodSource("hmiErrorsAndHttpStatus")
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
+        DATA_SCRIPT_DELETE_HEARING_TABLES,
+        DATA_SCRIPT_INSERT_PENDING_REQUESTS_PENDING_AND_HEARING})
+    void processPendingRequest_shouldSetIncidentFlagForHmiNonRetriableException(ErrorDetails errorDetails,
+                                                                                int httpStatus) {
         stubSuccessfullyReturnToken(TOKEN);
         stubRequestHearingThrowingError(TOKEN, errorDetails, httpStatus);
 
@@ -212,12 +248,33 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         messageProcessor.processPendingRequest(pendingRequestBefore);
 
         PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
-        assertPendingRequestStatus(pendingRequestAfter, "EXCEPTION");
-        assertTrue(pendingRequestAfter.getIncidentFlag(),
-                   "Pending request " + pendingRequestAfter.getId() + " incident flag should be true");
+        assertPendingRequestStatusExceptionAndIncidentFlag(pendingRequestAfter);
     }
 
-    private static Stream<Arguments> nonRetriableExceptionsAndHttpStatus() {
+    @Test
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
+        DATA_SCRIPT_DELETE_HEARING_TABLES,
+        DATA_SCRIPT_INSERT_PENDING_REQUESTS_PENDING_AND_HEARING})
+    void processPendingRequest_shouldSetIncidentFlagForHmiNonRetriableExceptionNonJson() {
+        stubSuccessfullyReturnToken(TOKEN);
+        stubRequestHearingThrowingErrorHtmlResponse(TOKEN, HTML_INTERNAL_SERVER_ERROR, 500);
+
+        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        messageProcessor.processPendingRequest(pendingRequestBefore);
+
+        PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
+        assertPendingRequestStatusExceptionAndIncidentFlag(pendingRequestAfter);
+    }
+
+    private static Stream<Arguments> adHttpStatusAndErrors() {
+        return Stream.of(
+            arguments(400, "AADSTS1002012: The provided value for scope scope is not valid.", List.of(1002012)),
+            arguments(401, "AADSTS7000215: Invalid client secret provided.", List.of(7000215)),
+            arguments(404, "AD Resource not found", List.of(1000000))
+        );
+    }
+
+    private static Stream<Arguments> hmiErrorsAndHttpStatus() {
         ErrorDetails authenticationErrorDetails = new ErrorDetails();
         authenticationErrorDetails.setAuthErrorCodes(List.of(401));
         authenticationErrorDetails.setAuthErrorDescription("Access denied due to invalid OAuth information");
@@ -255,6 +312,12 @@ class MessageProcessorPendingRequestIT extends BaseTest {
     private void assertPendingRequestStatus(PendingRequestEntity pendingRequest, String expectedStatus) {
         assertEquals(expectedStatus, pendingRequest.getStatus(),
                      "Pending request " + pendingRequest.getId() + " has unexpected status");
+    }
+
+    private void assertPendingRequestStatusExceptionAndIncidentFlag(PendingRequestEntity pendingRequest) {
+        assertPendingRequestStatus(pendingRequest, "EXCEPTION");
+        assertTrue(pendingRequest.getIncidentFlag(),
+                   "Pending request " + pendingRequest.getId() + " incident flag should be true");
     }
 
     private void assertLogErrorMessages(ListAppender<ILoggingEvent> listAppender,
