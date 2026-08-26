@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc.client.futurehearing;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -17,9 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnToken;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnTokenHtmlResponse;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnTokenTimeout;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubHealthCheck;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubHealthCheckThrowingError;
+import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubHealthCheckThrowingErrorHtmlResponse;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyReturnToken;
 
 // Set future-hearing-api read timeout value to force a timeout during timeout test
@@ -31,6 +34,9 @@ import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubSuccessfullyReturnTok
 class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
 
     private static final String TEST_TOKEN = "test-token";
+    private static final String SERVER_ERROR = "Server error";
+    private static final String HTML_INTERNAL_SERVER_ERROR =
+        "<html><head><title>500 Internal Server Error</title></head><body><h1>Internal Server Error</h1></body></html>";
 
     private static final String KEY_MESSAGE = "message";
     private static final String KEY_API_NAME = "apiName";
@@ -38,6 +44,7 @@ class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
     private static final String KEY_ERROR_DESC = "errorDescription";
 
     private static final String API_NAME_AD = "ActiveDirectory";
+    private static final String API_NAME_HMI = "HearingManagementInterface";
 
     private final HearingManagementInterfaceHealthIndicator hmiHealthIndicator;
 
@@ -57,7 +64,8 @@ class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
         assertEquals(healthStatus, health.getStatus(), "Health status has unexpected value");
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("healthShouldBeDownForActiveDirectoryApiError")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#adApiErrorsAndExpectedHealthCheckValues")
     void healthShouldBeDownForActiveDirectoryApiError(int responseStatusCode,
                                                       String responseErrorDescription,
@@ -74,6 +82,15 @@ class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
     }
 
     @Test
+    void healthShouldBeDownForActiveDirectoryApiErrorNonJson() {
+        stubFailToReturnTokenHtmlResponse(500, HTML_INTERNAL_SERVER_ERROR);
+
+        Health health = hmiHealthIndicator.health();
+
+        assertHealthDown(health, API_NAME_AD, SERVER_ERROR, 500, HTML_INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
     void healthShouldBeDownForActiveDirectoryApiTimeout() {
         stubFailToReturnTokenTimeout();
 
@@ -82,7 +99,8 @@ class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
         assertHealthDown(health, API_NAME_AD, "Connection/Read timeout", null, null);
     }
 
-    @ParameterizedTest(name = "{index}: {0}")
+    @DisplayName("healthShouldBeDownForHmiApiError")
+    @ParameterizedTest(name = "{displayName} {index}: {0}")
     @MethodSource("uk.gov.hmcts.reform.hmc.utils.TestingUtil#hmiApiErrorsAndExpectedHealthCheckValues")
     void healthShouldBeDownForHmiApiError(int responseStatusCode,
                                           String responseErrorMessage,
@@ -96,6 +114,16 @@ class HearingManagementInterfaceHealthIndicatorIT extends BaseTest {
         Health health = hmiHealthIndicator.health();
 
         assertHealthDown(health, apiName, message, errorCode, errorDescription);
+    }
+
+    @Test
+    void healthShouldBeDownForHmiApiErrorNonJson() {
+        stubSuccessfullyReturnToken(TEST_TOKEN);
+        stubHealthCheckThrowingErrorHtmlResponse(500, HTML_INTERNAL_SERVER_ERROR);
+
+        Health health = hmiHealthIndicator.health();
+
+        assertHealthDown(health, API_NAME_HMI, SERVER_ERROR, 500, HTML_INTERNAL_SERVER_ERROR);
     }
 
     private void assertHealthDown(Health health,
