@@ -250,6 +250,7 @@ def versions = [
   azureCoreAmqp      : '2.11.4',
   azureCoreHttpNetty : '1.16.4',
   azureServiceBus    : '7.17.18',
+  angusActivation    : '2.0.4',
   commonsFileUpload  : '1.6.0',
   junit              : '5.14.3',
   junitPlatform      : '1.14.3',
@@ -282,6 +283,7 @@ dependencyManagement {
   dependencies {
     dependency "commons-fileupload:commons-fileupload:${versions.commonsFileUpload}"
     dependency "com.azure:azure-core-http-netty:${versions.azureCoreHttpNetty}"
+    dependency "org.eclipse.angus:angus-activation:${versions.angusActivation}"
     dependency "tools.jackson.core:jackson-core:${versions.toolsJackson}"
     dependency "tools.jackson.core:jackson-databind:${versions.toolsJackson}"
   }
