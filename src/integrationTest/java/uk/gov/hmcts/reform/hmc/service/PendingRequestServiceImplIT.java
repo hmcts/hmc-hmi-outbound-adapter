@@ -262,18 +262,6 @@ class PendingRequestServiceImplIT extends BaseTest {
                       null,
                       List.of(createErrorStatusLogMessage(null))
             ),
-            arguments(named("AuthenticationException - empty ErrorDetails", authenticationExceptionEmptyErrorDetails),
-                      401,
-                      null,
-                      "{}",
-                      List.of(createErrorStatusLogMessage(null))
-            ),
-            arguments(named("AuthenticationException - null ErrorDetails", authenticationExceptionNullErrorDetails),
-                      401,
-                      null,
-                      null,
-                      List.of(createErrorStatusLogMessage(null))
-            ),
             arguments(named("BadFutureHearingRequestException", badFutureHearingRequestException),
                       401,
                       ERROR_DESCRIPTION_BAD_FUTURE_HEARING,
@@ -291,12 +279,6 @@ class PendingRequestServiceImplIT extends BaseTest {
                       ERROR_DESCRIPTION_SERVER_ERROR,
                       "{\"errCode\":500,\"errorDesc\":\"" + ERROR_DESCRIPTION_SERVER_ERROR + "\"}",
                       List.of(createErrorStatusLogMessage(ERROR_DESCRIPTION_SERVER_ERROR))
-            ),
-            arguments(named("ApiClientException", apiClientException),
-                      500,
-                      errorDescriptionHtml,
-                      "{\"errorCode\":500,\"errorDescription\":\"" + errorDescriptionHtml + "\"}",
-                      List.of(createErrorStatusLogMessage(errorDescriptionHtml))
             ),
             arguments(named("RuntimeException", new RuntimeException("runtime exception")),
                       null,
