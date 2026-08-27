@@ -15,6 +15,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
 import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
@@ -220,7 +221,9 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             BadFutureHearingRequestException.class, (ex, entity) ->
                 handleBadFutureHearingRequestException((BadFutureHearingRequestException) ex, entity),
             ApiClientException.class, (ex, entity) ->
-                handleApiClientException((ApiClientException) ex, entity)
+                handleApiClientException((ApiClientException) ex, entity),
+            ServerErrorException.class, (ex, entity) ->
+                handleServerErrorException((ServerErrorException) ex, entity)
         );
 
     public void escalatePendingRequests() {
@@ -293,6 +296,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         handleException(entity, ex.getErrorCode(), ex.getErrorDescription());
     }
 
+    private static void handleServerErrorException(ServerErrorException ex, HearingEntity entity) {
+        handleException(entity, ex.deriveErrorCode(), ex.deriveErrorMessage());
+    }
+
     private JsonNode extractErrorDetails(Exception exception) {
         if (exception instanceof ResourceNotFoundException resourceNotFoundException) {
             return objectMapper.convertValue(resourceNotFoundException.getMessage(), JsonNode.class);
@@ -305,6 +312,8 @@ public class PendingRequestServiceImpl implements PendingRequestService {
             errorInfo.put("errorCode", apiClientException.getErrorCode());
             errorInfo.put("errorDescription", apiClientException.getErrorDescription());
             return objectMapper.convertValue(errorInfo, JsonNode.class);
+        } else if (exception instanceof ServerErrorException serverErrorException) {
+            return objectMapper.convertValue(serverErrorException.getErrorDetails(), JsonNode.class);
         }
         return objectMapper.convertValue(exception.getMessage(), JsonNode.class);
     }

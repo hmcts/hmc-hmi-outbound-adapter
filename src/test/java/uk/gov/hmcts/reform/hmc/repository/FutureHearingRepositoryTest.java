@@ -35,6 +35,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckActiveDirectoryException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckHmiException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditServiceImpl;
 import uk.gov.hmcts.reform.hmc.utils.TestingUtil;
@@ -75,6 +76,8 @@ class FutureHearingRepositoryTest {
     private static final String ERROR_DESCRIPTION_AUTH = "Auth error";
     private static final String EXCEPTION_MESSAGE_API_CLIENT = "Api client exception";
     private static final String ERROR_DESCRIPTION_API_CLIENT = "Api client error";
+    private static final String EXCEPTION_MESSAGE_SERVER_ERROR = "Server error exception";
+    private static final String ERROR_DESCRIPTION_SERVER_ERROR = "Server error error";
 
     private static final Logger logger = (Logger) LoggerFactory.getLogger(DefaultFutureHearingRepository.class);
 
@@ -449,6 +452,47 @@ class FutureHearingRepositoryTest {
                       EXCEPTION_MESSAGE_API_CLIENT,
                       500,
                       ERROR_DESCRIPTION_API_CLIENT),
+            arguments(named("ServerErrorException: error details with error fields",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR,
+                                                     500,
+                                                     createErrorDetailsError(7000, ERROR_DESCRIPTION_SERVER_ERROR))
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      7000,
+                      ERROR_DESCRIPTION_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: error details with auth error fields",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR,
+                                                     500,
+                                                     createErrorDetailsAuthError(List.of(8000),
+                                                                                 ERROR_DESCRIPTION_SERVER_ERROR))
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      8000,
+                      ERROR_DESCRIPTION_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: error details with api error fields",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR,
+                                                     500,
+                                                     createErrorDetailsApiError(9000, ERROR_DESCRIPTION_SERVER_ERROR))
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      9000,
+                      ERROR_DESCRIPTION_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: empty error details",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR, 500, new ErrorDetails())
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      500,
+                      EXCEPTION_MESSAGE_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: null error details",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR, 500, null)),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      500,
+                      EXCEPTION_MESSAGE_SERVER_ERROR
+            ),
             arguments(named("RetryableException",
                             new RetryableException(400, "Connection/Read timeout", POST, null, 1L, getTokenRequest)
                       ),
@@ -504,8 +548,60 @@ class FutureHearingRepositoryTest {
                             new ApiClientException(EXCEPTION_MESSAGE_API_CLIENT, 500, ERROR_DESCRIPTION_API_CLIENT)),
                       EXCEPTION_MESSAGE_API_CLIENT,
                       500,
-                      ERROR_DESCRIPTION_API_CLIENT)
+                      ERROR_DESCRIPTION_API_CLIENT
+            ),
+            arguments(named("ServerErrorException: error details with error fields",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR,
+                                                     500,
+                                                     createErrorDetailsError(600, ERROR_DESCRIPTION_SERVER_ERROR))
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      600,
+                      ERROR_DESCRIPTION_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: error details with auth error fields",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR,
+                                                     500,
+                                                     createErrorDetailsAuthError(List.of(700),
+                                                                                 ERROR_DESCRIPTION_SERVER_ERROR))
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      700,
+                      ERROR_DESCRIPTION_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: error details with api error fields",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR,
+                                                     500,
+                                                     createErrorDetailsApiError(800, ERROR_DESCRIPTION_SERVER_ERROR))
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      800,
+                      ERROR_DESCRIPTION_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: empty error details",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR, 500, new ErrorDetails())
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      500,
+                      EXCEPTION_MESSAGE_SERVER_ERROR
+            ),
+            arguments(named("ServerErrorException: null error details",
+                            new ServerErrorException(EXCEPTION_MESSAGE_SERVER_ERROR, 500, null)
+                      ),
+                      EXCEPTION_MESSAGE_SERVER_ERROR,
+                      500,
+                      EXCEPTION_MESSAGE_SERVER_ERROR
+            )
         );
+    }
+
+    private static ErrorDetails createErrorDetailsError(Integer errorCode, String errorDescription) {
+        ErrorDetails errorDetails = new ErrorDetails();
+
+        errorDetails.setErrorCode(errorCode);
+        errorDetails.setErrorDescription(errorDescription);
+
+        return errorDetails;
     }
 
     private static ErrorDetails createErrorDetailsAuthError(List<Integer> errorCodes, String errorDescription) {
