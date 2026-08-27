@@ -28,6 +28,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckActiveDirectoryException
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckHmiException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 
 import java.util.List;
 
@@ -113,10 +114,10 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        void shouldThrow500AuthenticationException() {
+        void shouldThrow500ServerErrorException() {
             stubPostMethodThrowingAuthenticationError(500, GET_TOKEN_URL);
             assertThatThrownBy(defaultFutureHearingRepository::retrieveAuthToken)
-                .isInstanceOf(AuthenticationException.class)
+                .isInstanceOf(ServerErrorException.class)
                 .hasMessageContaining(SERVER_ERROR);
         }
     }
@@ -276,11 +277,11 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        void shouldThrow500AuthenticationException() {
+        void shouldThrow500ServerErrorException() {
             stubSuccessfullyReturnToken(TOKEN);
             stubPostMethodThrowingAuthenticationError(500, HMI_REQUEST_URL);
             assertThatThrownBy(() -> defaultFutureHearingRepository.createHearingRequest(data, CASE_LISTING_REQUEST_ID))
-                .isInstanceOf(AuthenticationException.class)
+                .isInstanceOf(ServerErrorException.class)
                 .hasMessageContaining(SERVER_ERROR);
         }
     }
@@ -419,13 +420,13 @@ public class FutureHearingRepositoryIT extends BaseTest {
         }
 
         @Test
-        void shouldRethrowAuthenticationExceptionWhen405Error() {
+        void shouldRethrowServerErrorExceptionWhen405Error() {
             stubFailToReturnToken(405, "4000: Failed to get token", List.of(4000));
 
-            AuthenticationException exception =
-                assertThrows(AuthenticationException.class,
+            ServerErrorException exception =
+                assertThrows(ServerErrorException.class,
                              () -> defaultFutureHearingRepository.deleteHearingRequest(data, CASE_LISTING_REQUEST_ID),
-                             "AuthenticationException should be thrown");
+                             "ServerErrorException should be thrown");
 
             ErrorDetails errorDetails = exception.getErrorDetails();
             assertErrorDetails(errorDetails, "4000: Failed to get token", 4000);

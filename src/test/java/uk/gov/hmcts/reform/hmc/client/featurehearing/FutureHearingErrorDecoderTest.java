@@ -24,6 +24,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -142,7 +143,7 @@ class FutureHearingErrorDecoderTest {
     }
 
     @Test
-    void shouldThrowAuthenticationExceptionWith500Error() {
+    void shouldThrowServerErrorExceptionWith500Error() {
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -151,7 +152,7 @@ class FutureHearingErrorDecoderTest {
 
         Exception exception = futureHearingErrorDecoder.decode(METHOD_KEY, response);
 
-        assertThat(exception).isInstanceOf(AuthenticationException.class);
+        assertThat(exception).isInstanceOf(ServerErrorException.class);
         assertEquals(SERVER_ERROR, exception.getMessage());
         List<ILoggingEvent> logsList = listAppender.list;
         assertEquals(1, logsList.size());
