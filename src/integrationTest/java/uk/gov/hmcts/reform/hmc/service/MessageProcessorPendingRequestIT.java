@@ -270,7 +270,8 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         return Stream.of(
             arguments(400, "AADSTS1002012: The provided value for scope scope is not valid.", List.of(1002012)),
             arguments(401, "AADSTS7000215: Invalid client secret provided.", List.of(7000215)),
-            arguments(404, "AD Resource not found", List.of(1000000))
+            arguments(404, "AD Resource not found", List.of(1000000)),
+            arguments(500, "AD server error", List.of(2000000))
         );
     }
 
@@ -287,10 +288,15 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         resourceNotFoundErrorDetails.setApiStatusCode(404);
         resourceNotFoundErrorDetails.setApiErrorMessage("Resource not found");
 
+        ErrorDetails serverErrorErrorDetails = new ErrorDetails();
+        serverErrorErrorDetails.setErrorCode(500);
+        serverErrorErrorDetails.setErrorDescription("Server error");
+
         return Stream.of(
             arguments(authenticationErrorDetails, 401),
             arguments(badFutureHearingRequestErrorDetails, 400),
-            arguments(resourceNotFoundErrorDetails, 404)
+            arguments(resourceNotFoundErrorDetails, 404),
+            arguments(serverErrorErrorDetails, 500)
         );
     }
 

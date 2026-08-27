@@ -9,6 +9,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -64,14 +65,18 @@ public class FutureHearingErrorDecoder implements ErrorDecoder {
         }
 
         switch (response.status()) {
-            case 400:
+            case 400 -> {
                 return new BadFutureHearingRequestException(INVALID_REQUEST, errorDetails);
-            case 401:
+            }
+            case 401 -> {
                 return new AuthenticationException(INVALID_SECRET, errorDetails);
-            case 404:
+            }
+            case 404 -> {
                 return new ResourceNotFoundException(REQUEST_NOT_FOUND);
-            default:
-                return new AuthenticationException(SERVER_ERROR, errorDetails);
+            }
+            default -> {
+                return new ServerErrorException(SERVER_ERROR, response.status(), errorDetails);
+            }
         }
     }
 

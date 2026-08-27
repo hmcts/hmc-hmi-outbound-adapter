@@ -23,6 +23,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckActiveDirectoryException;
 import uk.gov.hmcts.reform.hmc.errorhandling.HealthCheckHmiException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.service.HearingStatusAuditService;
 
@@ -89,6 +90,9 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
             logDebugHealthCheckActiveDirectoryException(e.getClass().getSimpleName());
             throw new HealthCheckActiveDirectoryException("Resource not found");
         } catch (ApiClientException e) {
+            logDebugHealthCheckActiveDirectoryException(e.getClass().getSimpleName());
+            throw createHealthCheckActiveDirectoryException(e);
+        } catch (ServerErrorException e) {
             logDebugHealthCheckActiveDirectoryException(e.getClass().getSimpleName());
             throw createHealthCheckActiveDirectoryException(e);
         } catch (RetryableException e) {
@@ -180,6 +184,9 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         } catch (ApiClientException e) {
             logDebugHealthCheckHmiException(e);
             throw createHealthCheckHmiException(e);
+        } catch (ServerErrorException e) {
+            logDebugHealthCheckHmiException(e);
+            throw createHealthCheckHmiException(e);
         }
     }
 
@@ -246,6 +253,14 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
                                                        exception.getErrorDescription());
     }
 
+    private HealthCheckActiveDirectoryException createHealthCheckActiveDirectoryException(
+        ServerErrorException exception) {
+
+        return new HealthCheckActiveDirectoryException(exception.getMessage(),
+                                                       exception.deriveErrorCode(),
+                                                       exception.deriveErrorMessage());
+    }
+
     private HealthCheckHmiException createHealthCheckHmiException(BadFutureHearingRequestException exception) {
         HealthCheckHmiException healthCheckHmiException;
 
@@ -280,6 +295,12 @@ public class DefaultFutureHearingRepository implements FutureHearingRepository {
         return new HealthCheckHmiException(exception.getMessage(),
                                            exception.getErrorCode(),
                                            exception.getErrorDescription());
+    }
+
+    private HealthCheckHmiException createHealthCheckHmiException(ServerErrorException exception) {
+        return new HealthCheckHmiException(exception.getMessage(),
+                                           exception.deriveErrorCode(),
+                                           exception.deriveErrorMessage());
     }
 
     private Integer getAuthErrorCode(List<Integer> authErrorCodes) {
