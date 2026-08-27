@@ -1,8 +1,13 @@
-  {
+{
   "connectionString": "${file:/mnt/secrets/hmc/app-insights-connection-string}",
   "role": {
     "name": "hmc-hmi-outbound-adapter"
-  }, 
+  },
+  "instrumentation": {
+    "logging": {
+      "level": "DEBUG"
+    }
+  },
   "preview": {
     "instrumentation": {
       "springIntegration": {
