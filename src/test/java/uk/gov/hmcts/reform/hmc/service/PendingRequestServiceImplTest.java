@@ -28,6 +28,7 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
 import uk.gov.hmcts.reform.hmc.errorhandling.AuthenticationException;
 import uk.gov.hmcts.reform.hmc.errorhandling.BadFutureHearingRequestException;
 import uk.gov.hmcts.reform.hmc.errorhandling.ResourceNotFoundException;
+import uk.gov.hmcts.reform.hmc.errorhandling.ServerErrorException;
 import uk.gov.hmcts.reform.hmc.helper.hmi.HmiHearingResponseMapper;
 import uk.gov.hmcts.reform.hmc.model.HearingStatusAuditContext;
 import uk.gov.hmcts.reform.hmc.model.HmcHearingResponse;
@@ -87,7 +88,10 @@ class PendingRequestServiceImplTest {
     private MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
 
     private static final String TEST_EXCEPTION_MESSAGE = "Test Exception";
+    private static final String TEST_AUTH_EXCEPTION_MESSAGE = "Test Auth Exception";
     private static final String TEST_ERROR_DESCRIPTION = "Test Error Description";
+    private static final String TEST_AUTH_ERROR_DESCRIPTION = "Test Auth Error";
+    private static final String TEST_API_ERROR_DESCRIPTION = "Test Api Error";
     private static final String ERROR_MESSAGE =
         "Hearing id: %s with Case reference: %s , Service Code: %s and Error Description: %s updated to status %s";
     private static final String CASE_REF = "1111222233334444";
@@ -523,16 +527,16 @@ class PendingRequestServiceImplTest {
             new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE, badFutureHearingRequestErrorDetails);
 
         ErrorDetails authenticationErrorDetailsNonEmpty =
-            TestingUtil.generateAuthErrorDetails("Test Auth Error", INTERNAL_SERVER_ERROR.value());
+            TestingUtil.generateAuthErrorDetails(TEST_AUTH_ERROR_DESCRIPTION, INTERNAL_SERVER_ERROR.value());
         AuthenticationException authenticationExceptionNonEmptyErrorDetails =
-            new AuthenticationException("Test Auth Exception", authenticationErrorDetailsNonEmpty);
+            new AuthenticationException(TEST_AUTH_EXCEPTION_MESSAGE, authenticationErrorDetailsNonEmpty);
 
         ErrorDetails authenticationErrorDetailsEmpty = new ErrorDetails();
         AuthenticationException authenticationExceptionEmptyErrorDetails =
-            new AuthenticationException("Test Auth Exception", authenticationErrorDetailsEmpty);
+            new AuthenticationException(TEST_AUTH_EXCEPTION_MESSAGE, authenticationErrorDetailsEmpty);
 
         AuthenticationException authenticationExceptionErrorDetailsNull =
-            new AuthenticationException("Test Auth Exception");
+            new AuthenticationException(TEST_AUTH_EXCEPTION_MESSAGE);
 
         ResourceNotFoundException resourceNotFoundException = new ResourceNotFoundException(TEST_EXCEPTION_MESSAGE);
 
@@ -541,6 +545,37 @@ class PendingRequestServiceImplTest {
                    "errorDescription", TEST_ERROR_DESCRIPTION);
         ApiClientException apiClientException =
             new ApiClientException(TEST_EXCEPTION_MESSAGE, INTERNAL_SERVER_ERROR.value(), TEST_ERROR_DESCRIPTION);
+
+        ErrorDetails serverErrorErrorDetailsErrorFields =
+            TestingUtil.generateErrorDetails(TEST_ERROR_DESCRIPTION, 9999);
+        ServerErrorException serverErrorExceptionErrorFields =
+            new ServerErrorException(TEST_EXCEPTION_MESSAGE,
+                                     INTERNAL_SERVER_ERROR.value(),
+                                     serverErrorErrorDetailsErrorFields);
+
+        ErrorDetails serverErrorErrorDetailsAuthErrorFields =
+            TestingUtil.generateAuthErrorDetails(TEST_AUTH_ERROR_DESCRIPTION, 1000);
+        ServerErrorException serverErrorExceptionAuthErrorFields =
+            new ServerErrorException(TEST_EXCEPTION_MESSAGE,
+                                     INTERNAL_SERVER_ERROR.value(),
+                                     serverErrorErrorDetailsAuthErrorFields);
+
+        ErrorDetails serverErrorErrorDetailsApiErrorFields = new ErrorDetails();
+        serverErrorErrorDetailsApiErrorFields.setApiStatusCode(999);
+        serverErrorErrorDetailsApiErrorFields.setApiErrorMessage(TEST_API_ERROR_DESCRIPTION);
+        ServerErrorException serverErrorExceptionApiErrorFields =
+            new ServerErrorException(TEST_EXCEPTION_MESSAGE,
+                                     INTERNAL_SERVER_ERROR.value(),
+                                     serverErrorErrorDetailsApiErrorFields);
+
+        ErrorDetails serverErrorErrorDetailsEmpty = new ErrorDetails();
+        ServerErrorException serverErrorExceptionEmptyErrorDetails =
+            new ServerErrorException(TEST_EXCEPTION_MESSAGE,
+                                     INTERNAL_SERVER_ERROR.value(),
+                                     serverErrorErrorDetailsEmpty);
+
+        ServerErrorException serverErrorExceptionNullErrorDetails =
+            new ServerErrorException(TEST_EXCEPTION_MESSAGE, INTERNAL_SERVER_ERROR.value(), null);
 
         return Stream.of(
             arguments(named("BadFutureHearingRequestException", badFutureHearingRequestException),
@@ -551,7 +586,7 @@ class PendingRequestServiceImplTest {
             arguments(named("AuthenticationException - non-empty ErrorDetails",
                             authenticationExceptionNonEmptyErrorDetails),
                       authenticationErrorDetailsNonEmpty,
-                      "Test Auth Error",
+                      TEST_AUTH_ERROR_DESCRIPTION,
                       INTERNAL_SERVER_ERROR.value()
             ),
             arguments(named("AuthenticationException - empty ErrorDetails", authenticationExceptionEmptyErrorDetails),
@@ -572,6 +607,33 @@ class PendingRequestServiceImplTest {
             arguments(named("ApiClientException", apiClientException),
                       apiClientErrorDetails,
                       TEST_ERROR_DESCRIPTION,
+                      INTERNAL_SERVER_ERROR.value()
+            ),
+            arguments(named("ServerErrorException - ErrorDetails error fields", serverErrorExceptionErrorFields),
+                      serverErrorErrorDetailsErrorFields,
+                      TEST_ERROR_DESCRIPTION,
+                      9999
+            ),
+            arguments(named("ServerErrorException - ErrorDetails auth error fields",
+                            serverErrorExceptionAuthErrorFields),
+                      serverErrorErrorDetailsAuthErrorFields,
+                      TEST_AUTH_ERROR_DESCRIPTION,
+                      1000
+            ),
+            arguments(named("ServerErrorException - ErrorDetails api error fields",
+                            serverErrorExceptionApiErrorFields),
+                      serverErrorErrorDetailsApiErrorFields,
+                      TEST_API_ERROR_DESCRIPTION,
+                      999
+            ),
+            arguments(named("ServerErrorException - empty ErrorDetails", serverErrorExceptionEmptyErrorDetails),
+                      serverErrorErrorDetailsEmpty,
+                      TEST_EXCEPTION_MESSAGE,
+                      INTERNAL_SERVER_ERROR.value()
+            ),
+            arguments(named("ServerErrorException - null ErrorDetails", serverErrorExceptionNullErrorDetails),
+                      null,
+                      TEST_EXCEPTION_MESSAGE,
                       INTERNAL_SERVER_ERROR.value()
             )
         );
