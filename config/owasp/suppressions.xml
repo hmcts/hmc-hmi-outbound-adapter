@@ -245,4 +245,16 @@
     <suppress>
         <cve>CVE-2026-73180</cve>
     </suppress>
+
+    <suppress>
+        <cve>CVE-2026-59276</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-59281</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-59282</cve>
+    </suppress>
 </suppressions>
