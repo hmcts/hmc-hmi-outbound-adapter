@@ -261,7 +261,7 @@ def versions = [
   reformLogging      : '8.0.0',
   springBoot         : springBoot.class.package.implementationVersion,
   testcontainers     : '1.21.4',
-  tomcat             : '10.1.57',
+  tomcat             : '10.1.59',
   toolsJackson       : '3.2.2'
 ]
 
