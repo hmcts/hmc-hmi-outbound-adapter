@@ -119,10 +119,6 @@
     </suppress>
 
     <suppress>
-        <cve>CVE-2026-59313</cve>
-    </suppress>
-
-    <suppress>
         <cve>CVE-2026-59283</cve>
     </suppress>
 
@@ -132,10 +128,6 @@
 
     <suppress>
         <cve>CVE-2026-59280</cve>
-    </suppress>
-
-    <suppress>
-        <cve>CVE-2026-59314</cve>
     </suppress>
 
     <suppress>
@@ -187,12 +179,6 @@
     </suppress>
     <suppress>
         <cve>CVE-2026-59284</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59313</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59314</cve>
     </suppress>
     <suppress>
         <cve>CVE-2026-65182</cve>
