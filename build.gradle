@@ -270,6 +270,7 @@ ext {
   set('jackson.version', '2.21.5')
   set('kotlin.version', versions.kotlin)
   set('netty.version', versions.netty)
+  set('reactor-bom.version', '2024.0.19')
   set('snakeyaml.version', '2.4')
   set('tomcat.version', versions.tomcat)
 }
