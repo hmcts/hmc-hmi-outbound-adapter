@@ -21,12 +21,6 @@ java {
 }
 
 configurations.configureEach {
-  resolutionStrategy.eachDependency { dependency ->
-    if (dependency.requested.group == 'org.springframework') {
-      dependency.useVersion '6.2.20'
-    }
-  }
-
   tasks.withType(Copy).configureEach {
     duplicatesStrategy = 'exclude'
   }
@@ -277,7 +271,6 @@ ext {
   set('kotlin.version', versions.kotlin)
   set('netty.version', versions.netty)
   set('snakeyaml.version', '2.4')
-  set('spring-framework.version', '6.2.20')
   set('tomcat.version', versions.tomcat)
 }
 
