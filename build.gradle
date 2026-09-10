@@ -301,12 +301,6 @@ ext.libraries = [
 
 dependencies {
 
-  constraints {
-    implementation('com.azure:azure-security-keyvault-keys:4.10.6') {
-      because 'CVE-2026-33117 is fixed in azure-security-keyvault-keys 4.10.6'
-    }
-  }
-
   // Spring dependencies
   implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.20.0'
 
