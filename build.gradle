@@ -271,6 +271,7 @@ ext {
   set('kotlin.version', versions.kotlin)
   set('netty.version', versions.netty)
   set('snakeyaml.version', '2.4')
+  set('spring-security.version', '6.5.12')
   set('tomcat.version', versions.tomcat)
 }
 
