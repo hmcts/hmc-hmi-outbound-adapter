@@ -271,9 +271,10 @@ ext {
   set('kotlin.version', versions.kotlin)
   set('netty.version', versions.netty)
   set('snakeyaml.version', '2.4')
-  set('spring-framework.version', '6.2.20')
   set('tomcat.version', versions.tomcat)
 }
+
+ext['spring-framework.version'] = '6.2.20'
 
 dependencyManagement {
   imports {
