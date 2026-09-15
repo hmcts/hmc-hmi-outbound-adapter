@@ -275,6 +275,8 @@ ext {
   set('tomcat.version', versions.tomcat)
 }
 
+ext['spring-framework.version'] = '6.2.20'
+
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${versions.springCloudVersion}"
