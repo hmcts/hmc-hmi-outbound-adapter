@@ -113,9 +113,6 @@
         <cve>CVE-2026-59270</cve>
     </suppress>
     <suppress>
-        <cve>CVE-2026-47874</cve>
-    </suppress>
-    <suppress>
         <cve>CVE-2026-47890</cve>
     </suppress>
     <suppress>
@@ -123,7 +120,7 @@
     </suppress>
 
     <suppress>
-        <cve>CVE-2026-47874</cve>
+      <cve>CVE-2026-33117</cve>
     </suppress>
     <suppress>
         <cve>CVE-2026-47890</cve>
