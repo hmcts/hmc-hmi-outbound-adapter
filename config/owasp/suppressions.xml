@@ -82,37 +82,6 @@
       <cve>CVE-2026-62380</cve>
     </suppress>
     <suppress>
-        <cve>CVE-2026-65182</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65183</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65637</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65905</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65927</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66422</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-68525</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-68569</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-68763</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-73180</cve>
-    </suppress>
-
-    <suppress>
         <cve>CVE-2026-47892</cve>
     </suppress>
 
@@ -190,21 +159,6 @@
         <cve>CVE-2026-59314</cve>
     </suppress>
     <suppress>
-        <cve>CVE-2026-65182</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65183</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65637</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65905</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-65927</cve>
-    </suppress>
-    <suppress>
         <cve>CVE-2026-66257</cve>
     </suppress>
     <suppress>
@@ -226,22 +180,6 @@
         <cve>CVE-2026-66299</cve>
     </suppress>
     <suppress>
-        <cve>CVE-2026-66422</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-68525</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-68569</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-68763</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-73180</cve>
-    </suppress>
-
-    <suppress>
         <cve>CVE-2026-59276</cve>
     </suppress>
     
@@ -261,5 +199,33 @@
     </suppress>
     <suppress>
         <cve>CVE-2026-47842</cve>
+    </suppress>
+
+    <suppress>
+        <cve>CVE-2026-47883</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-47884</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-47885</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-47886</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-47887</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-47888</cve>
+    </suppress>
+    
+    <suppress>
+        <cve>CVE-2026-47889</cve>
     </suppress>
 </suppressions>
