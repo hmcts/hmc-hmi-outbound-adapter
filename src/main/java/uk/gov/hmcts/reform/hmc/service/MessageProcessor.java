@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -58,6 +59,9 @@ public class MessageProcessor {
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
     private static final String LA_SYNC_HEARING_RESPONSE = "LA_SYNC_HEARING_RESPONSE";
 
+    @Value("${pending.request.cron-schedule:0 */2 * * * *}")
+    private String cronSchedule;
+
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
                             ServiceBusMessageErrorHandler errorHandler,
                             MessageSenderConfiguration messageSenderConfiguration,
@@ -70,13 +74,14 @@ public class MessageProcessor {
         this.pendingRequestService = pendingRequestService;
     }
 
-    @Value("${pending.request.pending-wait-in-milliseconds:120000}")
-    private Long pendingWaitInMilliseconds;
-
-    @Scheduled(fixedRateString = "${pending.request.pending-wait-in-milliseconds:120000}") // Execute every 2 minutes
+    @Scheduled(cron = "${pending.request.cron-schedule:0 */2 * * * *}") // Execute every 2 minutes
+    @SchedulerLock(
+        name = "hmcHmiOutboundAdapterProcessPendingRequests",
+        lockAtMostFor = "PT5M"
+    )
     @Transactional
     public void processPendingRequests() {
-        log.debug("processPendingRequests (every {})- starting", pendingWaitInMilliseconds);
+        log.debug("processPendingRequests (cron: {}) - starting", cronSchedule);
 
         pendingRequestService.deleteCompletedPendingRequests();
 
