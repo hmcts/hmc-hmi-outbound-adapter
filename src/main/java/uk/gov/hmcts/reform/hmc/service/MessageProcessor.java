@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -74,6 +75,10 @@ public class MessageProcessor {
     }
 
     @Scheduled(cron = "${pending.request.cron-schedule:0 */2 * * * *}") // Execute every 2 minutes
+    @SchedulerLock(
+        name = "hmcHmiOutboundAdapterProcessPendingRequests",
+        lockAtMostFor = "PT5M"
+    )
     @Transactional
     public void processPendingRequests() {
         log.debug("processPendingRequests (cron: {}) - starting", cronSchedule);
