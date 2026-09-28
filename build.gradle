@@ -245,7 +245,7 @@ repositories {
 }
 
 def versions = [
-  springCloudVersion: '2025.0.2',
+  springCloudVersion: '2025.0.3',
   azureCore          : '1.58.0',
   azureCoreAmqp      : '2.11.4',
   azureCoreHttpNetty : '1.16.4',
