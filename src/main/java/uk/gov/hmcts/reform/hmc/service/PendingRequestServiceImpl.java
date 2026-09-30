@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.hmc.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -23,11 +24,11 @@ import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
@@ -42,9 +43,6 @@ import static uk.gov.hmcts.reform.hmc.constants.Constants.LA_RESPONSE;
 public class PendingRequestServiceImpl implements PendingRequestService {
 
     private final HearingRepository hearingRepository;
-    @Value("${pending.request.pending-wait-interval:15,MINUTES}")
-    public String pendingWaitInterval;
-
     @Value("${pending.request.escalation-wait-interval:1,DAY}")
     public String escalationWaitInterval;
 
@@ -56,6 +54,9 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     @Value("${pending.request.retry-limit-in-minutes:20}")
     public Long retryLimitInMinutes;
+
+    @Value("${pending.request.claim-limit-in-minutes:30}")
+    public Long claimLimitInMinutes;
 
     private final HearingStatusAuditService hearingStatusAuditService;
     private final ObjectMapper objectMapper;
@@ -77,95 +78,54 @@ public class PendingRequestServiceImpl implements PendingRequestService {
         this.hmiHearingResponseMapper = hmiHearingResponseMapper;
     }
 
-    public boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
-        LocalDateTime currentDateTime = LocalDateTime.now();
-        LocalDateTime submittedDateTime = pendingRequest.getSubmittedDateTime();
-        long hoursElapsed = ChronoUnit.HOURS.between(submittedDateTime, currentDateTime);
-        log.info("Hours elapsed = {}; submittedDateTime: {}; currentDateTime: {}",
-                  hoursElapsed, submittedDateTime, currentDateTime);
-        boolean result = false;
-        if (hoursElapsed >= exceptionLimitInHours) {
-            log.info("Marking hearing request {} as Exception (hours elapsed exceeds limit!)",
-                      pendingRequest.getHearingId());
-            markRequestWithGivenStatus(pendingRequest.getId(), EXCEPTION.name());
-            log.error("Submitted time of request with ID {} is {} hours later than before.",
-                      pendingRequest.getHearingId(), exceptionLimitInHours);
-            result = true;
-        }
-        log.debug("submittedDateTimePeriodElapsed()={} hearingId<{}>", result, pendingRequest.getHearingId());
-        return result;
-    }
+    @Transactional
+    public PendingRequestEntity claimNextPendingRequest() {
+        UUID claimToken = UUID.randomUUID();
 
-    public boolean lastTriedDateTimePeriodElapsed(PendingRequestEntity pendingRequest) {
-        LocalDateTime lastTriedDateTime = pendingRequest.getLastTriedDateTime();
-        if (lastTriedDateTime == null) {
-            return true;
-        }
-
-        long minutesElapsed = ChronoUnit.MINUTES.between(lastTriedDateTime, LocalDateTime.now());
-        boolean result = retryLimitInMinutes < minutesElapsed;
-        log.info("lastTriedDateTimePeriodNotElapsed()={}  retryLimitInMinutes<{}> hearingId<{}> Minutes elapsed<{}> "
-                      + "submittedDateTime<{}> currentDateTime<{}>",
-                  result, retryLimitInMinutes, pendingRequest.getHearingId(), minutesElapsed, lastTriedDateTime,
-                  LocalDateTime.now());
-        return result;
-    }
-
-    public List<PendingRequestEntity> findAndLockByHearingId(Long hearingId) {
-        List<PendingRequestEntity> lockedRequests =
-            pendingRequestRepository.findAndLockByHearingId(hearingId);
-        log.info(
-            "{} locked records = findAndLockByHearingId({})",
-            null == lockedRequests ? 0 : lockedRequests.size(),
-            hearingId
+        return pendingRequestRepository.claimNextPendingRequest(
+            retryLimitInMinutes,
+            claimToken
         );
-        return lockedRequests;
     }
 
-    public List<PendingRequestEntity> findQueuedPendingRequestsForProcessing() {
-        List<PendingRequestEntity> pendingRequests =
-            pendingRequestRepository.findQueuedPendingRequestsForProcessing(
-                getIntervalUnits(pendingWaitInterval), getIntervalMeasure(pendingWaitInterval));
-        if (!pendingRequests.isEmpty()) {
-            pendingRequests.forEach(e ->
-                log.info("findQueuedPendingRequestsForProcessing(): id<{}> hearingId<{}> ",
-                      e.getId(), e.getHearingId()));
-        } else {
-            log.debug("findQueuedPendingRequestsForProcessing(): empty");
-        }
-        return pendingRequests;
+    public void resetFailedClaimedRequest(Long id, UUID claimToken) {
+        log.debug("resetFailedClaimedRequest({}, {})", id, claimToken);
+        pendingRequestRepository.resetFailedClaimedRequest(id, claimToken);
+        log.debug("resetFailedClaimedRequest({}, {})", id, claimToken);
     }
 
-    public void markRequestAsPending(Long id, Integer retryCountIn, LocalDateTime lastTriedDateTimeIn) {
-        log.debug("markRequestAsPending({}, {}, {})", id, retryCountIn, lastTriedDateTimeIn);
-        int retryCountOut = retryCountIn + 1;
-        LocalDateTime lastTriedDateTimeOut = LocalDateTime.now();
-        pendingRequestRepository.markRequestAsPending(id, retryCountOut, lastTriedDateTimeOut);
-        log.debug("markRequestAsPending({}, {}, {})", id, retryCountOut, lastTriedDateTimeOut);
-    }
-
-    public void markRequestWithGivenStatus(Long id, String status) {
-        log.info("markRequestWithGivenStatus({}, {})", id, status);
-        pendingRequestRepository.markRequestWithGivenStatus(id, status);
-        log.debug("markRequestWithGivenStatus({}, {} completed)", id, status);
-    }
-
-    public int claimRequest(Long id) {
-        return pendingRequestRepository.claimRequest(id);
+    public void completeClaimedRequest(Long id, UUID claimToken) {
+        log.info("completeClaimedRequest({}, {})", id, claimToken);
+        pendingRequestRepository.completeClaimedRequest(id, claimToken);
+        log.debug("completeClaimedRequest({}, {} completed)", id, claimToken);
     }
 
     @Override
-    public void handleNonRetriableException(PendingRequestEntity pendingRequest, Exception exception) {
+    public void markOverduePendingRequestsAsException() {
+        LocalDateTime exceptionLimitTime = LocalDateTime.now().minusHours(exceptionLimitInHours);
+        int count = pendingRequestRepository.markOverduePendingRequestsAsException(exceptionLimitTime);
+        log.info("Marked {} overdue pending requests as EXCEPTION", count);
+    }
+
+    @Override
+    public void resetTimedOutClaimedRequests() {
+        LocalDateTime claimLimitTime = LocalDateTime.now().minusMinutes(claimLimitInMinutes);
+        int count = pendingRequestRepository.resetTimedOutClaimedRequests(claimLimitTime);
+        log.info("Reset {} timed out claimed requests", count);
+    }
+
+    @Override
+    public void handleNonRetriableException(PendingRequestEntity pendingRequest, Exception exception, UUID claimToken) {
         Long hearingId = pendingRequest.getHearingId();
 
         Optional<HearingEntity> hearingEntityOptional = hearingRepository.findById(hearingId);
         if (hearingEntityOptional.isPresent()) {
             HearingEntity hearing = hearingEntityOptional.get();
             catchExceptionAndUpdateHearing(hearing, exception);
-            pendingRequestRepository.markRequestForNonRetriableException(pendingRequest.getId());
+            pendingRequestRepository.markClaimedRequestAsExceptionWithIncident(pendingRequest.getId(), claimToken);
         } else {
             log.error("Hearing id {} not found", hearingId);
-            pendingRequestRepository.markRequestWithGivenStatus(pendingRequest.getId(), EXCEPTION.name());
+            pendingRequestRepository.markClaimedRequestAsException(pendingRequest.getId(), claimToken);
         }
     }
 
@@ -240,10 +200,10 @@ public class PendingRequestServiceImpl implements PendingRequestService {
 
     }
 
-    public void deleteCompletedPendingRequests() {
+    public void deleteCompletedRequests() {
         log.info("deleteCompletedPendingRequests({})", deletionWaitInterval);
         try {
-            int countOfDeletedRecords = pendingRequestRepository.deleteCompletedRecords(
+            int countOfDeletedRecords = pendingRequestRepository.deleteCompletedRequests(
                 getIntervalUnits(deletionWaitInterval), getIntervalMeasure(deletionWaitInterval));
             log.debug("{} Completed pendingRequests deleted", countOfDeletedRecords);
         } catch (Exception e) {

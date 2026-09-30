@@ -3,31 +3,26 @@ package uk.gov.hmcts.reform.hmc.service;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface PendingRequestService {
 
-    boolean submittedDateTimePeriodElapsed(PendingRequestEntity pendingRequest);
+    PendingRequestEntity claimNextPendingRequest();
 
-    boolean lastTriedDateTimePeriodElapsed(PendingRequestEntity pendingRequest);
+    void completeClaimedRequest(Long id, UUID claimToken);
 
-    List<PendingRequestEntity> findAndLockByHearingId(Long hearingId);
+    void resetFailedClaimedRequest(Long id, UUID claimToken);
 
-    List<PendingRequestEntity> findQueuedPendingRequestsForProcessing();
-
-    void markRequestWithGivenStatus(Long id, String status);
-
-    int claimRequest(Long id);
-
-    void markRequestAsPending(Long hearingId, Integer retryCount, LocalDateTime lastTriedDateTimeIn);
-
-    void deleteCompletedPendingRequests();
+    void deleteCompletedRequests();
 
     void escalatePendingRequests();
 
-    void handleNonRetriableException(PendingRequestEntity pendingRequest, Exception exception);
+    void markOverduePendingRequestsAsException();
+
+    void resetTimedOutClaimedRequests();
+
+    void handleNonRetriableException(PendingRequestEntity pendingRequest, Exception exception, UUID claimToken);
 
     void catchExceptionAndUpdateHearing(HearingEntity hearingEntity, Exception exception);
 
