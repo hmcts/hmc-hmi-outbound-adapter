@@ -30,14 +30,13 @@ import uk.gov.hmcts.reform.hmc.service.PendingRequestService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -159,116 +158,37 @@ class MessageProcessorTest {
     void shouldProcessPendingRequest() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
 
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
-
         messageProcessor.processPendingRequest(pendingRequest);
 
-        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).claimRequest(pendingRequest.getId());
         verify(futureHearingRepository).createHearingRequest(any(), any());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
-    }
-
-    @ParameterizedTest
-    @MethodSource("providePendingRequestTestCases")
-    void shouldNotProcessPendingRequest(PendingRequestEntity pendingRequest, boolean submittedElapsed,
-                                        boolean lastTriedElapsed) {
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(submittedElapsed);
-        // Strict mocking is enabled, so only mock lastTriedDateTimePeriodElapsed() if submittedElapsed is false.
-        // If submittedElapsed is true, the short-circuiting logical operators in processPendingRequest() will prevent
-        // lastTriedDateTimePeriodElapsed() from being called causing a test failure due to unnecessary mocking.
-        if (!submittedElapsed) {
-            when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(lastTriedElapsed);
-        }
-
-        messageProcessor.processPendingRequest(pendingRequest);
-
-        verify(pendingRequestService, never()).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService, never()).claimRequest(pendingRequest.getId());
-        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
-        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
-    }
-
-    private static Stream<Arguments> providePendingRequestTestCases() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        return Stream.of(
-            Arguments.of(pendingRequest, true, true),  // Both time periods true
-            Arguments.of(pendingRequest, true, false), // Only submitted elapsed is true
-            Arguments.of(pendingRequest, false, false) // Both time periods false
-        );
+        verify(pendingRequestService).completeClaimedRequest(
+            pendingRequest.getId(), pendingRequest.getClaimToken());
     }
 
     @ParameterizedTest
     @MethodSource("provideNonRetryableExceptions")
     void shouldThrowNonRetryableExceptionWhileProcessPendingRequest(Exception exception) {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
-        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).claimRequest(pendingRequest.getId());
         verify(futureHearingRepository).createHearingRequest(any(), any());
-        verify(pendingRequestService).handleNonRetriableException(pendingRequest, exception);
+        verify(pendingRequestService).handleNonRetriableException(
+            pendingRequest, exception, pendingRequest.getClaimToken());
     }
 
     @ParameterizedTest
     @MethodSource("provideRetryableExceptions")
     void shouldThrowRetryableExceptionWhileProcessPendingRequest(Exception exception) {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
         doThrow(exception).when(futureHearingRepository).createHearingRequest(any(), any());
 
         messageProcessor.processPendingRequest(pendingRequest);
 
-        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).claimRequest(pendingRequest.getId());
         verify(futureHearingRepository).createHearingRequest(any(), any());
-        verify(pendingRequestService).markRequestAsPending(eq(pendingRequest.getId()),
-                                                           eq(pendingRequest.getRetryCount()),
-                                                           any());
-    }
-
-    @Test
-    void shouldProcessPendingRequestNotInPendingState() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setStatus("PROCESSING");
-
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(1);
-
-        messageProcessor.processPendingRequest(pendingRequest);
-
-        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService, never())
-            .markRequestAsPending(eq(pendingRequest.getId()), eq(pendingRequest.getRetryCount()), any());
-        verify(pendingRequestService).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
-    }
-
-    @Test
-    void shouldNotProcessClaimedRequest() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-
-        when(pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)).thenReturn(false);
-        when(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).thenReturn(true);
-        when(pendingRequestService.claimRequest(pendingRequest.getId())).thenReturn(0);
-
-        messageProcessor.processPendingRequest(pendingRequest);
-
-        verify(pendingRequestService).findAndLockByHearingId(pendingRequest.getHearingId());
-        verify(pendingRequestService).claimRequest(pendingRequest.getId());
-        verify(futureHearingRepository, never()).createHearingRequest(any(), any());
-        verify(pendingRequestService, never()).markRequestWithGivenStatus(pendingRequest.getId(), "COMPLETED");
+        verify(pendingRequestService).resetFailedClaimedRequest(
+            pendingRequest.getId(), pendingRequest.getClaimToken());
     }
 
     private static Stream<Arguments> provideRetryableExceptions() {
@@ -307,6 +227,7 @@ class MessageProcessorTest {
         pendingRequest.setMessage("{\"test\": \"name\"}");
         pendingRequest.setRetryCount(0);
         pendingRequest.setStatus(PendingStatusType.PENDING.name());
+        pendingRequest.setClaimToken(UUID.randomUUID());
         return pendingRequest;
     }
 

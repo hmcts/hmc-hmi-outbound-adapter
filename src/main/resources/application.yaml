@@ -117,3 +117,4 @@ pending:
     cron-schedule: ${PR_CRON_SCHEDULE:0 */2 * * * *}
     pending-wait-interval: ${PR_PENDING_WAIT_INTERVAL:2,MINUTES}
     retry-limit-in-minutes: ${PR_RETRY_LIMIT_IN_MINUTES:15}
+    claim-limit-in-minutes: ${PR_CLAIM_LIMIT_IN_MINUTES:30}
