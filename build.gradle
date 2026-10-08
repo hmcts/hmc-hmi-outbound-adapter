@@ -272,6 +272,7 @@ ext {
   set('netty.version', versions.netty)
   set('reactor-bom.version', '2025.0.7')
   set('snakeyaml.version', '2.4')
+  set('spring-framework.version', '6.2.20')
   set('tomcat.version', versions.tomcat)
 }
 
