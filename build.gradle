@@ -337,6 +337,9 @@ dependencies {
   implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.18'
   implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '2.0.18'
 
+  implementation "net.javacrumbs.shedlock:shedlock-spring:7.10.1"
+  implementation "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.10.1"
+
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: versions.postgresql
 
   testImplementation libraries.junit5
