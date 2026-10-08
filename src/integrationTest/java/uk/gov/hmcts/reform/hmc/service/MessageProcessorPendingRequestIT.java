@@ -21,6 +21,7 @@ import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,8 +52,6 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         "classpath:sql/insert-pending_requests_pending_and_hearing.sql";
     private static final String DATA_SCRIPT_INSERT_PENDING_REQUESTS_PROCESSING_AND_HEARING =
         "classpath:sql/insert-pending_requests_processing_and_hearing.sql";
-    private static final String DATA_SCRIPT_INSERT_PENDING_REQUESTS_NOT_READY =
-        "classpath:sql/insert-pending_requests_not_ready.sql";
     private static final String DATA_SCRIPT_INSERT_PENDING_REQUESTS_UNKNOWN_MESSAGE_TYPE =
         "classpath:sql/insert-pending_requests_unknown_message_type.sql";
 
@@ -104,8 +103,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         logger.setLevel(originalLogLevel);
 
         List<LogMessage> expectedLogMessages =
-            List.of(new LogMessage(Level.DEBUG, "processPendingRequests (every 120000)- starting"),
-                    new LogMessage(Level.DEBUG, "No pending requests found for processing."),
+            List.of(new LogMessage(Level.DEBUG, "processPendingRequests (cron: 0 */2 * * * *) - starting"),
                     new LogMessage(Level.DEBUG, "processPendingRequests - completed"));
         assertLogErrorMessages(listAppender, expectedLogMessages);
     }
@@ -118,72 +116,11 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubSuccessfullyRequestHearing(TOKEN);
 
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        PendingRequestEntity pendingRequestBefore = claimPendingRequest(PENDING_REQUEST_ID);
         messageProcessor.processPendingRequest(pendingRequestBefore);
 
         PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
         assertPendingRequestStatus(pendingRequestAfter, "COMPLETED");
-    }
-
-    @ParameterizedTest
-    @MethodSource("notReadyPendingRequests")
-    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
-        DATA_SCRIPT_DELETE_HEARING_TABLES,
-        DATA_SCRIPT_INSERT_PENDING_REQUESTS_NOT_READY})
-    void processPendingRequest_shouldNotProcessRequestsNotReady(long pendingRequestId, String expectedStatus) {
-        Logger logger = (Logger) LoggerFactory.getLogger(MessageProcessor.class);
-        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-        listAppender.start();
-        logger.addAppender(listAppender);
-
-        final Level originalLogLevel = logger.getLevel();
-        logger.setLevel(Level.DEBUG);
-
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(pendingRequestId);
-        messageProcessor.processPendingRequest(pendingRequestBefore);
-
-        logger.detachAndStopAllAppenders();
-        logger.setLevel(originalLogLevel);
-
-        String notReadyMessage = "Pending request with Id: %s, hearingId: %s is not ready for processing.";
-        Long hearingId = pendingRequestBefore.getHearingId();
-        List<LogMessage> expectedLogMessages =
-            List.of(new LogMessage(Level.DEBUG,
-                                   String.format(DEBUG_LOG_MESSAGE_PROCESS_PENDING_REQUEST_STARTING, hearingId)),
-                    new LogMessage(Level.DEBUG, String.format(notReadyMessage, pendingRequestId, hearingId)));
-        assertLogErrorMessages(listAppender, expectedLogMessages);
-
-        PendingRequestEntity pendingRequestAfter = getPendingRequest(pendingRequestId);
-        assertPendingRequestStatus(pendingRequestAfter, expectedStatus);
-    }
-
-    @Test
-    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES,
-        DATA_SCRIPT_DELETE_HEARING_TABLES,
-        DATA_SCRIPT_INSERT_PENDING_REQUESTS_PROCESSING_AND_HEARING})
-    void processPendingRequest_shouldNotProcessClaimedRequest() {
-        Logger logger = (Logger) LoggerFactory.getLogger(MessageProcessor.class);
-        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-        listAppender.start();
-        logger.addAppender(listAppender);
-
-        final Level originalLogLevel = logger.getLevel();
-        logger.setLevel(Level.DEBUG);
-
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
-        messageProcessor.processPendingRequest(pendingRequestBefore);
-
-        logger.detachAndStopAllAppenders();
-        logger.setLevel(originalLogLevel);
-
-        List<LogMessage> expectedLogMessages =
-            List.of(new LogMessage(Level.DEBUG,
-                                   String.format(DEBUG_LOG_MESSAGE_PROCESS_PENDING_REQUEST_STARTING, "2000000000")),
-                    new LogMessage(Level.DEBUG, "Pending request with Id: 1, hearingId: 2000000000 already claimed."));
-        assertLogErrorMessages(listAppender, expectedLogMessages);
-
-        PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
-        assertPendingRequestStatus(pendingRequestAfter, "PROCESSING");
     }
 
     @Test
@@ -191,7 +128,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         DATA_SCRIPT_DELETE_HEARING_TABLES,
         DATA_SCRIPT_INSERT_PENDING_REQUESTS_UNKNOWN_MESSAGE_TYPE})
     void processPendingRequest_shouldNotProcessUnknownMessageType() {
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        PendingRequestEntity pendingRequestBefore = claimPendingRequest(PENDING_REQUEST_ID);
         final LocalDateTime lastTriedDateTimeBefore = pendingRequestBefore.getLastTriedDateTime();
 
         messageProcessor.processPendingRequest(pendingRequestBefore);
@@ -213,7 +150,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
                                                                                List<Integer> errorCodes) {
         stubFailToReturnToken(httpStatus, errorDescription, errorCodes);
 
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        PendingRequestEntity pendingRequestBefore = claimPendingRequest(PENDING_REQUEST_ID);
         messageProcessor.processPendingRequest(pendingRequestBefore);
 
         PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
@@ -227,7 +164,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
     void processPendingRequest_shouldSetIncidentFlagForAdNonRetriableExceptionNonJson() {
         stubFailToReturnTokenHtmlResponse(500, HTML_INTERNAL_SERVER_ERROR);
 
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        PendingRequestEntity pendingRequestBefore = claimPendingRequest(PENDING_REQUEST_ID);
         messageProcessor.processPendingRequest(pendingRequestBefore);
 
         PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
@@ -244,7 +181,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubRequestHearingThrowingError(TOKEN, errorDetails, httpStatus);
 
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        PendingRequestEntity pendingRequestBefore = claimPendingRequest(PENDING_REQUEST_ID);
         messageProcessor.processPendingRequest(pendingRequestBefore);
 
         PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
@@ -259,7 +196,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         stubSuccessfullyReturnToken(TOKEN);
         stubRequestHearingThrowingErrorHtmlResponse(TOKEN, HTML_INTERNAL_SERVER_ERROR, 500);
 
-        PendingRequestEntity pendingRequestBefore = getPendingRequest(PENDING_REQUEST_ID);
+        PendingRequestEntity pendingRequestBefore = claimPendingRequest(PENDING_REQUEST_ID);
         messageProcessor.processPendingRequest(pendingRequestBefore);
 
         PendingRequestEntity pendingRequestAfter = getPendingRequest(PENDING_REQUEST_ID);
@@ -300,19 +237,19 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         );
     }
 
-    private static Stream<Arguments> notReadyPendingRequests() {
-        return Stream.of(
-            arguments(1L, "EXCEPTION"),
-            arguments(2L, "PENDING"),
-            arguments(3L, "EXCEPTION")
-        );
-    }
-
     private PendingRequestEntity getPendingRequest(long pendingRequestId) {
         Optional<PendingRequestEntity> pendingRequestOptional = pendingRequestRepository.findById(pendingRequestId);
         assertTrue(pendingRequestOptional.isPresent(), "Pending request " + pendingRequestId + " should be present");
 
         return pendingRequestOptional.get();
+    }
+
+    private PendingRequestEntity claimPendingRequest(long pendingRequestId) {
+        PendingRequestEntity claimed = pendingRequestRepository
+            .claimNextPendingRequest(15L, UUID.randomUUID());
+        assertTrue(claimed != null && claimed.getId().equals(pendingRequestId),
+                   "Pending request " + pendingRequestId + " should be claimed");
+        return claimed;
     }
 
     private void assertPendingRequestStatus(PendingRequestEntity pendingRequest, String expectedStatus) {

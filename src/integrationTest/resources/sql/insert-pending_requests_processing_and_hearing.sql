@@ -22,18 +22,20 @@ VALUES
 
 INSERT INTO public.pending_requests
 (id, hearing_id, version_number, message_type, submitted_date_time,
- deployment_id, retry_count, last_tried_date_time, status, incident_flag,
+ deployment_id, retry_count, last_tried_date_time, status, incident_flag, claimed_at, claim_token,
  message)
 VALUES
 (1, 2000000000, 1, 'REQUEST_HEARING', now() AT TIME ZONE 'UTC' - INTERVAL '20 minute',
- 'depId01', 0, now() AT TIME ZONE 'UTC' - INTERVAL '20 minute', 'PROCESSING', false,
+ 'depId01', 0, now() AT TIME ZONE 'UTC' - INTERVAL '20 minute', 'PROCESSING', false, now(),
+ '33333333-3333-3333-3333-333333333333',
  '{"test":"request for existing hearing"}');
 
 INSERT INTO public.pending_requests
 (id, hearing_id, version_number, message_type, submitted_date_time,
- deployment_id, retry_count, last_tried_date_time, status, incident_flag,
+ deployment_id, retry_count, last_tried_date_time, status, incident_flag, claimed_at, claim_token,
  message)
 VALUES
 (2, 2000000001, 1, 'REQUEST_HEARING', now() AT TIME ZONE 'UTC' - INTERVAL '20 minute',
- 'depId01', 0, now() AT TIME ZONE 'UTC' - INTERVAL '20 minute', 'PROCESSING', false,
+ 'depId01', 0, now() AT TIME ZONE 'UTC' - INTERVAL '20 minute', 'PROCESSING', false, now(),
+ '44444444-4444-4444-4444-444444444444',
  '{"test":"request for non-existing hearing"}');
