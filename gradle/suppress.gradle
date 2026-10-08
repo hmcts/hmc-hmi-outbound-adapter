@@ -41,6 +41,85 @@ void suppressCves(String reportName = Globals.REPORT_NAME) {
   }
 }
 
+Set<String> validateGeneratedCveSuppressions(String baselineSuppressionPath,
+                                           String generatedSuppressionPath = null,
+                                           String vulnerabilityReportPath = null) {
+  File baselineSuppressionFile = project.file(baselineSuppressionPath)
+  File generatedSuppressionFile = generatedSuppressionPath
+      ? project.file(generatedSuppressionPath)
+      : resolveSuppressionFile()
+  def outputDirectory = dependencyCheck.getOutputDirectory()
+  if (outputDirectory.respondsTo('get')) {
+    outputDirectory = outputDirectory.get().asFile
+  }
+  File reportFile = vulnerabilityReportPath
+      ? project.file(vulnerabilityReportPath)
+      : new File(project.file(outputDirectory), Globals.REPORT_NAME)
+
+  [baselineSuppressionFile, generatedSuppressionFile, reportFile].each { file ->
+    if (!file.isFile() || file.length() == 0) {
+      throw new GradleException("Required CVE validation file is missing or empty: ${file}")
+    }
+  }
+
+  // Dependency-Check validates both documents against its bundled suppression schema.
+  def suppressionParserClass = dependencyCheck.class.classLoader.loadClass(
+      'org.owasp.dependencycheck.xml.suppression.SuppressionParser')
+  def suppressionParser = suppressionParserClass.getDeclaredConstructor().newInstance()
+  suppressionParser.parseSuppressionRules(baselineSuppressionFile)
+  suppressionParser.parseSuppressionRules(generatedSuppressionFile)
+
+  def vulnerabilityReport = new XmlSlurper().parse(reportFile)
+  List<String> reportedVulnerabilities = vulnerabilityReport.'**'
+      .findAll { node -> node.name() == 'vulnerability' }
+      .collect { it.name.text().trim() }
+  if (!reportedVulnerabilities.every { it ==~ Globals.CVE_PATTERN }) {
+    throw new GradleException('The dependency report contains a vulnerability that is not a valid CVE identifier')
+  }
+  Set<Map<String, String>> findings = collectUnsuppressedFindings(vulnerabilityReport)
+  def unidentifiedDependencies = vulnerabilityReport.'**'.findAll { node ->
+    node.name() == 'dependency' && node.vulnerabilities.vulnerability.size() > 0
+        && !node.identifiers.package.id.text() && !node.sha1.text()
+  }
+  if (unidentifiedDependencies.size() > 0
+      || findings.collect { it.cve }.toSet() != reportedVulnerabilities.toSet()) {
+    throw new GradleException('A reported CVE is missing a dependency package URL or SHA-1')
+  }
+
+  Element expectedDocument = DOMBuilder.parse(new StringReader(
+      baselineSuppressionFile.getText('UTF-8'))).getDocumentElement()
+  Set<Map<String, String>> newFindings = findings.findAll { finding ->
+    Element existingRule = findExactSuppression(expectedDocument, finding.matchElement, finding.matchValue)
+    !existingRule || !hasDirectChildText(existingRule, 'cve', finding.cve)
+  } as Set
+  if (newFindings.isEmpty()) {
+    throw new GradleException('No new dependency-scoped CVE suppressions were added')
+  }
+
+  // Preserve existing rules and allow only the exact dependency/CVE additions in the report.
+  addNewSuppressions(findings, expectedDocument)
+  Element generatedDocument = DOMBuilder.parse(new StringReader(
+      generatedSuppressionFile.getText('UTF-8'))).getDocumentElement()
+  if (XmlUtil.serialize(cleanXml(expectedDocument)) != XmlUtil.serialize(cleanXml(generatedDocument))) {
+    throw new GradleException('Generated suppressions do not match the dependency report or an existing rule was modified')
+  }
+
+  return newFindings.collect { it.cve }.toSet()
+}
+
+File resolveSuppressionFile() {
+  def suppressionFileValue = dependencyCheck.getSuppressionFile()
+  if (suppressionFileValue?.metaClass?.respondsTo(suppressionFileValue, 'getOrNull')) {
+    suppressionFileValue = suppressionFileValue.getOrNull()
+  } else if (suppressionFileValue?.metaClass?.respondsTo(suppressionFileValue, 'get')) {
+    suppressionFileValue = suppressionFileValue.get()
+  }
+  if (!suppressionFileValue) {
+    throw new GradleException('No dependency-check suppression file is configured')
+  }
+  return project.file(suppressionFileValue.toString())
+}
+
 static Set<Map<String, String>> collectUnsuppressedFindings(GPathResult vulnerabilityReport) {
   Set<Map<String, String>> findings = [] as Set
 
@@ -153,6 +232,7 @@ static def cleanXml(Element suppressionDoc) {
 }
 
 class Globals {
+  static String CVE_PATTERN = /CVE-\d{4}-\d{4,}/
   static String TEXT_TO_FIND = "Temporary Suppression"
   static String REPORT_NAME = "dependency-check-report.xml"
 }
@@ -162,5 +242,25 @@ task suppressCves() {
     // Optional argument can be added to specify the name of the report file.
     // If no argument is specified, the default report file is 'dependency-check-report.xml'
     suppressCves()
+  }
+}
+
+tasks.register('validateGeneratedCveSuppressions') {
+  doLast {
+    String baselineSuppressionFile = providers.gradleProperty('baselineSuppressionFile').getOrNull()
+    if (!baselineSuppressionFile) {
+      throw new GradleException('Use -PbaselineSuppressionFile=<path> to specify the original suppression file')
+    }
+    Set<String> newCves = validateGeneratedCveSuppressions(
+        baselineSuppressionFile,
+        providers.gradleProperty('generatedSuppressionFile').getOrNull(),
+        providers.gradleProperty('vulnerabilityReportFile').getOrNull())
+
+    String outputPath = providers.gradleProperty('validatedCvesOutput').getOrNull()
+    if (outputPath) {
+      File outputFile = project.file(outputPath)
+      outputFile.parentFile.mkdirs()
+      outputFile.setText(newCves.toList().sort().join('\n') + '\n', 'UTF-8')
+    }
   }
 }
