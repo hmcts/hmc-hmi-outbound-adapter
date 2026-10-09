@@ -246,6 +246,7 @@ repositories {
 
 def versions = [
   springCloudVersion: '2025.0.3',
+  springFramework   : '6.2.20',
   azureCore          : '1.58.0',
   azureCoreAmqp      : '2.11.4',
   azureCoreHttpNetty : '1.16.4',
@@ -272,13 +273,15 @@ ext {
   set('netty.version', versions.netty)
   set('reactor-bom.version', '2025.0.7')
   set('snakeyaml.version', '2.4')
-  set('spring-framework.version', '6.2.20')
+  set('spring-framework.version', versions.springFramework)
   set('tomcat.version', versions.tomcat)
 }
 
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${versions.springCloudVersion}"
+    // Keep Spring Framework on the patched line after the Spring Cloud BOM is imported.
+    mavenBom "org.springframework:spring-framework-bom:${versions.springFramework}"
     mavenBom "io.netty:netty-bom:${versions.netty}"
   }
   dependencies {
