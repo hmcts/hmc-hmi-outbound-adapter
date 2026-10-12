@@ -61,15 +61,7 @@
       ]]></notes>
       <cve>CVE-2026-66276</cve>
     </suppress>
-    <suppress>
-      <notes><![CDATA[
-      file name: angus-activation-2.0.3.jar
-      ]]></notes>
-      <cve>CVE-2025-7962</cve>
-    </suppress>
-    <suppress>
-      <cve>CVE-2026-62380</cve>
-    </suppress>
+
     <suppress>
         <cve>CVE-2026-47892</cve>
     </suppress>
@@ -87,20 +79,18 @@
     </suppress>
 
     <suppress>
-        <cve>CVE-2026-59280</cve>
-    </suppress>
-
-    <suppress>
         <cve>CVE-2026-59314</cve>
     </suppress>
 
-    <suppress>
-        <cve>CVE-2026-59284</cve>
+  <suppress>
+    <notes>
+      <![CDATA[
+      The application does not enable or expose the writable /actuator/env
+      endpoint, so the vulnerable functionality is not reachable.
+      ]]></notes>
+    <cve>CVE-2026-59284</cve>
     </suppress>
 
-    <suppress>
-        <cve>CVE-2026-59270</cve>
-    </suppress>
     <suppress>
         <cve>CVE-2026-47890</cve>
     </suppress>
@@ -117,12 +107,7 @@
     <suppress>
         <cve>CVE-2026-47891</cve>
     </suppress>
-    <suppress>
-        <cve>CVE-2026-47892</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-47893</cve>
-    </suppress>
+
     <suppress>
         <cve>CVE-2026-53914</cve>
     </suppress>
@@ -144,24 +129,7 @@
     <suppress>
         <cve>CVE-2026-59314</cve>
     </suppress>
-    <suppress>
-        <cve>CVE-2026-66257</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66273</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66274</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66275</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66276</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66277</cve>
-    </suppress>
+
     <suppress>
         <cve>CVE-2026-66299</cve>
     </suppress>
@@ -174,7 +142,13 @@
     </suppress>
 
     <suppress>
-        <cve>CVE-2026-47834</cve>
+      <notes>
+        <![CDATA[
+      Spring Data JPA is present, but the application does not accept
+      untrusted Sort/Pageable values for native SQL queries.
+      ]]>
+      </notes>
+      <cve>CVE-2026-47834</cve>
     </suppress>
     <suppress>
         <cve>CVE-2026-47841</cve>
