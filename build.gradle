@@ -250,7 +250,7 @@ def versions = [
   azureCoreAmqp      : '2.11.4',
   azureCoreHttpNetty : '1.16.4',
   azureServiceBus    : '7.17.18',
-  angusActivation    : '2.0.4',
+  angusActivation    : '2.0.2',
   commonsFileUpload  : '1.6.0',
   junit              : '5.14.3',
   junitPlatform      : '1.14.3',
