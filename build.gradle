@@ -221,12 +221,22 @@ dependencyUpdates {
 
 apply from: './gradle/suppress.gradle'
 dependencyCheck {
+  formats = ['HTML', 'XML']
   suppressionFile = 'config/owasp/suppressions.xml'
 }
 
 tasks.register("printSuppressionFile") {
   doLast {
-    println "SUPPRESSION_FILE=${dependencyCheck.suppressionFile.get()}"
+    def suppressionFile = dependencyCheck.getSuppressionFile()
+    if (suppressionFile?.metaClass?.respondsTo(suppressionFile, "getOrNull")) {
+      suppressionFile = suppressionFile.getOrNull()
+    } else if (suppressionFile?.metaClass?.respondsTo(suppressionFile, "get")) {
+      suppressionFile = suppressionFile.get()
+    }
+    if (!suppressionFile) {
+      throw new GradleException("No dependency-check suppression file configured")
+    }
+    println "SUPPRESSION_FILE=${suppressionFile}"
   }
 }
 
@@ -256,7 +266,7 @@ def versions = [
   kotlin             : '2.2.21',
   lombok             : '1.18.42',
   mapstruct          : '1.4.2.Final',
-  netty              : '4.2.17.Final',
+  netty              : '4.2.18.Final',
   postgresql         : '42.7.13',
   reformLogging      : '8.0.0',
   springBoot         : springBoot.class.package.implementationVersion,
