@@ -9,13 +9,7 @@
         <filePath regex="true">.*(azure-core-1\.58\.0|azure-core-amqp-2\.11\.4|azure-core-http-netty-1\.16\.4|azure-json-1\.5\.1)\.jar$</filePath>
         <cve>CVE-2026-33117</cve>
     </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Temporary Suppression
-        file name: kotlin-stdlib-2.2.21.jar
-        ]]></notes>
-        <cve>CVE-2026-53914</cve>
-    </suppress>
+
     <suppress>
         <notes><![CDATA[
         CVE-2026-56816 only affects io.netty:netty-codec-http3 versions below 4.2.16.Final.
