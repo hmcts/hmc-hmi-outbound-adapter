@@ -14,6 +14,7 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Table(name = "pending_requests")
 @Entity
@@ -61,6 +62,12 @@ public class PendingRequestEntity implements Serializable {
 
     @Column(name = "deployment_id")
     private String deploymentId;
+
+    @Column(name = "claimed_at")
+    private LocalDateTime claimedAt;
+
+    @Column(name = "claim_token")
+    private UUID claimToken;
 
     @Override
     public boolean equals(Object o) {
