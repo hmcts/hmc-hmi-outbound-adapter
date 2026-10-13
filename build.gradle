@@ -242,7 +242,8 @@ repositories {
 def versions = [
   springCloudVersion: '2025.0.3',
   springFramework   : '6.2.19',
-  jackson            : '2.22.0',
+  jackson            : '2.22.1',
+  jacksonAnnotations : '2.22',
   log4j              : '2.26.1',
   azureCore          : '1.58.0',
   azureCoreAmqp      : '2.11.4',
@@ -289,7 +290,7 @@ dependencyManagement {
 
     // Keep the patched versions explicit because the Spring Cloud and Boot BOMs
     // otherwise win for transitive dependencies in the Jenkins build.
-    dependency "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
+    dependency "com.fasterxml.jackson.core:jackson-annotations:${versions.jacksonAnnotations}"
     dependency "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
     dependency "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     dependency "org.apache.logging.log4j:log4j-api:${versions.log4j}"
