@@ -11,13 +11,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        Temporary Suppression
-        file name: kotlin-stdlib-2.2.21.jar
-        ]]></notes>
-        <cve>CVE-2026-53914</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         CVE-2026-56816 only affects io.netty:netty-codec-http3 versions below 4.2.16.Final.
         Dependency-Check incorrectly matches the generic Netty CPE against Netty 4.1.136.Final artifacts.
         See https://github.com/netty/netty/security/advisories/GHSA-hpcc-26xq-25fv
@@ -32,7 +25,6 @@
         <cve>CVE-2026-55851</cve>
         <cve>CVE-2026-56745</cve>
         <cve>CVE-2026-56817</cve>
-        <cve>CVE-2026-56816</cve>
         <cve>CVE-2026-56819</cve>
         <cve>CVE-2026-56746</cve>
     </suppress>
@@ -120,66 +112,12 @@
     </suppress>
 
     <suppress>
-      <cve>CVE-2026-33117</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-47890</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-47891</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-47892</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-47893</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-53914</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59270</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59280</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59283</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59284</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59313</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-59314</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66257</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66273</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66274</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66275</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66276</cve>
-    </suppress>
-    <suppress>
-        <cve>CVE-2026-66277</cve>
-    </suppress>
-    <suppress>
         <cve>CVE-2026-66299</cve>
     </suppress>
     <suppress>
         <cve>CVE-2026-59281</cve>
     </suppress>
-    
+
     <suppress>
         <cve>CVE-2026-59282</cve>
     </suppress>
@@ -197,27 +135,27 @@
     <suppress>
         <cve>CVE-2026-47883</cve>
     </suppress>
-    
+
     <suppress>
         <cve>CVE-2026-47884</cve>
     </suppress>
-    
+
     <suppress>
         <cve>CVE-2026-47885</cve>
     </suppress>
-    
+
     <suppress>
         <cve>CVE-2026-47886</cve>
     </suppress>
-    
+
     <suppress>
         <cve>CVE-2026-47887</cve>
     </suppress>
-    
+
     <suppress>
         <cve>CVE-2026-47888</cve>
     </suppress>
-    
+
     <suppress>
         <cve>CVE-2026-47889</cve>
     </suppress>
