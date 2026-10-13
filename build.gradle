@@ -242,7 +242,7 @@ repositories {
 def versions = [
   springCloudVersion: '2025.0.3',
   springFramework   : '6.2.19',
-  jackson            : '2.21',
+  jackson            : '2.22.0',
   log4j              : '2.26.1',
   azureCore          : '1.58.0',
   azureCoreAmqp      : '2.11.4',
