@@ -240,7 +240,7 @@ repositories {
 }
 
 def versions = [
-  springCloudVersion: '2025.0.4',
+  springCloudVersion: '2025.0.3',
   azureCore          : '1.58.0',
   azureCoreAmqp      : '2.11.4',
   azureCoreHttpNetty : '1.16.4',
@@ -254,10 +254,6 @@ def versions = [
   netty              : '4.2.18.Final',
   postgresql         : '42.7.13',
   reformLogging      : '8.0.0',
-  jackson            : '2.21.5',
-  log4j              : '2.26.1',
-  springFramework    : '6.2.20',
-  springSecurity     : '6.5.12',
   springBoot         : springBoot.class.package.implementationVersion,
   testcontainers     : '1.21.4',
   tomcat             : '10.1.59',
@@ -265,12 +261,10 @@ def versions = [
 ]
 
 ext {
-  set('log4j2.version', versions.log4j)
-  set('jackson.version', versions.jackson)
+  set('log4j2.version', '2.26.1')
+  set('jackson.version', '2.21.5')
   set('kotlin.version', versions.kotlin)
   set('netty.version', versions.netty)
-  set('spring-framework.version', versions.springFramework)
-  set('spring-security.version', versions.springSecurity)
   set('reactor-bom.version', '2025.0.7')
   set('snakeyaml.version', '2.4')
   set('tomcat.version', versions.tomcat)
@@ -286,41 +280,6 @@ dependencyManagement {
     dependency "com.azure:azure-core-http-netty:${versions.azureCoreHttpNetty}"
     dependency "tools.jackson.core:jackson-core:${versions.toolsJackson}"
     dependency "tools.jackson.core:jackson-databind:${versions.toolsJackson}"
-    dependency "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
-    dependency "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
-    dependency "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
-    dependency "org.apache.logging.log4j:log4j-api:${versions.log4j}"
-    dependency "org.apache.logging.log4j:log4j-to-slf4j:${versions.log4j}"
-    dependency "org.springframework:spring-aop:${versions.springFramework}"
-    dependency "org.springframework:spring-aspects:${versions.springFramework}"
-    dependency "org.springframework:spring-beans:${versions.springFramework}"
-    dependency "org.springframework:spring-context:${versions.springFramework}"
-    dependency "org.springframework:spring-context-support:${versions.springFramework}"
-    dependency "org.springframework:spring-core:${versions.springFramework}"
-    dependency "org.springframework:spring-expression:${versions.springFramework}"
-    dependency "org.springframework:spring-jcl:${versions.springFramework}"
-    dependency "org.springframework:spring-jdbc:${versions.springFramework}"
-    dependency "org.springframework:spring-orm:${versions.springFramework}"
-    dependency "org.springframework:spring-tx:${versions.springFramework}"
-    dependency "org.springframework:spring-web:${versions.springFramework}"
-    dependency "org.springframework:spring-webflux:${versions.springFramework}"
-    dependency "org.springframework:spring-webmvc:${versions.springFramework}"
-    dependency "org.springframework.security:spring-security-config:${versions.springSecurity}"
-    dependency "org.springframework.security:spring-security-core:${versions.springSecurity}"
-    dependency "org.springframework.security:spring-security-crypto:${versions.springSecurity}"
-    dependency "org.springframework.security:spring-security-ldap:${versions.springSecurity}"
-    dependency "org.springframework.security:spring-security-web:${versions.springSecurity}"
-    dependency "org.apache.tomcat.embed:tomcat-embed-core:${versions.tomcat}"
-    dependency "org.apache.tomcat.embed:tomcat-embed-websocket:${versions.tomcat}"
-  }
-}
-
-configurations.configureEach {
-  resolutionStrategy.eachDependency { details ->
-    if (details.requested.group == 'io.netty') {
-      details.useVersion(versions.netty)
-      details.because('Use the patched Netty line for every transitive Netty module')
-    }
   }
 }
 
