@@ -91,7 +91,8 @@ class PendingRequestServiceImplIT extends BaseTest {
         PendingRequestEntity pendingRequestBefore = getPendingRequest(pendingRequestId);
         ResourceNotFoundException exception = createResourceNotFoundException();
 
-        pendingRequestService.handleNonRetriableException(pendingRequestBefore, exception);
+        pendingRequestService.handleNonRetriableException(
+            pendingRequestBefore, exception, pendingRequestBefore.getClaimToken());
 
         logger.detachAndStopAllAppenders();
         logger.setLevel(originalLogLevel);

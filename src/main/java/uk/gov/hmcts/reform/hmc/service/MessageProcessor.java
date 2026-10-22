@@ -8,7 +8,6 @@ import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.HearingManagementInterfaceResponse;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderConfiguration;
 import uk.gov.hmcts.reform.hmc.config.MessageType;
-import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.config.SyncMessage;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 import uk.gov.hmcts.reform.hmc.errorhandling.ApiClientException;
@@ -29,7 +27,6 @@ import uk.gov.hmcts.reform.hmc.errorhandling.ServiceBusMessageErrorHandler;
 import uk.gov.hmcts.reform.hmc.repository.DefaultFutureHearingRepository;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -58,6 +55,9 @@ public class MessageProcessor {
     public static final String MISSING_MESSAGE_TYPE = "Message is missing custom header message_type";
     private static final String LA_SYNC_HEARING_RESPONSE = "LA_SYNC_HEARING_RESPONSE";
 
+    @Value("${pending.request.cron-schedule:0 */2 * * * *}")
+    private String cronSchedule;
+
     public MessageProcessor(DefaultFutureHearingRepository futureHearingRepository,
                             ServiceBusMessageErrorHandler errorHandler,
                             MessageSenderConfiguration messageSenderConfiguration,
@@ -70,47 +70,24 @@ public class MessageProcessor {
         this.pendingRequestService = pendingRequestService;
     }
 
-    @Value("${pending.request.pending-wait-in-milliseconds:120000}")
-    private Long pendingWaitInMilliseconds;
-
-    @Scheduled(fixedRateString = "${pending.request.pending-wait-in-milliseconds:120000}") // Execute every 2 minutes
-    @Transactional
+    @Scheduled(cron = "${pending.request.cron-schedule:0 */2 * * * *}") // Execute every 2 minutes
     public void processPendingRequests() {
-        log.debug("processPendingRequests (every {})- starting", pendingWaitInMilliseconds);
+        log.debug("processPendingRequests (cron: {}) - starting", cronSchedule);
 
-        pendingRequestService.deleteCompletedPendingRequests();
-
+        pendingRequestService.deleteCompletedRequests();
+        pendingRequestService.markOverduePendingRequestsAsException();
+        pendingRequestService.resetTimedOutClaimedRequests();
         pendingRequestService.escalatePendingRequests();
 
-        List<PendingRequestEntity> pendingRequests = pendingRequestService.findQueuedPendingRequestsForProcessing();
-        if (pendingRequests.isEmpty()) {
-            log.debug("No pending requests found for processing.");
-        } else {
-            log.debug("process batch of {} PendingRequests", pendingRequests.size());
-            pendingRequests.forEach(this::processPendingRequest);
+        PendingRequestEntity request;
+        while ((request = pendingRequestService.claimNextPendingRequest()) != null) {
+            processPendingRequest(request);
         }
         log.debug("processPendingRequests - completed");
     }
 
-    @Transactional
     public void processPendingRequest(PendingRequestEntity pendingRequest) {
         log.debug("processPendingRequest(pendingRequest) starting : {}", pendingRequest.getHearingId());
-
-        if (pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
-            || !pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)) {
-            log.debug("Pending request with Id: {}, hearingId: {} is not ready for processing.",
-                      pendingRequest.getId(), pendingRequest.getHearingId());
-            return;
-        }
-
-        pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
-
-        int claimed = pendingRequestService.claimRequest(pendingRequest.getId());
-        if (claimed == 0) {
-            log.debug("Pending request with Id: {}, hearingId: {} already claimed.", pendingRequest.getId(),
-                      pendingRequest.getHearingId());
-            return;
-        }
 
         try {
             processPendingMessage(
@@ -120,20 +97,19 @@ public class MessageProcessor {
         } catch (ApiClientException | AuthenticationException
                  | BadFutureHearingRequestException | ResourceNotFoundException | ServerErrorException ex) {
             log.debug("Non-retriable exception {}, message {}", ex.getClass().getSimpleName(), ex.getMessage());
-            pendingRequestService.handleNonRetriableException(pendingRequest, ex);
+            pendingRequestService.handleNonRetriableException(pendingRequest, ex, pendingRequest.getClaimToken());
             return;
         } catch (Exception ex) {
             log.debug("Retriable exception {}, message {}", ex.getClass().getSimpleName(), ex.getMessage());
-            pendingRequestService.markRequestAsPending(
+            pendingRequestService.resetFailedClaimedRequest(
                 pendingRequest.getId(),
-                pendingRequest.getRetryCount(),
-                pendingRequest.getLastTriedDateTime()
+                pendingRequest.getClaimToken()
             );
             return;
         }
-        pendingRequestService.markRequestWithGivenStatus(
+        pendingRequestService.completeClaimedRequest(
             pendingRequest.getId(),
-            PendingStatusType.COMPLETED.name()
+            pendingRequest.getClaimToken()
         );
         log.debug("processPendingRequest(pendingRequest) completed");
     }
