@@ -6,7 +6,6 @@ import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -88,8 +87,9 @@ class PendingRequestEntityTest {
     void shouldReturnCorrectHashCode() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
 
-        int expectedHashCode = Objects.hash(id, hearingId, versionNumber, messageType, submittedDateTime, retryCount,
-                                             lastTriedDateTime, status, incidentFlag, message, deploymentId, null, null);
+        int expectedHashCode = Objects.hash(id, hearingId, versionNumber, messageType,
+                                            submittedDateTime, retryCount, lastTriedDateTime, status,
+                                            incidentFlag, message, deploymentId, null, null);
         assertThat(expectedHashCode).isEqualTo(pendingRequest.hashCode());
     }
 
