@@ -100,7 +100,8 @@ class PendingRequestRepositoryIT extends BaseTest {
         UUID claimToken = UUID.randomUUID();
         PendingRequestEntity claimed = pendingRequestRepository.claimNextPendingRequest(15L, claimToken);
 
-        Long lowestId = Math.min(firstPendingRequest.getId(), Math.min(secondPendingRequest.getId(), thirdPendingRequest.getId()));
+        Long lowestId = Math.min(firstPendingRequest.getId(),
+                                 Math.min(secondPendingRequest.getId(), thirdPendingRequest.getId()));
 
         assertThat(claimed.getId()).isEqualTo(lowestId);
         assertThat(claimed.getStatus()).isEqualTo(PROCESSING.name());
@@ -210,7 +211,8 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         pendingRequestRepository.resetFailedClaimedRequest(pendingRequest.getId(), claimToken);
 
-        Optional<PendingRequestEntity> pendingRequestOptional = pendingRequestRepository.findById(pendingRequest.getId());
+        Optional<PendingRequestEntity> pendingRequestOptional =
+            pendingRequestRepository.findById(pendingRequest.getId());
         assertThat(pendingRequestOptional).isPresent();
         PendingRequestEntity updated = pendingRequestOptional.get();
         assertThat(updated.getStatus()).isEqualTo(PENDING.name());
@@ -408,7 +410,8 @@ class PendingRequestRepositoryIT extends BaseTest {
         assertThat(otherPendingRequestOptional).isPresent();
         PendingRequestEntity otherPendingRequest = otherPendingRequestOptional.get();
         assertThat(otherPendingRequest.getStatus()).isEqualTo(PROCESSING.name());
-        assertThat(otherPendingRequest.getClaimToken()).isEqualTo(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+        UUID otherPendingRequestClaimToken = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        assertThat(otherPendingRequest.getClaimToken()).isEqualTo(otherPendingRequestClaimToken);
         assertThat(otherPendingRequest.getClaimedAt()).isNotNull();
     }
 
@@ -431,7 +434,8 @@ class PendingRequestRepositoryIT extends BaseTest {
         assertThat(otherPendingRequestOptional).isPresent();
         PendingRequestEntity otherPendingRequest = otherPendingRequestOptional.get();
         assertThat(otherPendingRequest.getStatus()).isEqualTo(PROCESSING.name());
-        assertThat(otherPendingRequest.getClaimToken()).isEqualTo(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+        UUID otherPendingRequestClaimToken = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        assertThat(otherPendingRequest.getClaimToken()).isEqualTo(otherPendingRequestClaimToken);
         assertThat(otherPendingRequest.getClaimedAt()).isNotNull();
     }
 

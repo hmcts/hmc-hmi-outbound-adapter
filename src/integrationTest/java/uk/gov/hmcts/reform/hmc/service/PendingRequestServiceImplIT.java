@@ -103,14 +103,13 @@ class PendingRequestServiceImplIT extends BaseTest {
         pendingRequest.setClaimToken(claimToken);
         pendingRequest.setClaimedAt(LocalDateTime.now());
         pendingRequestRepository.save(pendingRequest);
-        LocalDateTime beforeReset = LocalDateTime.now();
 
         pendingRequestService.resetFailedClaimedRequest(pendingRequest.getId(), claimToken);
 
         PendingRequestEntity retrievedPendingRequest = getPendingRequest(pendingRequest.getId());
         assertEquals(PENDING, retrievedPendingRequest.getStatus());
         assertEquals(3, retrievedPendingRequest.getRetryCount());
-        assertTrue(retrievedPendingRequest.getLastTriedDateTime().isAfter(beforeReset.minusSeconds(1)));
+        assertTrue(retrievedPendingRequest.getLastTriedDateTime().isAfter(LocalDateTime.now().minusSeconds(1)));
         assertNull(retrievedPendingRequest.getClaimToken());
         assertNull(retrievedPendingRequest.getClaimedAt());
     }
@@ -154,7 +153,8 @@ class PendingRequestServiceImplIT extends BaseTest {
     @Test
     @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES})
     void resetTimedOutClaimedRequests_shouldResetOnlyTimedOutClaim() {
-        PendingRequestEntity timedOutPendingRequest = createPendingRequest(PROCESSING, LocalDateTime.now().minusHours(1));
+        PendingRequestEntity timedOutPendingRequest =
+            createPendingRequest(PROCESSING, LocalDateTime.now().minusHours(1));
         timedOutPendingRequest.setClaimToken(UUID.randomUUID());
         timedOutPendingRequest.setClaimedAt(LocalDateTime.now().minusMinutes(31));
         pendingRequestRepository.save(timedOutPendingRequest);
