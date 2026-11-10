@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,6 +29,7 @@ import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,6 +46,10 @@ class PendingRequestServiceImplIT extends BaseTest {
     private static final String ERROR_DESCRIPTION_BAD_FUTURE_HEARING = "bad future hearing error description";
     private static final String ERROR_DESCRIPTION_SERVER_ERROR = "server error description";
     private static final String EXCEPTION_MESSAGE_RESOURCE_NOT_FOUND = "resource not found message";
+    private static final String PENDING = "PENDING";
+    private static final String PROCESSING = "PROCESSING";
+    private static final String EXCEPTION = "EXCEPTION";
+    private static final String COMPLETED = "COMPLETED";
 
     private static final String DATA_SCRIPT_DELETE_HEARING_TABLES =
         "classpath:sql/delete-hearing-tables.sql";
@@ -69,6 +75,121 @@ class PendingRequestServiceImplIT extends BaseTest {
         this.hearingRepository = hearingRepository;
         this.hearingStatusAuditRepository = hearingStatusAuditRepository;
         this.pendingRequestService = pendingRequestService;
+    }
+
+    @Test
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES})
+    void claimNextPendingRequest_shouldClaimEligibleRequest() {
+        PendingRequestEntity pendingRequest = createPendingRequest(PENDING, LocalDateTime.now().minusHours(1));
+        pendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
+        pendingRequestRepository.save(pendingRequest);
+
+        PendingRequestEntity claimed = pendingRequestService.claimNextPendingRequest();
+        PendingRequestEntity retrievedPendingRequest = getPendingRequest(pendingRequest.getId());
+
+        assertNotNull(claimed);
+        assertEquals(claimed.getId(), retrievedPendingRequest.getId());
+        assertEquals(PROCESSING, retrievedPendingRequest.getStatus());
+        assertNotNull(retrievedPendingRequest.getClaimToken());
+        assertNotNull(retrievedPendingRequest.getClaimedAt());
+    }
+
+    @Test
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES})
+    void resetFailedClaimedRequest_shouldIncrementRetryAndClearClaim() {
+        UUID claimToken = UUID.randomUUID();
+        PendingRequestEntity pendingRequest = createPendingRequest(PROCESSING, LocalDateTime.now().minusHours(1));
+        pendingRequest.setRetryCount(2);
+        pendingRequest.setClaimToken(claimToken);
+        pendingRequest.setClaimedAt(LocalDateTime.now());
+        pendingRequestRepository.save(pendingRequest);
+        LocalDateTime beforeReset = LocalDateTime.now();
+
+        pendingRequestService.resetFailedClaimedRequest(pendingRequest.getId(), claimToken);
+
+        PendingRequestEntity retrievedPendingRequest = getPendingRequest(pendingRequest.getId());
+        assertEquals(PENDING, retrievedPendingRequest.getStatus());
+        assertEquals(3, retrievedPendingRequest.getRetryCount());
+        assertTrue(retrievedPendingRequest.getLastTriedDateTime().isAfter(beforeReset.minusSeconds(1)));
+        assertNull(retrievedPendingRequest.getClaimToken());
+        assertNull(retrievedPendingRequest.getClaimedAt());
+    }
+
+    @Test
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES})
+    void completeClaimedRequest_shouldCompleteClaimAndClearClaimDetails() {
+        UUID claimToken = UUID.randomUUID();
+        PendingRequestEntity pendingRequest = createPendingRequest(PROCESSING, LocalDateTime.now().minusHours(1));
+        pendingRequest.setClaimToken(claimToken);
+        pendingRequest.setClaimedAt(LocalDateTime.now());
+        pendingRequestRepository.save(pendingRequest);
+
+        pendingRequestService.completeClaimedRequest(pendingRequest.getId(), claimToken);
+
+        PendingRequestEntity retrievedPendingRequest = getPendingRequest(pendingRequest.getId());
+        assertEquals(COMPLETED, retrievedPendingRequest.getStatus());
+        assertNull(retrievedPendingRequest.getClaimToken());
+        assertNull(retrievedPendingRequest.getClaimedAt());
+    }
+
+    @Test
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES})
+    void markOverduePendingRequestsAsException_shouldMarkOnlyOverduePendingRequest() {
+        PendingRequestEntity overduePendingRequest = createPendingRequest(PENDING, LocalDateTime.now().minusHours(25));
+        pendingRequestRepository.save(overduePendingRequest);
+
+        PendingRequestEntity recentPendingRequest = createPendingRequest(PENDING, LocalDateTime.now().minusHours(1));
+        pendingRequestRepository.save(recentPendingRequest);
+
+        pendingRequestService.markOverduePendingRequestsAsException();
+
+        PendingRequestEntity retrievedOverduePendingRequest = getPendingRequest(overduePendingRequest.getId());
+        assertEquals(EXCEPTION, retrievedOverduePendingRequest.getStatus());
+        assertTrue(retrievedOverduePendingRequest.getIncidentFlag());
+
+        PendingRequestEntity retrievedRecentPendingRequest = getPendingRequest(recentPendingRequest.getId());
+        assertEquals(PENDING, retrievedRecentPendingRequest.getStatus());
+    }
+
+    @Test
+    @Sql(scripts = {DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES})
+    void resetTimedOutClaimedRequests_shouldResetOnlyTimedOutClaim() {
+        PendingRequestEntity timedOutPendingRequest = createPendingRequest(PROCESSING, LocalDateTime.now().minusHours(1));
+        timedOutPendingRequest.setClaimToken(UUID.randomUUID());
+        timedOutPendingRequest.setClaimedAt(LocalDateTime.now().minusMinutes(31));
+        pendingRequestRepository.save(timedOutPendingRequest);
+
+        PendingRequestEntity activePendingRequest = createPendingRequest(PROCESSING, LocalDateTime.now().minusHours(1));
+        activePendingRequest.setClaimToken(UUID.randomUUID());
+        activePendingRequest.setClaimedAt(LocalDateTime.now().minusMinutes(5));
+        pendingRequestRepository.save(activePendingRequest);
+
+        pendingRequestService.resetTimedOutClaimedRequests();
+
+        PendingRequestEntity retrievedTimedOutPendingRequest = getPendingRequest(timedOutPendingRequest.getId());
+        assertEquals(PENDING, retrievedTimedOutPendingRequest.getStatus());
+        assertNull(retrievedTimedOutPendingRequest.getClaimToken());
+        assertNull(retrievedTimedOutPendingRequest.getClaimedAt());
+
+        PendingRequestEntity retrievedActivePendingRequest = getPendingRequest(activePendingRequest.getId());
+        assertEquals(PROCESSING, retrievedActivePendingRequest.getStatus());
+        assertEquals(activePendingRequest.getClaimToken(), retrievedActivePendingRequest.getClaimToken());
+        assertNotNull(retrievedActivePendingRequest.getClaimedAt());
+    }
+
+    private PendingRequestEntity createPendingRequest(String status, LocalDateTime submittedDateTime) {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        pendingRequest.setHearingId(2000000000L);
+        pendingRequest.setVersionNumber(1);
+        pendingRequest.setMessageType("REQUEST_HEARING");
+        pendingRequest.setMessage("{\"test\":\"pending request\"}");
+        pendingRequest.setStatus(status);
+        pendingRequest.setIncidentFlag(false);
+        pendingRequest.setSubmittedDateTime(submittedDateTime);
+        pendingRequest.setLastTriedDateTime(submittedDateTime);
+        pendingRequest.setRetryCount(0);
+        pendingRequest.setDeploymentId("depId01");
+        return pendingRequest;
     }
 
     @DisplayName("handleNonRetriableException_shouldUpdatePendingRequest")

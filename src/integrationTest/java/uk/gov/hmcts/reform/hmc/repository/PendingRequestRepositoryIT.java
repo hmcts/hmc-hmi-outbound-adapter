@@ -2,7 +2,6 @@ package uk.gov.hmcts.reform.hmc.repository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.reform.hmc.BaseTest;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
@@ -45,28 +44,65 @@ class PendingRequestRepositoryIT extends BaseTest {
 
     private final PendingRequestRepository pendingRequestRepository;
 
-    private final JdbcTemplate jdbcTemplate;
-
     @Autowired
-    public PendingRequestRepositoryIT(PendingRequestRepository pendingRequestRepository,
-                                      JdbcTemplate jdbcTemplate) {
+    public PendingRequestRepositoryIT(PendingRequestRepository pendingRequestRepository) {
         this.pendingRequestRepository = pendingRequestRepository;
-        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void claimNextPendingRequest_shouldClaimOldestEligibleRequest() {
-        PendingRequestEntity pendingRequest = createPendingRequestEntity(
+        PendingRequestEntity oldestPendingRequest = createPendingRequestEntity(
             1L, PENDING.name(), REQUEST_HEARING.name(), "oldest",
             LocalDateTime.now().minusHours(1), "101");
-        pendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
-        pendingRequestRepository.save(pendingRequest);
+        oldestPendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
+        pendingRequestRepository.save(oldestPendingRequest);
+
+        PendingRequestEntity newestPendingRequest = createPendingRequestEntity(
+            2L, PENDING.name(), REQUEST_HEARING.name(), "newest",
+            LocalDateTime.now().minusMinutes(30), "101");
+        newestPendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(20));
+        pendingRequestRepository.save(newestPendingRequest);
 
         UUID claimToken = UUID.randomUUID();
         PendingRequestEntity claimed = pendingRequestRepository.claimNextPendingRequest(15L, claimToken);
 
-        assertThat(claimed.getId()).isEqualTo(pendingRequest.getId());
+        assertThat(claimed.getId()).isEqualTo(oldestPendingRequest.getId());
+        assertThat(claimed.getStatus()).isEqualTo(PROCESSING.name());
+        assertThat(claimed.getClaimToken()).isEqualTo(claimToken);
+        assertThat(claimed.getClaimedAt()).isNotNull();
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
+    void claimNextPendingRequest_shouldClaimRequestWithSmallestIdWithSameSubmittedDateTime() {
+
+        LocalDateTime submittedDateTime = LocalDateTime.now().minusHours(1);
+
+        PendingRequestEntity firstPendingRequest = createPendingRequestEntity(
+            1L, PENDING.name(), REQUEST_HEARING.name(), "first",
+            submittedDateTime, "101");
+        firstPendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
+        pendingRequestRepository.save(firstPendingRequest);
+
+        PendingRequestEntity secondPendingRequest = createPendingRequestEntity(
+            1L, PENDING.name(), REQUEST_HEARING.name(), "first",
+            submittedDateTime, "101");
+        secondPendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
+        pendingRequestRepository.save(secondPendingRequest);
+
+        PendingRequestEntity thirdPendingRequest = createPendingRequestEntity(
+            1L, PENDING.name(), REQUEST_HEARING.name(), "first",
+            submittedDateTime, "101");
+        thirdPendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
+        pendingRequestRepository.save(thirdPendingRequest);
+
+        UUID claimToken = UUID.randomUUID();
+        PendingRequestEntity claimed = pendingRequestRepository.claimNextPendingRequest(15L, claimToken);
+
+        Long lowestId = Math.min(firstPendingRequest.getId(), Math.min(secondPendingRequest.getId(), thirdPendingRequest.getId()));
+
+        assertThat(claimed.getId()).isEqualTo(lowestId);
         assertThat(claimed.getStatus()).isEqualTo(PROCESSING.name());
         assertThat(claimed.getClaimToken()).isEqualTo(claimToken);
         assertThat(claimed.getClaimedAt()).isNotNull();
@@ -100,10 +136,8 @@ class PendingRequestRepositoryIT extends BaseTest {
         PendingRequestEntity pendingRequest = createPendingRequestEntity(
             1L, PENDING.name(), REQUEST_HEARING.name(), "recent",
             LocalDateTime.now().minusHours(1), "101");
+        pendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(1));
         pendingRequestRepository.save(pendingRequest);
-        jdbcTemplate.update("UPDATE pending_requests "
-                                + "SET last_tried_date_time = CURRENT_TIMESTAMP - INTERVAL '1 minute' "
-                                + "WHERE id = ?", pendingRequest.getId());
 
         assertThat(pendingRequestRepository.claimNextPendingRequest(15L, UUID.randomUUID()))
             .isNull();
@@ -112,11 +146,14 @@ class PendingRequestRepositoryIT extends BaseTest {
     @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_NEW_WITHOUT_EXCEPTION})
     void claimNextPendingRequest_whenRequestHearingWithoutException_shouldReturnRequest() {
-        PendingRequestEntity claimed = claimNextPendingRequest();
+        UUID claimToken = UUID.randomUUID();
+        PendingRequestEntity claimed = pendingRequestRepository.claimNextPendingRequest(15L, claimToken);
 
         assertThat(claimed).isNotNull();
         assertThat(claimed.getMessageType()).isEqualTo(REQUEST_HEARING.name());
         assertThat(claimed.getHearingId()).isEqualTo(2000000001L);
+        assertThat(claimed.getClaimToken()).isEqualTo(claimToken);
+        assertThat(claimed.getClaimedAt()).isNotNull();
     }
 
     @Test
@@ -160,16 +197,6 @@ class PendingRequestRepositoryIT extends BaseTest {
     }
 
     @Test
-    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_DELETE_WITH_EXCEPTION})
-    void claimNextPendingRequest_whenDeleteHearingWithPreviousException_shouldReturnNextHearing() {
-        PendingRequestEntity claimed = claimNextPendingRequest();
-
-        assertThat(claimed).isNotNull();
-        assertThat(claimed.getMessageType()).isEqualTo(REQUEST_HEARING.name());
-        assertThat(claimed.getHearingId()).isEqualTo(2000000002L);
-    }
-
-    @Test
     @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT})
     void returnFailedClaimToPending_shouldIncrementRetryCountAndClearClaim() {
         UUID claimToken = UUID.randomUUID();
@@ -183,7 +210,9 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         pendingRequestRepository.resetFailedClaimedRequest(pendingRequest.getId(), claimToken);
 
-        PendingRequestEntity updated = pendingRequestRepository.findById(pendingRequest.getId()).orElseThrow();
+        Optional<PendingRequestEntity> pendingRequestOptional = pendingRequestRepository.findById(pendingRequest.getId());
+        assertThat(pendingRequestOptional).isPresent();
+        PendingRequestEntity updated = pendingRequestOptional.get();
         assertThat(updated.getStatus()).isEqualTo(PENDING.name());
         assertThat(updated.getRetryCount()).isEqualTo(3);
         assertThat(updated.getLastTriedDateTime()).isNotNull();
@@ -213,6 +242,10 @@ class PendingRequestRepositoryIT extends BaseTest {
         assertThat(recovered).isEqualTo(1);
         assertThat(pendingRequestRepository.findById(stale.getId()).orElseThrow().getStatus())
             .isEqualTo(PENDING.name());
+        assertThat(pendingRequestRepository.findById(stale.getId()).orElseThrow().getClaimedAt())
+            .isNull();
+        assertThat(pendingRequestRepository.findById(stale.getId()).orElseThrow().getClaimToken())
+            .isNull();
         assertThat(pendingRequestRepository.findById(active.getId()).orElseThrow().getStatus())
             .isEqualTo(PROCESSING.name());
     }
@@ -236,6 +269,12 @@ class PendingRequestRepositoryIT extends BaseTest {
         assertThat(marked).isEqualTo(1);
         assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getStatus())
             .isEqualTo(EXCEPTION.name());
+        assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getIncidentFlag())
+            .isTrue();
+        assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getClaimToken())
+            .isNull();
+        assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getClaimedAt())
+            .isNull();
         assertThat(pendingRequestRepository.findById(recent.getId()).orElseThrow().getStatus())
             .isEqualTo(PENDING.name());
     }
@@ -341,7 +380,59 @@ class PendingRequestRepositoryIT extends BaseTest {
         pendingRequestRepository.markClaimedRequestAsExceptionWithIncident(1L, claimToken);
 
         assertPendingRequestStatusIncidentFlag(1L, EXCEPTION.name(), true);
+        Optional<PendingRequestEntity> pendingRequestOptional = pendingRequestRepository.findById(1L);
+        assertThat(pendingRequestOptional).isPresent();
+        PendingRequestEntity pendingRequest = pendingRequestOptional.get();
+        assertThat(pendingRequest.getIncidentFlag()).isTrue();
+        assertThat(pendingRequest.getClaimToken()).isNull();
+        assertThat(pendingRequest.getClaimedAt()).isNull();
         assertPendingRequestStatusIncidentFlag(2L, PROCESSING.name(), false);
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_NON_RETRIABLE_EXCEPTION})
+    void markClaimedRequestAsException_shouldMarkMatchingClaimAndClearClaimDetails() {
+        UUID claimToken = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        pendingRequestRepository.markClaimedRequestAsException(1L, claimToken);
+
+        Optional<PendingRequestEntity> markedPendingRequestOptional = pendingRequestRepository.findById(1L);
+        assertThat(markedPendingRequestOptional).isPresent();
+        PendingRequestEntity markedPendingRequest = markedPendingRequestOptional.get();
+        assertThat(markedPendingRequest.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(markedPendingRequest.getIncidentFlag()).isFalse();
+        assertThat(markedPendingRequest.getClaimToken()).isNull();
+        assertThat(markedPendingRequest.getClaimedAt()).isNull();
+
+        Optional<PendingRequestEntity> otherPendingRequestOptional = pendingRequestRepository.findById(2L);
+        assertThat(otherPendingRequestOptional).isPresent();
+        PendingRequestEntity otherPendingRequest = otherPendingRequestOptional.get();
+        assertThat(otherPendingRequest.getStatus()).isEqualTo(PROCESSING.name());
+        assertThat(otherPendingRequest.getClaimToken()).isEqualTo(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+        assertThat(otherPendingRequest.getClaimedAt()).isNotNull();
+    }
+
+    @Test
+    @Sql(scripts = {DELETE_PENDING_REQUEST_DATA_SCRIPT, INSERT_PENDING_REQUESTS_NON_RETRIABLE_EXCEPTION})
+    void completeClaimedRequest_shouldCompleteMatchingClaimAndClearClaimDetails() {
+        UUID claimToken = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        pendingRequestRepository.completeClaimedRequest(1L, claimToken);
+
+        Optional<PendingRequestEntity> completedPendingRequestOptional = pendingRequestRepository.findById(1L);
+        assertThat(completedPendingRequestOptional).isPresent();
+        PendingRequestEntity completedPendingRequest = completedPendingRequestOptional.get();
+        assertThat(completedPendingRequest.getStatus()).isEqualTo(COMPLETED.name());
+        assertThat(completedPendingRequest.getIncidentFlag()).isFalse();
+        assertThat(completedPendingRequest.getClaimToken()).isNull();
+        assertThat(completedPendingRequest.getClaimedAt()).isNull();
+
+        Optional<PendingRequestEntity> otherPendingRequestOptional = pendingRequestRepository.findById(2L);
+        assertThat(otherPendingRequestOptional).isPresent();
+        PendingRequestEntity otherPendingRequest = otherPendingRequestOptional.get();
+        assertThat(otherPendingRequest.getStatus()).isEqualTo(PROCESSING.name());
+        assertThat(otherPendingRequest.getClaimToken()).isEqualTo(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+        assertThat(otherPendingRequest.getClaimedAt()).isNotNull();
     }
 
     private void createTestData(String status, LocalDateTime localDateTime, Integer countOfRecords) {

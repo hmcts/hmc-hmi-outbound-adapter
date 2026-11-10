@@ -111,7 +111,7 @@ public class MessageProcessor {
             pendingRequest.getId(),
             pendingRequest.getClaimToken()
         );
-        log.debug("processPendingRequest(pendingRequest) completed");
+        log.debug("processPendingRequest(pendingRequest) completed : {}", pendingRequest.getHearingId());
     }
 
     public void processMessage(ServiceBusReceivedMessageContext messageContext) {

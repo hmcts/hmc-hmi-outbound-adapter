@@ -24,6 +24,7 @@ import uk.gov.hmcts.reform.hmc.repository.HearingRepository;
 import uk.gov.hmcts.reform.hmc.repository.PendingRequestRepository;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,35 +82,31 @@ public class PendingRequestServiceImpl implements PendingRequestService {
     @Transactional
     public PendingRequestEntity claimNextPendingRequest() {
         UUID claimToken = UUID.randomUUID();
-
-        return pendingRequestRepository.claimNextPendingRequest(
-            retryLimitInMinutes,
-            claimToken
-        );
+        return pendingRequestRepository.claimNextPendingRequest(retryLimitInMinutes, claimToken);
     }
 
     public void resetFailedClaimedRequest(Long id, UUID claimToken) {
-        log.debug("resetFailedClaimedRequest({}, {})", id, claimToken);
+        log.debug("resetFailedClaimedRequest({}, {}) - starting", id, claimToken);
         pendingRequestRepository.resetFailedClaimedRequest(id, claimToken);
-        log.debug("resetFailedClaimedRequest({}, {})", id, claimToken);
+        log.debug("resetFailedClaimedRequest({}, {}) - completed", id, claimToken);
     }
 
     public void completeClaimedRequest(Long id, UUID claimToken) {
-        log.info("completeClaimedRequest({}, {})", id, claimToken);
+        log.info("completeClaimedRequest({}, {}) - starting", id, claimToken);
         pendingRequestRepository.completeClaimedRequest(id, claimToken);
-        log.debug("completeClaimedRequest({}, {} completed)", id, claimToken);
+        log.debug("completeClaimedRequest({}, {}) - completed", id, claimToken);
     }
 
     @Override
     public void markOverduePendingRequestsAsException() {
-        LocalDateTime exceptionLimitTime = LocalDateTime.now().minusHours(exceptionLimitInHours);
+        LocalDateTime exceptionLimitTime = LocalDateTime.now(ZoneOffset.UTC).minusHours(exceptionLimitInHours);
         int count = pendingRequestRepository.markOverduePendingRequestsAsException(exceptionLimitTime);
         log.info("Marked {} overdue pending requests as EXCEPTION", count);
     }
 
     @Override
     public void resetTimedOutClaimedRequests() {
-        LocalDateTime claimLimitTime = LocalDateTime.now().minusMinutes(claimLimitInMinutes);
+        LocalDateTime claimLimitTime = LocalDateTime.now(ZoneOffset.UTC).minusMinutes(claimLimitInMinutes);
         int count = pendingRequestRepository.resetTimedOutClaimedRequests(claimLimitTime);
         log.info("Reset {} timed out claimed requests", count);
     }

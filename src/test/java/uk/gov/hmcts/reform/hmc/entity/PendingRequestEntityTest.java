@@ -6,6 +6,7 @@ import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,7 +48,8 @@ class PendingRequestEntityTest {
                 + ">,messageType:<" + messageType + ">,submittedDateTime:<"
                 + submittedDateTime + ">,retryCount:<" + retryCount + ">,"
             + "lastTriedDateTime:<" + lastTriedDateTime + ">,status:<" + status + ">,incidentFlag:<" + incidentFlag
-                + ">,message:<" + message + ">,deploymentId:<" + deploymentId + ">";
+                + ">,message:<" + message + ">,deploymentId:<" + deploymentId + ">claimedAt:<" + null
+                + ">claimToken:<" + null + ">";
         assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }
 
@@ -87,7 +89,7 @@ class PendingRequestEntityTest {
         PendingRequestEntity pendingRequest = generatePendingRequest();
 
         int expectedHashCode = Objects.hash(id, hearingId, versionNumber, messageType, submittedDateTime, retryCount,
-                                             lastTriedDateTime, status, incidentFlag, message, deploymentId);
+                                             lastTriedDateTime, status, incidentFlag, message, deploymentId, null, null);
         assertThat(expectedHashCode).isEqualTo(pendingRequest.hashCode());
     }
 
@@ -107,10 +109,13 @@ class PendingRequestEntityTest {
         pendingRequest.setMessage("Test Message");
         pendingRequest.setMessageType("REQUEST_HEARING");
         pendingRequest.setDeploymentId("depIdXX");
+        pendingRequest.setClaimedAt(null);
+        pendingRequest.setClaimToken(null);
 
         String expectedString = "id:<1>,hearingId:<12345>,versionNumber:<1>,messageType:<REQUEST_HEARING>,"
             + "submittedDateTime:<2023-10-01T10:09:08>,retryCount:<3>,lastTriedDateTime:<2023-10-02T09:08:07>,"
-            + "status:<PENDING>,incidentFlag:<true>,message:<Test Message>,deploymentId:<depIdXX>";
+            + "status:<PENDING>,incidentFlag:<true>,message:<Test Message>,deploymentId:<depIdXX>claimedAt:<null>"
+            + "claimToken:<null>";
         assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }
 
@@ -127,6 +132,8 @@ class PendingRequestEntityTest {
         pendingRequest.setMessage(message);
         pendingRequest.setMessageType(messageType);
         pendingRequest.setDeploymentId(deploymentId);
+        pendingRequest.setClaimedAt(null);
+        pendingRequest.setClaimToken(null);
         return pendingRequest;
     }
 }

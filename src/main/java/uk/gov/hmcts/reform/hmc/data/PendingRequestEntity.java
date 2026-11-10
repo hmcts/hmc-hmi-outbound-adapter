@@ -89,7 +89,10 @@ public class PendingRequestEntity implements Serializable {
         ) && Objects.equals(status, that.status) && Objects.equals(incidentFlag, that.incidentFlag) && Objects.equals(
             message,
             that.message
-        ) && Objects.equals(deploymentId, that.deploymentId);
+        ) && Objects.equals(deploymentId, that.deploymentId) && Objects.equals(
+            claimedAt,
+            that.claimedAt
+        ) && Objects.equals(claimToken, that.claimToken);
     }
 
     @Override
@@ -105,7 +108,9 @@ public class PendingRequestEntity implements Serializable {
             status,
             incidentFlag,
             message,
-            deploymentId
+            deploymentId,
+            claimedAt,
+            claimToken
         );
     }
 
@@ -120,6 +125,8 @@ public class PendingRequestEntity implements Serializable {
             + "status:<" + status + ">,"
             + "incidentFlag:<" + incidentFlag + ">,"
             + "message:<" + message + ">,"
-            + "deploymentId:<" + deploymentId + ">";
+            + "deploymentId:<" + deploymentId + ">"
+            + "claimedAt:<" + claimedAt + ">"
+            + "claimToken:<" + claimToken + ">";
     }
 }

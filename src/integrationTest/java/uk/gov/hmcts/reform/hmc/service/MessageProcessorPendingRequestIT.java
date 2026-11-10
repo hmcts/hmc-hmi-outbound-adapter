@@ -24,8 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnToken;
 import static uk.gov.hmcts.reform.hmc.WiremockFixtures.stubFailToReturnTokenHtmlResponse;
@@ -41,17 +40,12 @@ class MessageProcessorPendingRequestIT extends BaseTest {
     private static final String HTML_INTERNAL_SERVER_ERROR =
         "<html><head><title>500 Internal Server Error</title></head><body><h1>Internal Server Error</h1></body></html>";
 
-    private static final String DEBUG_LOG_MESSAGE_PROCESS_PENDING_REQUEST_STARTING =
-        "processPendingRequest(pendingRequest) starting : %s";
-
     private static final String DATA_SCRIPT_DELETE_PENDING_REQUEST_TABLES =
         "classpath:sql/delete-pending_request_tables.sql";
     private static final String DATA_SCRIPT_DELETE_HEARING_TABLES =
         "classpath:sql/delete-hearing-tables.sql";
     private static final String DATA_SCRIPT_INSERT_PENDING_REQUESTS_PENDING_AND_HEARING =
         "classpath:sql/insert-pending_requests_pending_and_hearing.sql";
-    private static final String DATA_SCRIPT_INSERT_PENDING_REQUESTS_PROCESSING_AND_HEARING =
-        "classpath:sql/insert-pending_requests_processing_and_hearing.sql";
     private static final String DATA_SCRIPT_INSERT_PENDING_REQUESTS_UNKNOWN_MESSAGE_TYPE =
         "classpath:sql/insert-pending_requests_unknown_message_type.sql";
 
@@ -247,8 +241,8 @@ class MessageProcessorPendingRequestIT extends BaseTest {
     private PendingRequestEntity claimPendingRequest(long pendingRequestId) {
         PendingRequestEntity claimed = pendingRequestRepository
             .claimNextPendingRequest(15L, UUID.randomUUID());
-        assertTrue(claimed != null && claimed.getId().equals(pendingRequestId),
-                   "Pending request " + pendingRequestId + " should be claimed");
+        assertNotNull(claimed, "Pending request should be returned");
+        assertEquals(pendingRequestId, claimed.getId(), "Pending request " + pendingRequestId + " should be claimed");
         return claimed;
     }
 
