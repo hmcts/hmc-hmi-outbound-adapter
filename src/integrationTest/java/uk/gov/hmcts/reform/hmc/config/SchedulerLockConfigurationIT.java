@@ -47,7 +47,7 @@ class SchedulerLockConfigurationIT extends BaseTest {
         Optional<SimpleLock> lock = lockProvider.lock(lockConfiguration());
 
         assertThat(lock).isPresent();
-        assertThat(lockRowCount()).isOne();
+        assertThat(lockRowCount()).isNotNull().isOne();
 
         lock.orElseThrow().unlock();
     }
@@ -92,7 +92,7 @@ class SchedulerLockConfigurationIT extends BaseTest {
         return LOCK_NAME_PREFIX + UUID.randomUUID();
     }
 
-    private int lockRowCount() {
+    private Integer lockRowCount() {
         return jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM public.shedlock WHERE name = ?",
             Integer.class,
