@@ -86,13 +86,13 @@ class PendingRequestRepositoryIT extends BaseTest {
         pendingRequestRepository.save(firstPendingRequest);
 
         PendingRequestEntity secondPendingRequest = createPendingRequestEntity(
-            1L, PENDING.name(), REQUEST_HEARING.name(), "first",
+            1L, PENDING.name(), REQUEST_HEARING.name(), "second",
             submittedDateTime, "101");
         secondPendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
         pendingRequestRepository.save(secondPendingRequest);
 
         PendingRequestEntity thirdPendingRequest = createPendingRequestEntity(
-            1L, PENDING.name(), REQUEST_HEARING.name(), "first",
+            1L, PENDING.name(), REQUEST_HEARING.name(), "third",
             submittedDateTime, "101");
         thirdPendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
         pendingRequestRepository.save(thirdPendingRequest);
@@ -240,16 +240,23 @@ class PendingRequestRepositoryIT extends BaseTest {
         pendingRequestRepository.save(active);
 
         int recovered = pendingRequestRepository.resetTimedOutClaimedRequests(LocalDateTime.now().minusMinutes(30));
-
         assertThat(recovered).isEqualTo(1);
-        assertThat(pendingRequestRepository.findById(stale.getId()).orElseThrow().getStatus())
-            .isEqualTo(PENDING.name());
-        assertThat(pendingRequestRepository.findById(stale.getId()).orElseThrow().getClaimedAt())
-            .isNull();
-        assertThat(pendingRequestRepository.findById(stale.getId()).orElseThrow().getClaimToken())
-            .isNull();
-        assertThat(pendingRequestRepository.findById(active.getId()).orElseThrow().getStatus())
-            .isEqualTo(PROCESSING.name());
+
+        Optional<PendingRequestEntity> stalePendingRequestOptional =
+            pendingRequestRepository.findById(stale.getId());
+        assertThat(stalePendingRequestOptional).isPresent();
+        PendingRequestEntity stalePendingRequest = stalePendingRequestOptional.get();
+
+        assertThat(stalePendingRequest.getStatus()).isEqualTo(PENDING.name());
+        assertThat(stalePendingRequest.getClaimedAt()).isNull();
+        assertThat(stalePendingRequest.getClaimToken()).isNull();
+
+        Optional<PendingRequestEntity> activePendingRequestOptional =
+            pendingRequestRepository.findById(active.getId());
+        assertThat(activePendingRequestOptional).isPresent();
+        PendingRequestEntity activePendingRequest = activePendingRequestOptional.get();
+
+        assertThat(activePendingRequest.getStatus()).isEqualTo(PROCESSING.name());
     }
 
     @Test
@@ -267,18 +274,23 @@ class PendingRequestRepositoryIT extends BaseTest {
 
         int marked = pendingRequestRepository.markOverduePendingRequestsAsException(
             LocalDateTime.now().minusHours(4));
-
         assertThat(marked).isEqualTo(1);
-        assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getStatus())
-            .isEqualTo(EXCEPTION.name());
-        assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getIncidentFlag())
-            .isTrue();
-        assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getClaimToken())
-            .isNull();
-        assertThat(pendingRequestRepository.findById(expired.getId()).orElseThrow().getClaimedAt())
-            .isNull();
-        assertThat(pendingRequestRepository.findById(recent.getId()).orElseThrow().getStatus())
-            .isEqualTo(PENDING.name());
+
+        Optional<PendingRequestEntity> expiredPendingRequestOptional =
+            pendingRequestRepository.findById(expired.getId());
+        assertThat(expiredPendingRequestOptional).isPresent();
+        PendingRequestEntity expiredPendingRequest = expiredPendingRequestOptional.get();
+
+        assertThat(expiredPendingRequest.getStatus()).isEqualTo(EXCEPTION.name());
+        assertThat(expiredPendingRequest.getIncidentFlag()).isTrue();
+        assertThat(expiredPendingRequest.getClaimToken()).isNull();
+        assertThat(expiredPendingRequest.getClaimedAt()).isNull();
+
+        Optional<PendingRequestEntity> recentPendingRequestOptional =
+            pendingRequestRepository.findById(recent.getId());
+        assertThat(recentPendingRequestOptional).isPresent();
+        PendingRequestEntity recentPendingRequest = recentPendingRequestOptional.get();
+        assertThat(recentPendingRequest.getStatus()).isEqualTo(PENDING.name());
     }
 
     private PendingRequestEntity claimNextPendingRequest() {

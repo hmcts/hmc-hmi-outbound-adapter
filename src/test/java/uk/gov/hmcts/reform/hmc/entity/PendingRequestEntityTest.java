@@ -47,8 +47,8 @@ class PendingRequestEntityTest {
                 + ">,messageType:<" + messageType + ">,submittedDateTime:<"
                 + submittedDateTime + ">,retryCount:<" + retryCount + ">,"
             + "lastTriedDateTime:<" + lastTriedDateTime + ">,status:<" + status + ">,incidentFlag:<" + incidentFlag
-                + ">,message:<" + message + ">,deploymentId:<" + deploymentId + ">claimedAt:<" + null
-                + ">claimToken:<" + null + ">";
+                + ">,message:<" + message + ">,deploymentId:<" + deploymentId + ">,claimedAt:<" + null
+                + ">,claimToken:<" + null + ">";
         assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }
 
@@ -114,7 +114,7 @@ class PendingRequestEntityTest {
 
         String expectedString = "id:<1>,hearingId:<12345>,versionNumber:<1>,messageType:<REQUEST_HEARING>,"
             + "submittedDateTime:<2023-10-01T10:09:08>,retryCount:<3>,lastTriedDateTime:<2023-10-02T09:08:07>,"
-            + "status:<PENDING>,incidentFlag:<true>,message:<Test Message>,deploymentId:<depIdXX>claimedAt:<null>"
+            + "status:<PENDING>,incidentFlag:<true>,message:<Test Message>,deploymentId:<depIdXX>,claimedAt:<null>,"
             + "claimToken:<null>";
         assertThat(expectedString).isEqualTo(pendingRequest.toString());
     }

@@ -125,8 +125,8 @@ public class PendingRequestEntity implements Serializable {
             + "status:<" + status + ">,"
             + "incidentFlag:<" + incidentFlag + ">,"
             + "message:<" + message + ">,"
-            + "deploymentId:<" + deploymentId + ">"
-            + "claimedAt:<" + claimedAt + ">"
+            + "deploymentId:<" + deploymentId + ">,"
+            + "claimedAt:<" + claimedAt + ">,"
             + "claimToken:<" + claimToken + ">";
     }
 }
