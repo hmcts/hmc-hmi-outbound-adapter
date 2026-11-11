@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import uk.gov.hmcts.reform.hmc.client.futurehearing.ErrorDetails;
 import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
-import uk.gov.hmcts.reform.hmc.config.PendingStatusType;
 import uk.gov.hmcts.reform.hmc.data.HearingEntity;
 import uk.gov.hmcts.reform.hmc.data.HearingResponseEntity;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
@@ -41,17 +40,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,7 +57,6 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static uk.gov.hmcts.reform.hmc.config.PendingStatusType.EXCEPTION;
 
 @DisplayName("PendingRequestServiceImpl")
 @ExtendWith(MockitoExtension.class)
@@ -101,146 +97,41 @@ class PendingRequestServiceImplTest {
     private final Logger logger = (Logger) LoggerFactory.getLogger(PendingRequestServiceImpl.class);
 
     @Test
-    void shouldReturnTrueWhenExceptionLimitExceeded() {
+    void shouldClaimNextPendingRequest() {
         PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setSubmittedDateTime(LocalDateTime.now().minusHours(5));
-        pendingRequestService.escalationWaitInterval = "3,HOURS";
-        pendingRequestService.exceptionLimitInHours = 4L;
+        pendingRequestService.retryLimitInMinutes = 15L;
+        when(pendingRequestRepository.claimNextPendingRequest(eq(15L), any(UUID.class))).thenReturn(pendingRequest);
 
-        boolean result = pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest);
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void shouldReturnFalseWhenExceptionLimitNotExceeded() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setSubmittedDateTime(LocalDateTime.now().minusHours(3));
-        pendingRequestService.escalationWaitInterval = "3,HOURS";
-        pendingRequestService.exceptionLimitInHours = 4L;
-
-        boolean result = pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest);
-
-        assertThat(result).isFalse();
-    }
-
-    @Test
-    void shouldHandleNullSubmittedDateTime() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setSubmittedDateTime(null);
-
-        assertThrows(NullPointerException.class,
-                     () -> pendingRequestService.submittedDateTimePeriodElapsed(pendingRequest)
-        );
-    }
-
-    @Test
-    void shouldLockPendingRequestsByHearingId() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        List<PendingRequestEntity> pendingRequests = List.of(pendingRequest);
-        when(pendingRequestRepository.findAndLockByHearingId(pendingRequest.getHearingId()))
-            .thenReturn(pendingRequests);
-
-        List<PendingRequestEntity> result = pendingRequestService.findAndLockByHearingId(pendingRequest.getHearingId());
-
-        assertThat(pendingRequest).isEqualTo(result.getFirst());
-        verify(pendingRequestRepository).findAndLockByHearingId(pendingRequest.getHearingId());
-    }
-
-    @Test
-    void shouldReturnOldestPendingRequestForProcessing() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setSubmittedDateTime(LocalDateTime.now().minusHours(5));
-        pendingRequestService.pendingWaitInterval = "2,MINUTES";
-        when(pendingRequestRepository
-                 .findQueuedPendingRequestsForProcessing(2L, "MINUTES"))
-                 .thenReturn(List.of(pendingRequest));
-
-        List<PendingRequestEntity> results = pendingRequestService.findQueuedPendingRequestsForProcessing();
-
-        assertThat(results.getFirst()).isEqualTo(pendingRequest);
-        verify(pendingRequestRepository).findQueuedPendingRequestsForProcessing(anyLong(), anyString());
-    }
-
-    @Test
-    void shouldReturnFalseWhenLastTriedDateTimePeriodElapsed() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(10));
-        pendingRequestService.retryLimitInMinutes = 20L;
-
-        boolean result = pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest);
-
-        assertThat(result).isFalse();
-    }
-
-    @Test
-    void shouldReturnTrueWhenLastTriedDateTimePeriodElapsed() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setLastTriedDateTime(LocalDateTime.now().minusMinutes(30));
-        pendingRequestService.retryLimitInMinutes = 20L;
-
-        boolean result = pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest);
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void shouldHandleNullLastTriedDateTime() {
-        PendingRequestEntity pendingRequest = generatePendingRequest();
-        pendingRequest.setLastTriedDateTime(null);
-
-        assertThat(pendingRequestService.lastTriedDateTimePeriodElapsed(pendingRequest)).isTrue();
-    }
-
-    @Test
-    void shouldMarkRequestAsProcessing() {
-        long id = 1L;
-        pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.PROCESSING.name());
-
-        verify(pendingRequestRepository).markRequestWithGivenStatus(id, PendingStatusType.PROCESSING.name());
-    }
-
-    @Test
-    void shouldClaim() {
-        long id = 1L;
-        pendingRequestService.claimRequest(id);
-
-        verify(pendingRequestRepository).claimRequest(id);
+        assertThat(pendingRequestService.claimNextPendingRequest()).isSameAs(pendingRequest);
+        verify(pendingRequestRepository).claimNextPendingRequest(eq(15L), any(UUID.class));
     }
 
     @Test
     void shouldMarkRequestAsPending() {
-        long id = 1L;
-        int retryCount = 1;
-        LocalDateTime lastRetriedDateTime = LocalDateTime.now();
-        pendingRequestService.markRequestAsPending(id, retryCount, lastRetriedDateTime);
+        UUID claimToken = UUID.randomUUID();
 
-        verify(pendingRequestRepository).markRequestAsPending(eq(id), eq(retryCount + 1), any());
+        pendingRequestService.resetFailedClaimedRequest(1L, claimToken);
+
+        verify(pendingRequestRepository).resetFailedClaimedRequest(1L, claimToken);
     }
 
     @Test
-    void shouldMarkRequestAsCompleted() {
-        long id = 1L;
-        pendingRequestService.markRequestWithGivenStatus(id, PendingStatusType.COMPLETED.name());
+    void shouldCompleteClaimedRequest() {
+        UUID claimToken = UUID.randomUUID();
 
-        verify(pendingRequestRepository).markRequestWithGivenStatus(id, PendingStatusType.COMPLETED.name());
-    }
+        pendingRequestService.completeClaimedRequest(1L, claimToken);
 
-    @Test
-    void shouldMarkRequestAsException() {
-        long id = 1L;
-        pendingRequestService.markRequestWithGivenStatus(id, EXCEPTION.name());
-
-        verify(pendingRequestRepository).markRequestWithGivenStatus(id, EXCEPTION.name());
+        verify(pendingRequestRepository)
+            .completeClaimedRequest(1L, claimToken);
     }
 
     @Test
     void shouldDeleteCompletedPendingRequests() {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
 
-        pendingRequestService.deleteCompletedPendingRequests();
+        pendingRequestService.deleteCompletedRequests();
 
-        verify(pendingRequestRepository).deleteCompletedRecords(30L, "DAYS");
+        verify(pendingRequestRepository).deleteCompletedRequests(30L, "DAYS");
     }
 
     @Test
@@ -248,11 +139,11 @@ class PendingRequestServiceImplTest {
         pendingRequestService.deletionWaitInterval = "30,DAYS";
 
         RuntimeException exception = new RuntimeException("Runtime error");
-        when(pendingRequestRepository.deleteCompletedRecords(30L, "DAYS")).thenThrow(exception);
+        when(pendingRequestRepository.deleteCompletedRequests(30L, "DAYS")).thenThrow(exception);
 
         ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
 
-        pendingRequestService.deleteCompletedPendingRequests();
+        pendingRequestService.deleteCompletedRequests();
 
         logger.detachAndStopAllAppenders();
 
@@ -261,7 +152,7 @@ class PendingRequestServiceImplTest {
                     new LogMessage(Level.ERROR, "Failed to deleteCompletedRecords"));
         verifyLogMessages(listAppender, expectedLogMessages);
 
-        verify(pendingRequestRepository).deleteCompletedRecords(30L, "DAYS");
+        verify(pendingRequestRepository).deleteCompletedRequests(30L, "DAYS");
     }
 
     @Test
@@ -410,8 +301,9 @@ class PendingRequestServiceImplTest {
         PendingRequestEntity pendingRequest = generatePendingRequest();
         BadFutureHearingRequestException exception =
             new BadFutureHearingRequestException(TEST_EXCEPTION_MESSAGE, errorDetails);
+        UUID claimToken = pendingRequest.getClaimToken();
 
-        pendingRequestService.handleNonRetriableException(pendingRequest, exception);
+        pendingRequestService.handleNonRetriableException(pendingRequest, exception, claimToken);
 
         assertThat(hearing.getStatus()).isEqualTo("EXCEPTION");
         assertThat(hearing.getUpdatedDateTime()).isNotNull();
@@ -436,7 +328,7 @@ class PendingRequestServiceImplTest {
                 .errorDetails(hearingStatusAuditErrorDescription).build()
         );
 
-        verify(pendingRequestRepository).markRequestForNonRetriableException(1L);
+        verify(pendingRequestRepository).markClaimedRequestAsExceptionWithIncident(1L, claimToken);
     }
 
     @Test
@@ -445,20 +337,21 @@ class PendingRequestServiceImplTest {
 
         Exception exception = new Exception("Test Exception");
         when(hearingRepository.findById(2000000001L)).thenReturn(Optional.empty());
+        UUID claimToken = pendingRequest.getClaimToken();
 
         ListAppender<ILoggingEvent> listAppender = getILoggingEventListAppender();
 
-        pendingRequestService.handleNonRetriableException(pendingRequest, exception);
+        pendingRequestService.handleNonRetriableException(pendingRequest, exception, claimToken);
 
         logger.detachAndStopAllAppenders();
         verifyLogErrors(listAppender, "Hearing id 2000000001 not found");
 
         verify(hearingRepository).findById(2000000001L);
-        verify(pendingRequestRepository).markRequestWithGivenStatus(1L, EXCEPTION.name());
+        verify(pendingRequestRepository).markClaimedRequestAsException(1L, claimToken);
 
         verify(hearingRepository, never()).save(any());
         verify(hearingStatusAuditService, never()).saveAuditTriageDetailsWithUpdatedDateOrCurrentDate(any());
-        verify(pendingRequestRepository, never()).markRequestForNonRetriableException(1L);
+        verify(pendingRequestRepository, never()).markClaimedRequestAsExceptionWithIncident(1L, claimToken);
     }
 
     @Test
@@ -643,6 +536,7 @@ class PendingRequestServiceImplTest {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
         pendingRequest.setId(1L);
         pendingRequest.setHearingId(2000000001L);
+        pendingRequest.setClaimToken(UUID.randomUUID());
         return pendingRequest;
     }
 
