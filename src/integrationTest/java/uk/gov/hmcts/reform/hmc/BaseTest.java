@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.hmc;
 
+import com.azure.messaging.servicebus.ServiceBusSenderClient;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -8,7 +9,6 @@ import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.cloud.contract.wiremock.WireMockConfigurationCustomizer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWireMock
@@ -16,8 +16,11 @@ import uk.gov.hmcts.reform.hmc.config.MessageSenderToTopicConfiguration;
 @ActiveProfiles("itest")
 public class BaseTest implements WireMockConfigurationCustomizer {
 
-    @MockitoBean
-    protected MessageSenderToTopicConfiguration messageSenderToTopicConfiguration;
+    @MockitoBean(name = "topicSenderClient")
+    protected ServiceBusSenderClient topicSenderClient;
+
+    @MockitoBean(name = "queueSenderClient")
+    protected ServiceBusSenderClient queueSenderClient;
 
     @Value("${wiremock.server.port}")
     protected Integer wiremockPort;
