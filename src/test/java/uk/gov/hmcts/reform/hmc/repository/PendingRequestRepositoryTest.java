@@ -8,8 +8,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import uk.gov.hmcts.reform.hmc.data.PendingRequestEntity;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
@@ -24,20 +24,23 @@ class PendingRequestRepositoryTest {
     private PendingRequestRepository pendingRequestRepository;
 
     @Test
-    void findQueuedPendingRequestsForProcessing_shouldReturnPendingRequest() {
-        List<PendingRequestEntity> pendingRequests = List.of(new PendingRequestEntity());
-        when(pendingRequestRepository.findQueuedPendingRequestsForProcessing(2L, "MINUTES"))
-            .thenReturn(pendingRequests);
-        List<PendingRequestEntity> results =
-            pendingRequestRepository.findQueuedPendingRequestsForProcessing(2L, "MINUTES");
-        assertThat(results).isNotNull();
+    void claimNextPendingRequest_shouldReturnPendingRequest() {
+        PendingRequestEntity pendingRequest = new PendingRequestEntity();
+        UUID claimToken = UUID.randomUUID();
+        when(pendingRequestRepository.claimNextPendingRequest(15L, claimToken))
+            .thenReturn(pendingRequest);
+
+        PendingRequestEntity result =
+            pendingRequestRepository.claimNextPendingRequest(15L, claimToken);
+
+        assertThat(result).isSameAs(pendingRequest);
     }
 
     @Test
     void findRequestsForEscalation_shouldReturnListOfRequests() {
         PendingRequestEntity pendingRequest = new PendingRequestEntity();
         when(pendingRequestRepository.findRequestsForEscalation(1L, "DAY"))
-            .thenReturn(Collections.singletonList(pendingRequest));
+            .thenReturn(List.of(pendingRequest));
         List<PendingRequestEntity> results = pendingRequestRepository
             .findRequestsForEscalation(1L, "DAY");
         assertThat(results).isNotEmpty();
@@ -52,17 +55,17 @@ class PendingRequestRepositoryTest {
 
     @Test
     void deleteCompletedRecords_shouldDeleteRecords() {
-        when(pendingRequestRepository.deleteCompletedRecords(30L, "DAYS")).thenReturn(1);
-        int deletedRows = pendingRequestRepository.deleteCompletedRecords(30L, "DAYS");
+        when(pendingRequestRepository.deleteCompletedRequests(30L, "DAYS")).thenReturn(1);
+        int deletedRows = pendingRequestRepository.deleteCompletedRequests(30L, "DAYS");
         assertThat(deletedRows).isPositive();
     }
 
     @Test
     void deleteCompletedRecords_shouldHandleNoRecordsToDelete() {
-        when(pendingRequestRepository.deleteCompletedRecords(30L, "DAYS"))
+        when(pendingRequestRepository.deleteCompletedRequests(30L, "DAYS"))
             .thenThrow(new EmptyResultDataAccessException(1));
 
         assertThatExceptionOfType(EmptyResultDataAccessException.class).isThrownBy(
-            () -> pendingRequestRepository.deleteCompletedRecords(30L, "DAYS"));
+            () -> pendingRequestRepository.deleteCompletedRequests(30L, "DAYS"));
     }
 }
