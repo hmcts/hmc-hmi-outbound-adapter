@@ -104,7 +104,7 @@ class MessageProcessorPendingRequestIT extends BaseTest {
         logger.setLevel(originalLogLevel);
 
         List<LogMessage> expectedLogMessages =
-            List.of(new LogMessage(Level.DEBUG, "processPendingRequests (every 120000)- starting"),
+            List.of(new LogMessage(Level.DEBUG, "processPendingRequests (cron: 0 */2 * * * *) - starting"),
                     new LogMessage(Level.DEBUG, "No pending requests found for processing."),
                     new LogMessage(Level.DEBUG, "processPendingRequests - completed"));
         assertLogErrorMessages(listAppender, expectedLogMessages);
